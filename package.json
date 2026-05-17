@@ -12,6 +12,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "dexie": "^4.4.2",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"

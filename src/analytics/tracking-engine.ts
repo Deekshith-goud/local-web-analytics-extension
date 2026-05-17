@@ -7,10 +7,12 @@ import {
 import { createEventBus } from "../utils/event-bus";
 import { logger } from "../utils/logger";
 import { extractHostname } from "../utils/url";
+import { stageRecord } from "../storage/drain-engine";
 
 const MAX_SESSION_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 const ACTIVE_SESSION_KEY = "active_session_state";
 const IDLE_THRESHOLD_SECONDS = 30;
+const CURRENT_SCHEMA_VERSION = 1;
 
 export class TrackingEngine {
   public events = createEventBus<TrackingEvents>();
@@ -162,19 +164,23 @@ export class TrackingEngine {
     const durationMs = Math.max(0, endTime - this.currentState.startTime);
 
     if (durationMs > 0 && this.currentState.domain) {
+      const now2 = Date.now();
       const record: ActivityRecord = {
         sessionId: this.currentState.sessionId,
         domain: this.currentState.domain,
         startTime: this.currentState.startTime,
         endTime,
         durationMs,
-        terminationReason: reason
+        terminationReason: reason,
+        // Audit metadata — reserved for migration and recovery analysis
+        createdAt: now2,
+        updatedAt: now2,
+        schemaVersion: CURRENT_SCHEMA_VERSION
       };
 
-      // Save to prefix-based staging area
-      const stagingKey = `staging:${endTime}:${record.sessionId}`;
-      await chrome.storage.local.set({ [stagingKey]: record });
-      
+      // Delegate staging to DrainEngine — decouples engine from storage details
+      await stageRecord(record);
+
       this.events.emit("session-ended", record);
       logger.debug("Finalized session:", record);
     }
