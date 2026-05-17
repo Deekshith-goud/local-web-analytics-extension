@@ -42,6 +42,7 @@
       "storage",
       "tabs",
       "idle",
+      "windows",
       "webNavigation"
     ],
     "content_security_policy": {
