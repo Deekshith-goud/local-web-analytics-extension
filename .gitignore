@@ -1,0 +1,8 @@
+node_modules/
+.plasmo/
+build/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
