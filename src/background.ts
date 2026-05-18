@@ -14,7 +14,8 @@ import {
   getActivityRecordsInRange,
   getDailyTotal,
   getDailyDomainStatsForDate,
-  pruneOldActivities
+  pruneOldActivities,
+  clearAllData
 } from "./storage/repository";
 import {
   getLocalTodayDateString,
@@ -735,6 +736,34 @@ async function handleGetHistoricalStats(
   }
 }
 
+/**
+ * Destructively clears all local extension state including IndexedDB tables,
+ * local storage configurations, custom productivity rules, active timers, and in-memory caches.
+ */
+async function resetExtensionState(): Promise<void> {
+  logger.warn("[Background] Commencing full extension state reset...");
+
+  // 1. Pause tracking engine
+  await engine.setPaused(true);
+
+  // 2. Clear IndexedDB repositories
+  await clearAllData();
+
+  // 3. Clear chrome.storage.local completely (WAL keys, options, maintenance timestamps, custom rules)
+  await chrome.storage.local.clear();
+
+  // 4. Reset engine in-memory state
+  engine.clearState();
+
+  // 5. Re-compile productivity classifier to empty state
+  classifier.compileRules([]);
+
+  // 6. Invalidate all cache memoizations
+  invalidateAllCaches();
+
+  logger.info("[Background] Full extension state reset completed successfully.");
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 1. Derive execution origin context surface and validate sender identity
   const surface = deriveSurface(sender);
@@ -991,6 +1020,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Asynchronous reply
   }
 
+  if (msg.type === "PURGE_ALL_DATA") {
+    resetExtensionState()
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to execute extension state purge:", err);
+        sendResponse({ success: false, error: String(err) });
+      });
+    return true; // Asynchronous reply
+  }
 
   return false;
 });

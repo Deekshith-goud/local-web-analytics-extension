@@ -57,7 +57,8 @@ export const MESSAGE_CAPABILITIES = Object.freeze({
   RESET_PRODUCTIVITY_RULES: Object.freeze(["dashboard"]),
   TOGGLE_TRACKING: Object.freeze(["popup", "dashboard"]),
   BROADCAST_RULES_UPDATED: Object.freeze(["background", "dashboard"]),
-  GET_SECURITY_METRICS: Object.freeze(["dashboard"])
+  GET_SECURITY_METRICS: Object.freeze(["dashboard"]),
+  PURGE_ALL_DATA: Object.freeze(["dashboard"])
 });
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────

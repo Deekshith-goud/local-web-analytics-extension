@@ -75,6 +75,13 @@ export class TrackingEngine {
   }
 
   /**
+   * Resets active session in-memory state during purges.
+   */
+  public clearState(): void {
+    this.currentState = null;
+  }
+
+  /**
    * Public getter for the tracking paused state.
    */
   public getPaused(): boolean {

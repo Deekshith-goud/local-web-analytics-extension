@@ -95,7 +95,8 @@ export type RuntimeMessage =
   | { type: "RESET_PRODUCTIVITY_RULES"; version: 1 }
   | { type: "BROADCAST_RULES_UPDATED"; version: 1 }
   | { type: "GET_CACHE_METRICS"; version: 1 }
-  | { type: "GET_SECURITY_METRICS"; version: 1 };
+  | { type: "GET_SECURITY_METRICS"; version: 1 }
+  | { type: "PURGE_ALL_DATA"; version: 1 };
 
 export interface ActiveSessionResponse {
   activeSession: {

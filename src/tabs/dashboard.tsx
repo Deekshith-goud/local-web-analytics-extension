@@ -32,10 +32,15 @@ function formatDuration(ms: number): string {
 type RangeType = "today" | "7days" | "30days";
 
 export default function AnalyticsDashboard() {
-  const [activeTab, setActiveTab] = useState<"analytics" | "rules">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings">("analytics");
   const [range, setRange] = useState<RangeType>("7days");
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Settings & Database Purge modal states
+  const [showPurgeModal, setShowPurgeModal] = useState(false);
+  const [purgeConfirmText, setPurgeConfirmText] = useState("");
+  const [isPurging, setIsPurging] = useState(false);
 
   // Productivity Rules Tab States
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
@@ -272,6 +277,28 @@ export default function AnalyticsDashboard() {
     );
   };
 
+  const handleExecutePurge = () => {
+    if (purgeConfirmText !== "PURGE") return;
+    setIsPurging(true);
+    chrome.runtime.sendMessage(
+      { type: "PURGE_ALL_DATA", version: 1 } satisfies RuntimeMessage,
+      (res: { success: boolean; error?: string }) => {
+        setIsPurging(false);
+        setShowPurgeModal(false);
+        setPurgeConfirmText("");
+        if (res && res.success) {
+          alert("All local database records, rules, and cache keys have been permanently purged.");
+          // Refresh statistics
+          fetchStats();
+          // Reload custom/default rules lists
+          fetchRules();
+        } else {
+          alert(`Failed to purge database: ${res?.error ?? "Unknown error"}`);
+        }
+      }
+    );
+  };
+
   const handleExportRules = () => {
     const payload = JSON.stringify({
       schema: "web-swap-productivity-rules",
@@ -378,6 +405,12 @@ export default function AnalyticsDashboard() {
           >
             Productivity Rules
           </button>
+          <button
+            className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`}
+            onClick={() => setActiveTab("settings")}
+          >
+            Settings & Privacy
+          </button>
         </nav>
 
         {/* Date Filters (Only shown when activeTab is overview) */}
@@ -425,7 +458,7 @@ export default function AnalyticsDashboard() {
       )}
 
       {/* TABS CONTROLLER CONTAINER */}
-      {activeTab === "analytics" ? (
+      {activeTab === "analytics" && (
         <>
           {/* Derived Metric Cards Grid */}
           <section className="metrics-grid" aria-label="Browsing overview cards">
@@ -722,7 +755,9 @@ export default function AnalyticsDashboard() {
             </section>
           </div>
         </>
-      ) : (
+      )}
+
+      {activeTab === "rules" && (
         /* PRODUCTIVITY RULES TAB PANEL */
         <section className="rules-manager-layout" aria-label="Productivity classification preferences">
           {/* Rules List Column */}
@@ -934,6 +969,100 @@ export default function AnalyticsDashboard() {
             </button>
           </form>
         </section>
+      )}
+
+      {activeTab === "settings" && (
+        <section className="settings-panel-layout" aria-label="Settings and Data Control">
+          <div className="settings-card">
+            <h3>🔒 Privacy & Local-First Policy</h3>
+            <p>
+              Your browsing activity is processed and stored <strong>entirely on your local machine</strong>.
+              No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.
+            </p>
+          </div>
+
+          <div className="settings-card">
+            <h3>💾 Local Storage Behavior</h3>
+            <p>
+              The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs.
+              All tracking state runs asynchronously in service worker background threads with zero UI blocking.
+              Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.
+            </p>
+          </div>
+
+          <div className="settings-card danger-zone">
+            <h4>⚠️ Danger Zone: Permanent Purge</h4>
+            <p style={{ marginBottom: "16px", color: "var(--text-secondary)" }}>
+              Purging the on-device database is destructive and irreversible. This will instantly wipe all website session logs,
+              daily domain indicators, customized classification rules, volatile ring-buffered caches, and active state keys.
+            </p>
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => {
+                setShowPurgeModal(true);
+                setPurgeConfirmText("");
+              }}
+              aria-haspopup="dialog"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "4px" }}>
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              Purge On-Device Database
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* MULTI-STEP CONFIRMATION MODAL OVERLAY */}
+      {showPurgeModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
+          <div className="modal-content">
+            <h3 id="purge-modal-title" className="modal-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              Confirm Permanent Purge
+            </h3>
+            <p className="modal-desc">
+              This action is destructive and <strong>absolutely irreversible</strong>. Your on-device data will be permanently wiped.
+              To proceed, please type <strong>PURGE</strong> in the input field below to authorize this request:
+            </p>
+            <input
+              type="text"
+              className="modal-input"
+              value={purgeConfirmText}
+              onChange={(e) => setPurgeConfirmText(e.target.value.toUpperCase())}
+              placeholder="Type PURGE to delete"
+              disabled={isPurging}
+              autoFocus
+            />
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-modal-cancel"
+                onClick={() => {
+                  setShowPurgeModal(false);
+                  setPurgeConfirmText("");
+                }}
+                disabled={isPurging}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-modal-confirm"
+                onClick={handleExecutePurge}
+                disabled={purgeConfirmText !== "PURGE" || isPurging}
+              >
+                {isPurging ? "Purging..." : "Confirm Purge"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Footer Info */}
