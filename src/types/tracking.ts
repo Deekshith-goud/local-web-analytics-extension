@@ -1,3 +1,4 @@
+import type { ProductivityRule } from "../analytics/productivity-rules";
 /**
  * tracking.ts
  *
@@ -88,7 +89,11 @@ export type RuntimeMessage =
   | { type: "GET_POPUP_SNAPSHOT"; version: 1 }
   | { type: "GET_HISTORICAL_STATS"; version: 1; startMs: number; endMs: number }
   | { type: "GET_TRACKING_STATUS"; version: 1 }
-  | { type: "TOGGLE_TRACKING"; version: 1; paused: boolean };
+  | { type: "TOGGLE_TRACKING"; version: 1; paused: boolean }
+  | { type: "GET_PRODUCTIVITY_RULES"; version: 1 }
+  | { type: "SAVE_PRODUCTIVITY_RULES"; version: 1; rules: ProductivityRule[] }
+  | { type: "RESET_PRODUCTIVITY_RULES"; version: 1 }
+  | { type: "BROADCAST_RULES_UPDATED"; version: 1 };
 
 export interface ActiveSessionResponse {
   activeSession: {
@@ -137,6 +142,11 @@ export interface HistoricalStatsResponse {
     averageSessionMs: number;
     focusHours: number;
     metricsVersion: number;
+    productiveDurationMs: number;
+    distractingDurationMs: number;
+    neutralDurationMs: number;
+    unknownDurationMs: number;
+    productivityScore: number;
   };
   timeline: Array<{
     date: string;

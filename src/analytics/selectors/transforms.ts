@@ -1,3 +1,4 @@
+import type { ProductivityCategory } from "../productivity-rules";
 /**
  * selectors/transforms.ts
  *
@@ -54,7 +55,8 @@ export interface SVGLineCoordinate {
 export function aggregateHistoricalStats(
   allDates: string[],
   dbTotals: DailyTotal[],
-  dbDomainStats: DailyDomainStat[]
+  dbDomainStats: DailyDomainStat[],
+  domainCategories: Record<string, ProductivityCategory> = {}
 ): HistoricalAggregates {
   // 1. Build map of existing totals
   const totalsMap = new Map<string, DailyTotal>();
@@ -100,11 +102,34 @@ export function aggregateHistoricalStats(
 
   const uniqueDomainsCount = domainAggregates.size;
 
-  // 4. Compute Derived Metrics
+  // 4. Compute Productivity Breakdown Durations
+  let productiveDurationMs = 0;
+  let distractingDurationMs = 0;
+  let neutralDurationMs = 0;
+  let unknownDurationMs = 0;
+
+  for (const [domain, data] of domainAggregates.entries()) {
+    const category = domainCategories[domain] || "unknown";
+    if (category === "productive") {
+      productiveDurationMs += data.durationMs;
+    } else if (category === "distracting") {
+      distractingDurationMs += data.durationMs;
+    } else if (category === "neutral") {
+      neutralDurationMs += data.durationMs;
+    } else {
+      unknownDurationMs += data.durationMs;
+    }
+  }
+
+  // 5. Compute Derived Metrics
   const metrics = calculateDerivedMetrics(
     aggregatedMs,
     aggregatedVisits,
-    uniqueDomainsCount
+    uniqueDomainsCount,
+    productiveDurationMs,
+    distractingDurationMs,
+    neutralDurationMs,
+    unknownDurationMs
   );
 
   return {
@@ -131,9 +156,14 @@ export function downsampleTimeline(
 
   for (let i = 0; i < timeline.length; i += chunkSize) {
     const chunk = timeline.slice(i, i + chunkSize);
-    const label = chunk.length > 1
-      ? `${chunk[0].date.substring(5)} to ${chunk[chunk.length - 1].date.substring(5)}`
-      : chunk[0].date;
+    const firstItem = chunk[0];
+    const lastItem = chunk[chunk.length - 1];
+    let label = "";
+    if (firstItem && lastItem && chunk.length > 1) {
+      label = `${firstItem.date.substring(5)} to ${lastItem.date.substring(5)}`;
+    } else if (firstItem) {
+      label = firstItem.date;
+    }
 
     const durationMs = chunk.reduce((sum, item) => sum + item.durationMs, 0);
     const visitCount = chunk.reduce((sum, item) => sum + item.visitCount, 0);

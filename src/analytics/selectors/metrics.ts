@@ -24,6 +24,11 @@ export interface DerivedMetrics {
   averageSessionMs: number;
   focusHours: number;
   metricsVersion: number;
+  productiveDurationMs: number;
+  distractingDurationMs: number;
+  neutralDurationMs: number;
+  unknownDurationMs: number;
+  productivityScore: number;
 }
 
 /**
@@ -33,7 +38,11 @@ export interface DerivedMetrics {
 export function calculateDerivedMetrics(
   totalDurationMs: number,
   totalVisits: number,
-  uniqueDomainsCount: number
+  uniqueDomainsCount: number,
+  productiveDurationMs: number = 0,
+  distractingDurationMs: number = 0,
+  neutralDurationMs: number = 0,
+  unknownDurationMs: number = 0
 ): DerivedMetrics {
   // Safety checks & semantic thresholds: sessions under 1000ms are discarded
   const validatedVisits = Math.max(0, totalVisits);
@@ -41,8 +50,14 @@ export function calculateDerivedMetrics(
     ? Math.round(totalDurationMs / validatedVisits) 
     : 0;
 
-  // Focus Hours is derived as hours (with 2 decimals accuracy)
-  const focusHours = parseFloat((totalDurationMs / (1000 * 60 * 60)).toFixed(2));
+  // Focus Hours: Total browsing seconds mapped as productive divided by 3600 (represented in hours)
+  const focusHours = parseFloat((productiveDurationMs / (1000 * 60 * 60)).toFixed(2));
+
+  // Productivity Score: productive / (productive + distracting) * 100
+  const totalClassifiedMs = productiveDurationMs + distractingDurationMs;
+  const productivityScore = totalClassifiedMs > 0
+    ? Math.round((productiveDurationMs / totalClassifiedMs) * 100)
+    : 0;
 
   return {
     totalDurationMs,
@@ -50,6 +65,11 @@ export function calculateDerivedMetrics(
     uniqueDomainsCount,
     averageSessionMs,
     focusHours,
+    productiveDurationMs,
+    distractingDurationMs,
+    neutralDurationMs,
+    unknownDurationMs,
+    productivityScore,
     metricsVersion: METRICS_VERSION
   };
 }

@@ -23,6 +23,7 @@ export function getLocalDateString(timestamp: number): string {
   return getLocalTodayDateString(new Date(timestamp));
 }
 
+
 /**
  * Returns the millisecond timestamp for the absolute start of a local date (00:00:00.000).
  * Handles DST boundaries safely by creating a Date object with local parameters.
@@ -32,17 +33,13 @@ export function getStartOfDayTimestamp(dateStr: string): number {
   if (parts.length !== 3) {
     throw new Error(`Invalid date string: ${dateStr}`);
   }
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1; // Date month is 0-indexed
-  const day = parseInt(parts[2], 10);
+  const year = parseInt(parts[0] ?? "0", 10);
+  const month = parseInt(parts[1] ?? "1", 10) - 1; // Date month is 0-indexed
+  const day = parseInt(parts[2] ?? "1", 10);
 
   return new Date(year, month, day, 0, 0, 0, 0).getTime();
 }
 
-/**
- * Generates an array of YYYY-MM-DD local date strings between two timestamps inclusive.
- * Used for building continuous time-series chart axes even if there is zero activity on some days.
- */
 export function getDateRangeList(startMs: number, endMs: number): string[] {
   const dates: string[] = [];
   const startDayStr = getLocalDateString(startMs);
