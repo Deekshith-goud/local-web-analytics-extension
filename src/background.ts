@@ -32,8 +32,7 @@ import {
   DEFAULT_RULES, 
   getCustomRules, 
   saveCustomRules, 
-  type ProductivityCategory, 
-  type ProductivityRule 
+  type ProductivityCategory 
 } from "./analytics/productivity-rules";
 import type {
   RuntimeMessage,
