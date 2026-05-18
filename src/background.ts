@@ -43,6 +43,14 @@ import type {
   HistoricalStatsResponse
 } from "./types/tracking";
 import { logger } from "./utils/logger";
+import {
+  deriveSurface,
+  isRuntimeMessage,
+  MESSAGE_CAPABILITIES,
+  logSecurityEvent,
+  securityMetrics,
+  securityEventsLog
+} from "./security/validators";
 
 
 export {};
@@ -728,20 +736,51 @@ async function handleGetHistoricalStats(
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // 1. Security Check: Reject untyped or loose payloads
-  if (typeof message !== "object" || message === null) {
+  // 1. Derive execution origin context surface and validate sender identity
+  const surface = deriveSurface(sender);
+  if (surface === "unknown") {
+    securityMetrics.rejectedMessages++;
+    logSecurityEvent(
+      "REJECTED_UNKNOWN_SURFACE",
+      "unknown",
+      `Connection blocked. Sender ID: ${sender.id ?? "none"}, URL: ${sender.url ?? "none"}`
+    );
+    logger.warn(`[Background Security] Rejected message from untrusted surface. Sender URL: ${sender.url}`);
     return false;
   }
 
-  const msg = message as Partial<RuntimeMessage>;
-
-  // 2. Version Check: enforce strict compatibility
-  if (msg.version !== 1) {
-    logger.warn(`[Background] Rejected message with invalid protocol version: ${msg.version}`);
+  // 2. Structurally validate message schema shape and protocol version
+  if (!isRuntimeMessage(message)) {
+    logSecurityEvent(
+      "REJECTED_MALFORMED_SCHEMA",
+      surface,
+      `Payload failed schema validation type-guards.`
+    );
+    logger.warn(`[Background Security] Malformed payload rejected from surface: ${surface}`);
+    sendResponse({ success: false, error: "Access denied. Malformed message payload." });
     return false;
   }
 
-  // 3. Command Route
+  const msg = message as RuntimeMessage;
+
+  // 3. Enforce capabilities access policies (Deny-by-Default)
+  const allowedSurfaces = (MESSAGE_CAPABILITIES as Record<string, readonly string[]>)[msg.type];
+  if (!allowedSurfaces || !allowedSurfaces.includes(surface)) {
+    securityMetrics.privilegeViolations++;
+    logSecurityEvent(
+      "REJECTED_PRIVILEGE_VIOLATION",
+      surface,
+      `Action '${msg.type}' requires privileged access. Allowed: [${allowedSurfaces ? allowedSurfaces.join(", ") : "none"}]`,
+      msg.type
+    );
+    logger.error(
+      `[Background Security] Privilege violation: surface '${surface}' attempted action '${msg.type}'`
+    );
+    sendResponse({ success: false, error: `Access denied. Unauthorized context surface '${surface}'.` });
+    return false;
+  }
+
+  // 4. Privileged command route execution
   if (msg.type === "GET_ACTIVE_SESSION") {
     const active = engine.getActiveSession();
     const response: ActiveSessionResponse = {
@@ -856,6 +895,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       maintenanceLog: maintenanceEventsLog.get(),
       historicalCacheSize: historicalSnapshotCache.size,
       historicalCacheKeys: Array.from(historicalSnapshotCache.keys())
+    });
+    return false; // Synchronous response
+  }
+
+  if (msg.type === "GET_SECURITY_METRICS") {
+    sendResponse({
+      metrics: securityMetrics,
+      eventsLog: securityEventsLog.get()
     });
     return false; // Synchronous response
   }
