@@ -5,10 +5,17 @@
  * Instantiates the TrackingEngine and wires lifecycle events.
  * Handles clean shutdown to avoid phantom sessions on suspension.
  * Integrates the staging Drain Engine with debounced flushing strategy.
+ * Handles secure, versioned messaging from Content Script UIs.
  */
 
 import { TrackingEngine } from "./analytics/tracking-engine";
 import { drainStaging } from "./storage/drain-engine";
+import { getActivityRecordsInRange } from "./storage/repository";
+import type {
+  RuntimeMessage,
+  ActiveSessionResponse,
+  TodayStatsResponse
+} from "./types/tracking";
 import { logger } from "./utils/logger";
 
 export {};
@@ -17,19 +24,6 @@ const engine = new TrackingEngine();
 
 // ─── Debounced Drain ──────────────────────────────────────────────────────────
 
-/**
- * Debounced drain wrapper.
- *
- * WHY DEBOUNCED:
- * Rapid tab switches produce many session-ended events within seconds.
- * Draining on every single event would thrash IndexedDB unnecessarily.
- * We batch these into a single drain run after 5s of inactivity.
- *
- * IMPORTANT MV3 NOTE:
- * The debounce timer can be lost if the service worker is suspended before
- * it fires. This is acceptable — the startup drain (below) will always
- * catch any un-drained records when the worker wakes up again.
- */
 const DRAIN_DEBOUNCE_MS = 5_000;
 let drainTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -84,4 +78,111 @@ chrome.runtime.onSuspend.addListener(() => {
     drainTimer = null;
   }
   engine.handleShutdown();
+});
+
+// ─── Live Aggregate Aggregation ───────────────────────────────────────────────
+
+/**
+ * Calculates live daily aggregates by merging persisted database records
+ * with the in-memory active session from the tracking engine.
+ *
+ * RATIONALE:
+ * Doing this in the background ensures the content script has zero direct
+ * DB read access (least privilege) and stays extremely lightweight.
+ */
+async function getLiveTodayStats(): Promise<TodayStatsResponse> {
+  const now = Date.now();
+  const today = new Date();
+  // Local midnight today
+  const startOfDayMs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  // 1. Fetch all completed records for today from DB
+  const records = await getActivityRecordsInRange(startOfDayMs, now);
+
+  // 2. Query in-memory live tracking state
+  const active = engine.getActiveSession();
+  const activeSessionPayload = active
+    ? { domain: active.domain, startTime: active.startTime }
+    : null;
+
+  // 3. Build aggregated structures
+  let totalDurationMs = 0;
+  const domainDurations: Record<string, number> = {};
+  const uniqueDomains = new Set<string>();
+
+  // Add DB records
+  for (const r of records) {
+    totalDurationMs += r.durationMs;
+    uniqueDomains.add(r.domain);
+    domainDurations[r.domain] = (domainDurations[r.domain] ?? 0) + r.durationMs;
+  }
+
+  // Add live active tracking session duration
+  if (active) {
+    const elapsed = Math.max(0, now - active.startTime);
+    totalDurationMs += elapsed;
+    uniqueDomains.add(active.domain);
+    domainDurations[active.domain] = (domainDurations[active.domain] ?? 0) + elapsed;
+  }
+
+  // Map to list, sort descending by duration
+  const topDomains = Object.entries(domainDurations)
+    .map(([domain, durationMs]) => ({ domain, durationMs }))
+    .sort((a, b) => b.durationMs - a.durationMs)
+    .slice(0, 5); // Limit to top 5 for the floating blob UI
+
+  return {
+    activeSession: activeSessionPayload,
+    totalDurationMs,
+    uniqueDomainsCount: uniqueDomains.size,
+    topDomains
+  };
+}
+
+// ─── Secure Runtime Message Passing ───────────────────────────────────────────
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // 1. Security Check: Reject untyped or loose payloads
+  if (typeof message !== "object" || message === null) {
+    return false;
+  }
+
+  const msg = message as Partial<RuntimeMessage>;
+
+  // 2. Version Check: enforce strict compatibility
+  if (msg.version !== 1) {
+    logger.warn(`[Background] Rejected message with invalid protocol version: ${msg.version}`);
+    return false;
+  }
+
+  // 3. Command Route
+  if (msg.type === "GET_ACTIVE_SESSION") {
+    const active = engine.getActiveSession();
+    const response: ActiveSessionResponse = {
+      activeSession: active ? { domain: active.domain, startTime: active.startTime } : null
+    };
+    sendResponse(response);
+    return false; // Synchronous response
+  }
+
+  if (msg.type === "GET_TODAY_STATS") {
+    // Aggregation uses async DB call — return true to signal asynchronous response
+    getLiveTodayStats()
+      .then((stats) => {
+        sendResponse(stats);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to aggregate live today stats", err);
+        // Fail-safe empty stats payload
+        sendResponse({
+          activeSession: null,
+          totalDurationMs: 0,
+          uniqueDomainsCount: 0,
+          topDomains: []
+        } as TodayStatsResponse);
+      });
+    return true; // Asynchronous reply
+  }
+
+  return false;
 });

@@ -53,6 +53,14 @@ export class TrackingEngine {
     this.isInitialized = false;
   }
 
+  /**
+   * Public getter for the active session.
+   * Enables background handlers to query live timing state.
+   */
+  public getActiveSession(): ActiveSession | null {
+    return this.currentState;
+  }
+
   private setupListeners(): void {
     chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     chrome.tabs.onUpdated.addListener(this.onTabUpdated.bind(this));
