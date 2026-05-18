@@ -79,3 +79,40 @@ export interface TrackingEvents {
   "session-ended": (record: ActivityRecord) => void;
   "idle-state-changed": (state: chrome.idle.IdleState) => void;
 }
+
+// ─── Phase 4 Discriminated Message Protocol ───────────────────────────────────
+
+export type RuntimeMessage =
+  | { type: "GET_ACTIVE_SESSION"; version: 1 }
+  | { type: "GET_TODAY_STATS"; version: 1 };
+
+export interface ActiveSessionResponse {
+  activeSession: {
+    domain: string;
+    startTime: number;
+  } | null;
+}
+
+export interface TodayStatsResponse {
+  activeSession: {
+    domain: string;
+    startTime: number;
+  } | null;
+  totalDurationMs: number;
+  uniqueDomainsCount: number;
+  topDomains: Array<{
+    domain: string;
+    durationMs: number;
+  }>;
+}
+
+// ─── Floating Blob UI State ──────────────────────────────────────────────────
+
+export type AnchorCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+export interface BlobUIState {
+  anchorCorner: AnchorCorner;
+  offsetX: number; // Offset from horizontal anchor edge
+  offsetY: number; // Offset from vertical anchor edge
+  isCollapsed: boolean;
+}

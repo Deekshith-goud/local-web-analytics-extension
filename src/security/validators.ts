@@ -28,7 +28,7 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Minimal hostname pattern — at least one dot, no spaces, no paths. */
-const DOMAIN_REGEX = /^[a-z0-9]([a-z0-9\-\.]{0,253}[a-z0-9])?$/i;
+const DOMAIN_REGEX = /^[a-z0-9]([a-z0-9\-.]{0,253}[a-z0-9])?$/i;
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 
