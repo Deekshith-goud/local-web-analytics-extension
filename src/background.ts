@@ -10,17 +10,36 @@
 
 import { TrackingEngine } from "./analytics/tracking-engine";
 import { drainStaging } from "./storage/drain-engine";
-import { getActivityRecordsInRange } from "./storage/repository";
+import {
+  getActivityRecordsInRange,
+  getDailyTotal,
+  getDailyDomainStatsForDate
+} from "./storage/repository";
+import { getLocalTodayDateString } from "./analytics/selectors";
 import type {
   RuntimeMessage,
   ActiveSessionResponse,
-  TodayStatsResponse
+  TodayStatsResponse,
+  PopupSnapshotResponse
 } from "./types/tracking";
 import { logger } from "./utils/logger";
 
 export {};
 
 const engine = new TrackingEngine();
+
+// ─── Today Stats Cache Memoization Layer (Sub-300ms Hydration) ──────────────────
+
+let cachedDbStats: {
+  date: string;
+  todayTotals: { totalDurationMs: number; totalVisits: number; uniqueDomainsCount: number };
+  topDomains: Array<{ domain: string; durationMs: number }>;
+} | null = null;
+
+function invalidateCache(): void {
+  logger.debug("[Background] Invalidating today stats cache.");
+  cachedDbStats = null;
+}
 
 // ─── Debounced Drain ──────────────────────────────────────────────────────────
 
@@ -64,8 +83,13 @@ chrome.runtime.onStartup.addListener(async () => {
   await initializeAndDrain();
 })();
 
-// Schedule a debounced drain whenever a session ends
+// Schedule a debounced drain and invalidate cache on session state changes
+engine.events.on("session-started", () => {
+  invalidateCache();
+});
+
 engine.events.on("session-ended", () => {
+  invalidateCache();
   scheduleDrain();
 });
 
@@ -141,6 +165,90 @@ async function getLiveTodayStats(): Promise<TodayStatsResponse> {
 
 // ─── Secure Runtime Message Passing ───────────────────────────────────────────
 
+async function getLivePopupSnapshot(
+  activeSession: { domain: string; startTime: number } | null,
+  trackingPaused: boolean
+): Promise<PopupSnapshotResponse> {
+  const now = Date.now();
+  const dateStr = getLocalTodayDateString(new Date(now));
+
+  // If cache is empty or for a different day, refresh it!
+  if (!cachedDbStats || cachedDbStats.date !== dateStr) {
+    logger.debug("[Background] Cache miss. Fetching from IndexedDB repository...");
+    const [dbTotal, dbDomainStats] = await Promise.all([
+      getDailyTotal(dateStr),
+      getDailyDomainStatsForDate(dateStr)
+    ]);
+
+    const totalDurationMs = dbTotal ? dbTotal.totalDurationMs : 0;
+    const totalVisits = dbTotal ? dbTotal.totalVisits : 0;
+    
+    const uniqueDomains = new Set<string>();
+    const domainDurations: Record<string, number> = {};
+
+    if (dbDomainStats) {
+      for (const stat of dbDomainStats) {
+        uniqueDomains.add(stat.domain);
+        domainDurations[stat.domain] = stat.durationMs;
+      }
+    }
+
+    cachedDbStats = {
+      date: dateStr,
+      todayTotals: {
+        totalDurationMs,
+        totalVisits,
+        uniqueDomainsCount: uniqueDomains.size
+      },
+      topDomains: Object.entries(domainDurations)
+        .map(([domain, durationMs]) => ({ domain, durationMs }))
+        .sort((a, b) => b.durationMs - a.durationMs)
+    };
+  } else {
+    logger.debug("[Background] Today snapshot cache hit!");
+  }
+
+  // Marriage: dynamic live overlay of the in-memory active session (Safe from double-counting)
+  let totalDurationMs = cachedDbStats.todayTotals.totalDurationMs;
+  let totalVisits = cachedDbStats.todayTotals.totalVisits;
+  const uniqueDomainsCount = cachedDbStats.todayTotals.uniqueDomainsCount;
+  
+  const domainDurations: Record<string, number> = {};
+  for (const item of cachedDbStats.topDomains) {
+    domainDurations[item.domain] = item.durationMs;
+  }
+
+  let finalUniqueDomainsCount = uniqueDomainsCount;
+
+  if (activeSession) {
+    const elapsed = Math.max(0, now - activeSession.startTime);
+    totalDurationMs += elapsed;
+    totalVisits += 1;
+    
+    if (domainDurations[activeSession.domain] === undefined) {
+      finalUniqueDomainsCount += 1;
+    }
+    domainDurations[activeSession.domain] = (domainDurations[activeSession.domain] ?? 0) + elapsed;
+  }
+
+  const topDomains = Object.entries(domainDurations)
+    .map(([domain, durationMs]) => ({ domain, durationMs }))
+    .sort((a, b) => b.durationMs - a.durationMs)
+    .slice(0, 5);
+
+  return {
+    trackingPaused,
+    activeSession,
+    todayTotals: {
+      totalDurationMs,
+      totalVisits,
+      uniqueDomainsCount: finalUniqueDomainsCount
+    },
+    topDomains,
+    snapshotGeneratedAt: now
+  };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 1. Security Check: Reject untyped or loose payloads
   if (typeof message !== "object" || message === null) {
@@ -180,6 +288,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           uniqueDomainsCount: 0,
           topDomains: []
         } as TodayStatsResponse);
+      });
+    return true; // Asynchronous reply
+  }
+
+  if (msg.type === "GET_POPUP_SNAPSHOT") {
+    const active = engine.getActiveSession();
+    const paused = engine.getPaused();
+    const activePayload = active ? { domain: active.domain, startTime: active.startTime } : null;
+
+    getLivePopupSnapshot(activePayload, paused)
+      .then((snapshot) => {
+        sendResponse(snapshot);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to generate popup snapshot", err);
+        sendResponse({
+          trackingPaused: paused,
+          activeSession: null,
+          todayTotals: { totalDurationMs: 0, totalVisits: 0, uniqueDomainsCount: 0 },
+          topDomains: [],
+          snapshotGeneratedAt: Date.now()
+        } as PopupSnapshotResponse);
+      });
+    return true; // Asynchronous reply
+  }
+
+  if (msg.type === "GET_TRACKING_STATUS") {
+    sendResponse({
+      trackingPaused: engine.getPaused()
+    });
+    return false; // Synchronous response
+  }
+
+  if (msg.type === "TOGGLE_TRACKING") {
+    const desiredState = !!msg.paused;
+    engine.setPaused(desiredState)
+      .then(() => {
+        invalidateCache();
+        sendResponse({ success: true, trackingPaused: desiredState });
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to toggle tracking engine paused state", err);
+        sendResponse({ success: false, error: String(err) });
       });
     return true; // Asynchronous reply
   }

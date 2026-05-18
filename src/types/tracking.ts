@@ -80,11 +80,14 @@ export interface TrackingEvents {
   "idle-state-changed": (state: chrome.idle.IdleState) => void;
 }
 
-// ─── Phase 4 Discriminated Message Protocol ───────────────────────────────────
+// ─── Phase 4 & 5 Discriminated Message Protocol ───────────────────────────────
 
 export type RuntimeMessage =
   | { type: "GET_ACTIVE_SESSION"; version: 1 }
-  | { type: "GET_TODAY_STATS"; version: 1 };
+  | { type: "GET_TODAY_STATS"; version: 1 }
+  | { type: "GET_POPUP_SNAPSHOT"; version: 1 }
+  | { type: "GET_TRACKING_STATUS"; version: 1 }
+  | { type: "TOGGLE_TRACKING"; version: 1; paused: boolean };
 
 export interface ActiveSessionResponse {
   activeSession: {
@@ -104,6 +107,24 @@ export interface TodayStatsResponse {
     domain: string;
     durationMs: number;
   }>;
+}
+
+export interface PopupSnapshotResponse {
+  trackingPaused: boolean;
+  activeSession: {
+    domain: string;
+    startTime: number;
+  } | null;
+  todayTotals: {
+    totalDurationMs: number;
+    totalVisits: number;
+    uniqueDomainsCount: number;
+  };
+  topDomains: Array<{
+    domain: string;
+    durationMs: number;
+  }>;
+  snapshotGeneratedAt: number; // Sync validation & stale prevention
 }
 
 // ─── Floating Blob UI State ──────────────────────────────────────────────────

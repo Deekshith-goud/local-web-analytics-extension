@@ -18,6 +18,7 @@ export class TrackingEngine {
   public events = createEventBus<TrackingEvents>();
   private currentState: ActiveSession | null = null;
   private isInitialized = false;
+  private isPaused = false;
 
   constructor() {
     this.setupListeners();
@@ -29,6 +30,18 @@ export class TrackingEngine {
     logger.info("Initializing Tracking Engine...");
     chrome.idle.setDetectionInterval(IDLE_THRESHOLD_SECONDS);
     
+    // Resolve tracking paused setting
+    const pauseSetting = await chrome.storage.local.get("tracking_paused");
+    this.isPaused = !!pauseSetting.tracking_paused;
+
+    if (this.isPaused) {
+      logger.info("Tracking is PAUSED on initialization.");
+      // Safeguard: remove any stale active session left from crash/suspend state
+      await chrome.storage.local.remove(ACTIVE_SESSION_KEY);
+      this.isInitialized = true;
+      return;
+    }
+
     const data = await chrome.storage.local.get(ACTIVE_SESSION_KEY);
     const recoveredSession = data[ACTIVE_SESSION_KEY] as ActiveSession | undefined;
 
@@ -59,6 +72,33 @@ export class TrackingEngine {
    */
   public getActiveSession(): ActiveSession | null {
     return this.currentState;
+  }
+
+  /**
+   * Public getter for the tracking paused state.
+   */
+  public getPaused(): boolean {
+    return this.isPaused;
+  }
+
+  /**
+   * Public setter to dynamically pause/resume tracking.
+   * Triggers clean session finalizations or instant tab re-evaluations.
+   */
+  public async setPaused(paused: boolean): Promise<void> {
+    if (this.isPaused === paused) return;
+
+    logger.info(`Setting tracking paused state: ${paused}`);
+    this.isPaused = paused;
+    await chrome.storage.local.set({ tracking_paused: paused });
+
+    if (paused) {
+      // Gracefully terminate active session immediately (strict boundary)
+      await this.finalizeCurrentSession("unfocused");
+    } else {
+      // Re-evaluate current browser tab focus immediately to resume tracking
+      await this.evaluateCurrentState();
+    }
   }
 
   private setupListeners(): void {
@@ -111,6 +151,8 @@ export class TrackingEngine {
   }
 
   private async evaluateCurrentState(): Promise<void> {
+    if (this.isPaused) return;
+
     try {
       const window = await chrome.windows.getLastFocused();
       if (!window || !window.focused || window.id === undefined) {
@@ -128,6 +170,8 @@ export class TrackingEngine {
   }
 
   private async startTracking(tab: chrome.tabs.Tab, windowId: number): Promise<void> {
+    if (this.isPaused) return;
+
     const domain = extractHostname(tab.url);
     if (!domain) {
       return; // Ignore invalid or untracked protocols
@@ -200,6 +244,7 @@ export class TrackingEngine {
   // --- Event Listeners ---
 
   private async onTabActivated(activeInfo: chrome.tabs.TabActiveInfo): Promise<void> {
+    if (this.isPaused) return;
     logger.debug("Tab activated", activeInfo);
     
     // Ensure window is actually focused
@@ -217,6 +262,7 @@ export class TrackingEngine {
   }
 
   private async onTabUpdated(tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab): Promise<void> {
+    if (this.isPaused) return;
     // Only act if URL changed and load completed
     if (changeInfo.status === "complete" && tab.url) {
       logger.debug("Tab updated", tabId, tab.url);
@@ -232,6 +278,7 @@ export class TrackingEngine {
   }
 
   private async onWindowFocusChanged(windowId: number): Promise<void> {
+    if (this.isPaused) return;
     logger.debug("Window focus changed", windowId);
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
       await this.finalizeCurrentSession("unfocused");
@@ -242,6 +289,7 @@ export class TrackingEngine {
   }
 
   private async onIdleStateChanged(state: chrome.idle.IdleState): Promise<void> {
+    if (this.isPaused) return;
     logger.debug("Idle state changed", state);
     if (state === "idle" || state === "locked") {
       await this.finalizeCurrentSession("idle");
