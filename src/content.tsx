@@ -3,10 +3,12 @@ import type { PlasmoCSConfig } from "plasmo";
 import React, { useEffect, useRef, useState } from "react";
 
 import { isSensitiveSite } from "./security/sensitive-sites";
+import { validateBlobUIState } from "./security/validators";
 import type {
   AnchorCorner,
   BlobUIState,
-  TodayStatsResponse
+  TodayStatsResponse,
+  RuntimeMessage
 } from "./types/tracking";
 
 // Encapsulate and export Shadow DOM CSS injector
@@ -87,7 +89,7 @@ export default function BlobContent() {
   // Helper to query stats safely from background
   const fetchFreshStats = React.useCallback(() => {
     chrome.runtime.sendMessage(
-      { type: "GET_TODAY_STATS", version: 1 },
+      { type: "GET_TODAY_STATS", version: 1 } satisfies RuntimeMessage,
       (response: TodayStatsResponse) => {
         if (chrome.runtime.lastError) {
           return;
@@ -126,18 +128,16 @@ export default function BlobContent() {
 
     // Load persisted coordinates from chrome.storage.local
     chrome.storage.local.get(["blob_ui_state"], (result) => {
-      if (result.blob_ui_state) {
-        const saved: BlobUIState = result.blob_ui_state;
-        // Verify against window size to avoid offscreen positioning on lower res
-        const clamped = clampPosition(saved.anchorCorner, saved.offsetX, saved.offsetY);
-        setPosition({
-          anchorCorner: clamped.anchor,
-          offsetX: clamped.ox,
-          offsetY: clamped.oy,
-          isCollapsed: saved.isCollapsed ?? true
-        });
-        setUiState(saved.isCollapsed ? "collapsed" : "expanded");
-      }
+      const saved = validateBlobUIState(result.blob_ui_state);
+      // Verify against window size to avoid offscreen positioning on lower res
+      const clamped = clampPosition(saved.anchorCorner, saved.offsetX, saved.offsetY);
+      setPosition({
+        anchorCorner: clamped.anchor,
+        offsetX: clamped.ox,
+        offsetY: clamped.oy,
+        isCollapsed: saved.isCollapsed
+      });
+      setUiState(saved.isCollapsed ? "collapsed" : "expanded");
     });
 
     // Load base today stats from background

@@ -13,7 +13,7 @@ import "./dashboard.css";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates, computeLineCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
-import type { HistoricalStatsResponse } from "../types/tracking";
+import type { HistoricalStatsResponse, RuntimeMessage } from "../types/tracking";
 
 // Formatting utility for durations
 function formatDuration(ms: number): string {
@@ -75,7 +75,7 @@ export default function AnalyticsDashboard() {
         version: 1,
         startMs: rangeTimestamps.startMs,
         endMs: rangeTimestamps.endMs
-      },
+      } satisfies RuntimeMessage,
       (response: HistoricalStatsResponse) => {
         setIsLoading(false);
         if (response) {
@@ -92,7 +92,7 @@ export default function AnalyticsDashboard() {
   // 3. Fetch rules at mount or when active tab switches to "rules"
   const fetchRules = React.useCallback(() => {
     chrome.runtime.sendMessage(
-      { type: "GET_PRODUCTIVITY_RULES", version: 1 },
+      { type: "GET_PRODUCTIVITY_RULES", version: 1 } satisfies RuntimeMessage,
       (response: { success: boolean; customRules: ProductivityRule[]; defaultRules: ProductivityRule[]; error?: string }) => {
         if (response && response.success) {
           setCustomRules(response.customRules);
@@ -221,7 +221,7 @@ export default function AnalyticsDashboard() {
         type: "SAVE_PRODUCTIVITY_RULES",
         version: 1,
         rules: updatedRules
-      },
+      } satisfies RuntimeMessage,
       (res: { success: boolean; error?: string }) => {
         if (res && res.success) {
           setCustomRules(updatedRules);
@@ -244,7 +244,7 @@ export default function AnalyticsDashboard() {
         type: "SAVE_PRODUCTIVITY_RULES",
         version: 1,
         rules: updatedRules
-      },
+      } satisfies RuntimeMessage,
       (res: { success: boolean; error?: string }) => {
         if (res && res.success) {
           setCustomRules(updatedRules);
@@ -260,7 +260,7 @@ export default function AnalyticsDashboard() {
     if (!confirm("Are you sure you want to reset all custom rules? This restores the built-in catalog defaults.")) return;
     
     chrome.runtime.sendMessage(
-      { type: "RESET_PRODUCTIVITY_RULES", version: 1 },
+      { type: "RESET_PRODUCTIVITY_RULES", version: 1 } satisfies RuntimeMessage,
       (res: { success: boolean; error?: string }) => {
         if (res && res.success) {
           setCustomRules([]);

@@ -63,7 +63,7 @@ export default function Popup() {
   // Load popup snapshot
   const loadSnapshot = useCallback(async () => {
     try {
-      const message: RuntimeMessage = { type: "GET_POPUP_SNAPSHOT", version: 1 };
+      const message = { type: "GET_POPUP_SNAPSHOT", version: 1 } satisfies RuntimeMessage;
       chrome.runtime.sendMessage(message, (res: PopupSnapshotResponse | undefined) => {
         if (chrome.runtime.lastError) {
           setError("Failed to sync background tracker.");
@@ -107,11 +107,11 @@ export default function Popup() {
     }
 
     try {
-      const message: RuntimeMessage = {
+      const message = {
         type: "TOGGLE_TRACKING",
         version: 1,
         paused: isPausedDesired
-      };
+      } satisfies RuntimeMessage;
       
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError || !response || !response.success) {
