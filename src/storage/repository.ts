@@ -21,6 +21,7 @@
 import { db } from "./db";
 import type { ActivityRecord, DailyDomainStat, DailyTotal } from "../types/tracking";
 import { logger } from "../utils/logger";
+import { cooperativeYield } from "../utils/scheduler";
 
 /** Ensures the Dexie database is open before any operation runs. */
 async function ensureDbReady(): Promise<void> {
@@ -106,4 +107,61 @@ export async function clearAllData(): Promise<void> {
     await db.dailyTotals.clear();
   });
   logger.warn("[Repository] All analytics data cleared.");
+}
+
+/**
+ * Prunes raw activity records older than the specified retention threshold (in days) incrementally.
+ * Keeps pre-aggregated daily totals and daily domain stats intact so historical
+ * summaries remain 100% correct, while saving disk space and speeding up IndexedDB.
+ *
+ * Uses cooperative yielding to prevent long IndexedDB locks and worker stalls.
+ *
+ * @param days Retention threshold in days (default: 90)
+ * @param batchSize Batch size of records to prune in a single transaction (default: 500)
+ * @returns Object summarizing rows deleted and batches executed
+ */
+export async function pruneOldActivities(
+  days: number = 90,
+  batchSize: number = 500
+): Promise<{ rowsDeleted: number; batchesExecuted: number }> {
+  await ensureDbReady();
+  const thresholdTime = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  let rowsDeleted = 0;
+  let batchesExecuted = 0;
+  let hasMore = true;
+
+  try {
+    while (hasMore) {
+      // Fetch a small chunk of sessionId keys below the threshold
+      const chunkKeys = await db.activities
+        .where("startTime")
+        .below(thresholdTime)
+        .limit(batchSize)
+        .primaryKeys();
+
+      if (chunkKeys.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      await db.activities.bulkDelete(chunkKeys);
+      rowsDeleted += chunkKeys.length;
+      batchesExecuted += 1;
+
+      logger.debug(`[Repository] Compacted database chunk: deleted ${chunkKeys.length} activity keys.`);
+
+      // Cooperative yield: pause momentarily to yield execution based on frame boundary
+      await cooperativeYield();
+    }
+
+    if (rowsDeleted > 0) {
+      logger.info(`[Repository] Incremental pruning finished: deleted ${rowsDeleted} raw activity records over ${batchesExecuted} batches.`);
+    }
+
+    return { rowsDeleted, batchesExecuted };
+  } catch (err) {
+    logger.error("[Repository] Incremental database compaction/pruning failed:", err);
+    return { rowsDeleted, batchesExecuted };
+  }
 }

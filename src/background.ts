@@ -13,7 +13,8 @@ import { drainStaging } from "./storage/drain-engine";
 import {
   getActivityRecordsInRange,
   getDailyTotal,
-  getDailyDomainStatsForDate
+  getDailyDomainStatsForDate,
+  pruneOldActivities
 } from "./storage/repository";
 import {
   getLocalTodayDateString,
@@ -49,17 +50,183 @@ export {};
 const engine = new TrackingEngine();
 const classifier = new ProductivityClassifier([]);
 
-// ─── Today Stats Cache Memoization Layer (Sub-300ms Hydration) ──────────────────
+// ─── Isolated, Ring-Buffered Cache Layer & Metrics ─────────────────────────────
 
-let cachedDbStats: {
+const SNAPSHOT_SCHEMA_VERSION = 1;
+const MAX_HISTORICAL_CACHE_ENTRIES = 30;
+
+// Simple Ring Buffer implementation for memory-safe telemetry metrics
+class RingBuffer<T> {
+  private items: T[] = [];
+  constructor(private limit: number) {}
+
+  public push(item: T): void {
+    this.items.push(item);
+    if (this.items.length > this.limit) {
+      this.items.shift();
+    }
+  }
+
+  public get(): T[] {
+    return [...this.items];
+  }
+}
+
+// Bounded structure for historical ranges
+interface HistoricalCacheEntry {
+  key: string;
+  generatedAt: number;
+  lastAccessedAt: number;
+  payload: HistoricalStatsResponse;
+  estimatedBytes: number;
+  schemaVersion: number;
+}
+
+// Telemetry Observability structures (locally only)
+interface CacheMetricEvent {
+  timestamp: number;
+  type: "hit" | "miss" | "invalidation";
+  cacheType: "today" | "historical";
+  key: string;
+  computeTimeMs?: number;
+  estimatedBytes?: number;
+}
+
+interface MaintenanceMetricEvent {
+  timestamp: number;
+  durationMs: number;
+  rowsDeleted: number;
+  batchesExecuted: number;
+  success: boolean;
+}
+
+// Ring buffers capped at 100 entries to prevent memory leaks completely
+const cacheEventsLog = new RingBuffer<CacheMetricEvent>(100);
+const maintenanceEventsLog = new RingBuffer<MaintenanceMetricEvent>(100);
+
+// Observability metrics summary
+const cacheMetrics = {
+  hits: 0,
+  misses: 0,
+  invalidations: 0,
+  computesCount: 0,
+  totalComputeTimeMs: 0
+};
+
+// 1. Separate caches for isolated invalidation semantics
+let todaySnapshotCache: {
   date: string;
   todayTotals: { totalDurationMs: number; totalVisits: number; uniqueDomainsCount: number };
   topDomains: Array<{ domain: string; durationMs: number }>;
 } | null = null;
 
-function invalidateCache(): void {
-  logger.debug("[Background] Invalidating today stats cache.");
-  cachedDbStats = null;
+const historicalSnapshotCache = new Map<string, HistoricalCacheEntry>();
+
+// Cache Stampede Prevention Map to deduplicate concurrent requests for identical boundaries
+const inFlightPromises = new Map<string, Promise<HistoricalStatsResponse>>();
+
+/**
+ * Deep-freezes an object recursively to safeguard cached data from 
+ * accidental UI-layer mutation side-effects.
+ */
+function deepFreeze<T extends object>(obj: T): T {
+  Object.freeze(obj);
+  Object.getOwnPropertyNames(obj).forEach((prop) => {
+    const val = (obj as Record<string, unknown>)[prop];
+    if (val !== null && typeof val === "object" && !Object.isFrozen(val)) {
+      deepFreeze(val as object);
+    }
+  });
+  return obj;
+}
+
+/**
+ * Estimates character payload footprint size in bytes.
+ */
+function estimatePayloadSize(obj: unknown): number {
+  try {
+    return JSON.stringify(obj).length * 2;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Invalidates the volatile Today cache (triggered by drains/sessions starts/ends).
+ * This is a "Soft" invalidation — preserves the historical aggregates.
+ */
+function invalidateTodayCache(): void {
+  logger.debug("[Background] Soft Invalidation: Clearing volatile todaySnapshotCache.");
+  todaySnapshotCache = null;
+  cacheMetrics.invalidations += 1;
+  cacheEventsLog.push({
+    timestamp: Date.now(),
+    type: "invalidation",
+    cacheType: "today",
+    key: "today"
+  });
+}
+
+/**
+ * Invalidates ALL caches (volatile today + bounded historical maps).
+ * This is a "Hard" invalidation — triggered by rules compiling or database reset.
+ */
+function invalidateAllCaches(): void {
+  logger.info("[Background] Hard Invalidation: Purging all cache maps (today & historical).");
+  todaySnapshotCache = null;
+  historicalSnapshotCache.clear();
+  inFlightPromises.clear();
+  cacheMetrics.invalidations += 1;
+  cacheEventsLog.push({
+    timestamp: Date.now(),
+    type: "invalidation",
+    cacheType: "historical",
+    key: "all"
+  });
+}
+
+/**
+ * Generates canonical contextual signature for cache keys to prevent collision 
+ * when custom rules configuration or metrics schemas version updates.
+ */
+function getCacheKey(startMs: number, endMs: number): string {
+  const rulesSignature = classifier.getRulesCount();
+  return `v${SNAPSHOT_SCHEMA_VERSION}:m1:r${rulesSignature}:${startMs}_${endMs}`;
+}
+
+/**
+ * Bounded LRU Cache Eviction: inserts key and prunes oldest item if limit exceeded.
+ */
+function setHistoricalCache(key: string, payload: HistoricalStatsResponse): void {
+  if (historicalSnapshotCache.size >= MAX_HISTORICAL_CACHE_ENTRIES) {
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+
+    for (const [k, entry] of historicalSnapshotCache.entries()) {
+      if (entry.lastAccessedAt < oldestTime) {
+        oldestTime = entry.lastAccessedAt;
+        oldestKey = k;
+      }
+    }
+
+    if (oldestKey) {
+      logger.debug(`[Background] LRU Cache Eviction: Removing oldest cache item '${oldestKey}'.`);
+      historicalSnapshotCache.delete(oldestKey);
+    }
+  }
+
+  // Freeze payload recursively to block unexpected UI mutations
+  const frozenPayload = deepFreeze(payload);
+  const estimatedBytes = estimatePayloadSize(frozenPayload);
+
+  historicalSnapshotCache.set(key, {
+    key,
+    generatedAt: Date.now(),
+    lastAccessedAt: Date.now(),
+    payload: frozenPayload,
+    estimatedBytes,
+    schemaVersion: SNAPSHOT_SCHEMA_VERSION
+  });
 }
 
 // ─── Debounced Drain ──────────────────────────────────────────────────────────
@@ -77,6 +244,99 @@ function scheduleDrain(): void {
   }, DRAIN_DEBOUNCE_MS);
 }
 
+// ─── Reentrancy Locked Daily Incremental Maintenance Scheduler ───────────────────
+
+let maintenanceInProgress = false;
+
+/**
+ * Runs DB pruning compaction safely under idle state limits.
+ * Uses a reentrancy lock and lastPrunedAt to restrict running once daily.
+ */
+async function runMaintenance(): Promise<void> {
+  if (maintenanceInProgress) {
+    logger.debug("[Background] Maintenance skipped: Compaction is already in progress.");
+    return;
+  }
+
+  try {
+    // 1. Verify system state is actually idle or locked
+    const systemState = await new Promise<chrome.idle.IdleState>((resolve) => {
+      chrome.idle.queryState(60, resolve);
+    });
+
+    if (systemState !== "idle" && systemState !== "locked") {
+      logger.debug("[Background] Deferring maintenance: System is currently active.");
+      return;
+    }
+
+    // 2. Enforce daily interval via storage token
+    const storage = await chrome.storage.local.get("maintenance:lastPrunedAt");
+    const lastPruned = storage["maintenance:lastPrunedAt"] as number | undefined;
+    const now = Date.now();
+
+    if (lastPruned && now - lastPruned < 24 * 60 * 60 * 1000) {
+      logger.debug("[Background] Compaction deferred: Database already pruned in last 24h.");
+      return;
+    }
+
+    // 3. Run incremental pruning under lock
+    logger.info("[Background] System is idle. Executing daily database compaction...");
+    maintenanceInProgress = true;
+    const tStart = performance.now();
+
+    const result = await pruneOldActivities(90, 500);
+
+    const durationMs = performance.now() - tStart;
+    maintenanceInProgress = false;
+
+    // 4. Update last pruned token & log metrics event
+    await chrome.storage.local.set({ "maintenance:lastPrunedAt": now });
+    maintenanceEventsLog.push({
+      timestamp: now,
+      durationMs,
+      rowsDeleted: result.rowsDeleted,
+      batchesExecuted: result.batchesExecuted,
+      success: true
+    });
+
+    logger.info(`[Background] Compaction completed successfully: Pruned ${result.rowsDeleted} rows across ${result.batchesExecuted} batches.`);
+  } catch (err) {
+    maintenanceInProgress = false;
+    logger.error("[Background] Maintenance compaction failed:", err);
+    maintenanceEventsLog.push({
+      timestamp: Date.now(),
+      durationMs: 0,
+      rowsDeleted: 0,
+      batchesExecuted: 0,
+      success: false
+    });
+  }
+}
+
+/**
+ * Warm-up Strategy: precomputes Today's live snapshot in the background
+ * to pre-populate caches for immediate surface (popup/blob) openings.
+ */
+async function prewarmCache(): Promise<void> {
+  logger.debug("[Background] Warming today stats cache...");
+  try {
+    const active = engine.getActiveSession();
+    const paused = engine.getPaused();
+    const activePayload = active ? { domain: active.domain, startTime: active.startTime } : null;
+    await getLivePopupSnapshot(activePayload, paused);
+    logger.info("[Background] Today cache pre-warmed successfully.");
+  } catch (err) {
+    logger.error("[Background] Failed to pre-warm cache on worker wakeup:", err);
+  }
+}
+
+// Register background maintenance compaction to execute during idle windows
+chrome.idle.onStateChanged.addListener(async (state) => {
+  if (state === "idle" || state === "locked") {
+    await runMaintenance();
+  }
+});
+
 // ─── Engine + Drain Lifecycle ─────────────────────────────────────────────────
 
 async function initializeAndDrain(): Promise<void> {
@@ -91,6 +351,10 @@ async function initializeAndDrain(): Promise<void> {
   }
   // Immediate drain on wakeup catches records staged before last suspension
   await drainStaging();
+  // Pre-warm caches immediately after drain completion
+  await prewarmCache();
+  // Attempt daily maintenance during wakeup if system happens to be idle already
+  await runMaintenance();
 }
 
 // Initialize on install
@@ -114,11 +378,11 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Schedule a debounced drain and invalidate cache on session state changes
 engine.events.on("session-started", () => {
-  invalidateCache();
+  invalidateTodayCache();
 });
 
 engine.events.on("session-ended", () => {
-  invalidateCache();
+  invalidateTodayCache();
   scheduleDrain();
 });
 
@@ -202,8 +466,9 @@ async function getLivePopupSnapshot(
   const dateStr = getLocalTodayDateString(new Date(now));
 
   // If cache is empty or for a different day, refresh it!
-  if (!cachedDbStats || cachedDbStats.date !== dateStr) {
-    logger.debug("[Background] Cache miss. Fetching from IndexedDB repository...");
+  if (!todaySnapshotCache || todaySnapshotCache.date !== dateStr) {
+    logger.debug("[Background] Today cache miss. Fetching from IndexedDB repository...");
+    const tStart = performance.now();
     const [dbTotal, dbDomainStats] = await Promise.all([
       getDailyTotal(dateStr),
       getDailyDomainStatsForDate(dateStr)
@@ -222,7 +487,7 @@ async function getLivePopupSnapshot(
       }
     }
 
-    cachedDbStats = {
+    todaySnapshotCache = {
       date: dateStr,
       todayTotals: {
         totalDurationMs,
@@ -233,17 +498,37 @@ async function getLivePopupSnapshot(
         .map(([domain, durationMs]) => ({ domain, durationMs }))
         .sort((a, b) => b.durationMs - a.durationMs)
     };
+
+    const computeTimeMs = performance.now() - tStart;
+    cacheMetrics.misses += 1;
+    cacheMetrics.computesCount += 1;
+    cacheMetrics.totalComputeTimeMs += computeTimeMs;
+    cacheEventsLog.push({
+      timestamp: Date.now(),
+      type: "miss",
+      cacheType: "today",
+      key: `today:${dateStr}`,
+      computeTimeMs,
+      estimatedBytes: estimatePayloadSize(todaySnapshotCache)
+    });
   } else {
     logger.debug("[Background] Today snapshot cache hit!");
+    cacheMetrics.hits += 1;
+    cacheEventsLog.push({
+      timestamp: Date.now(),
+      type: "hit",
+      cacheType: "today",
+      key: `today:${dateStr}`
+    });
   }
 
   // Marriage: dynamic live overlay of the in-memory active session (Safe from double-counting)
-  let totalDurationMs = cachedDbStats.todayTotals.totalDurationMs;
-  let totalVisits = cachedDbStats.todayTotals.totalVisits;
-  const uniqueDomainsCount = cachedDbStats.todayTotals.uniqueDomainsCount;
+  let totalDurationMs = todaySnapshotCache.todayTotals.totalDurationMs;
+  let totalVisits = todaySnapshotCache.todayTotals.totalVisits;
+  const uniqueDomainsCount = todaySnapshotCache.todayTotals.uniqueDomainsCount;
   
   const domainDurations: Record<string, number> = {};
-  for (const item of cachedDbStats.topDomains) {
+  for (const item of todaySnapshotCache.topDomains) {
     domainDurations[item.domain] = item.durationMs;
   }
 
@@ -284,107 +569,162 @@ async function handleGetHistoricalStats(
   activeSession: { domain: string; startTime: number } | null,
   trackingPaused: boolean
 ): Promise<HistoricalStatsResponse> {
-  const now = Date.now();
-  
-  // 1. Get dates range in YYYY-MM-DD format
+  // 1. Get dates range in YYYY-MM-DD format (Canonical key boundaries)
   const dates = getDateRangeList(startMs, endMs);
   const startDateStr = dates[0] || getLocalDateString(startMs);
   const endDateStr = dates[dates.length - 1] || getLocalDateString(endMs);
 
-  // 2. Fetch pre-aggregated records from IndexedDB range query
-  const [dbTotals, dbDomainStats] = await Promise.all([
-    getDailyTotalsRange(startDateStr, endDateStr),
-    getDailyDomainStatsRange(startDateStr, endDateStr)
-  ]);
+  const key = getCacheKey(startMs, endMs);
 
-  // 3. Clone and overlay active dynamic session if active and inside the queried date range
-  const todayStr = getLocalTodayDateString(new Date(now));
-  const isTodayIncluded = dates.includes(todayStr);
+  // 2. Cache Hit checking (Soft boundaries: 5s for today, 60s for historical)
+  const cached = historicalSnapshotCache.get(key);
+  const todayStr = getLocalTodayDateString(new Date());
+  const containsToday = dates.includes(todayStr);
+  const TTL_MS = containsToday ? 5_000 : 60_000;
 
-  const finalTotals = [...dbTotals];
-  const finalDomainStats = [...dbDomainStats];
+  if (cached && (Date.now() - cached.generatedAt < TTL_MS)) {
+    logger.debug(`[Background] Historical cache hit for key: ${key}`);
+    cached.lastAccessedAt = Date.now();
+    cacheMetrics.hits += 1;
+    cacheEventsLog.push({
+      timestamp: Date.now(),
+      type: "hit",
+      cacheType: "historical",
+      key
+    });
+    return cached.payload;
+  }
 
-  if (activeSession && isTodayIncluded) {
-    const elapsed = Math.max(0, now - activeSession.startTime);
+  // 3. Cache Stampede Prevention check
+  const inFlight = inFlightPromises.get(key);
+  if (inFlight) {
+    logger.debug(`[Background] Cache Stampede Merging: Joining active promise for key: ${key}`);
+    return inFlight;
+  }
 
-    // Find if domain already exists for today in finalDomainStats to check unique domains
-    const domainRecordedToday = finalDomainStats.some(
-      (s) => s.date === todayStr && s.domain === activeSession.domain
-    );
-    const isNewDomainForToday = !domainRecordedToday;
+  // 4. Computation Promise Block
+  const tStart = performance.now();
+  const computePromise = (async () => {
+    // Fetch pre-aggregated records from IndexedDB range query
+    const [dbTotals, dbDomainStats] = await Promise.all([
+      getDailyTotalsRange(startDateStr, endDateStr),
+      getDailyDomainStatsRange(startDateStr, endDateStr)
+    ]);
 
-    // Find if today already exists in dbTotals
-    const todayIndex = finalTotals.findIndex((t) => t.date === todayStr);
-    if (todayIndex >= 0) {
-      const existing = finalTotals[todayIndex];
-      if (existing) {
-        finalTotals[todayIndex] = {
-          ...existing,
-          totalDurationMs: existing.totalDurationMs + elapsed,
-          totalVisits: existing.totalVisits + 1,
-          uniqueDomainsCount: existing.uniqueDomainsCount + (isNewDomainForToday ? 1 : 0),
-          updatedAt: now,
-        };
+    const finalTotals = [...dbTotals];
+    const finalDomainStats = [...dbDomainStats];
+
+    if (activeSession && containsToday) {
+      const elapsed = Math.max(0, Date.now() - activeSession.startTime);
+
+      // Find if domain already exists for today in finalDomainStats to check unique domains
+      const domainRecordedToday = finalDomainStats.some(
+        (s) => s.date === todayStr && s.domain === activeSession.domain
+      );
+      const isNewDomainForToday = !domainRecordedToday;
+
+      // Find if today already exists in dbTotals
+      const todayIndex = finalTotals.findIndex((t) => t.date === todayStr);
+      if (todayIndex >= 0) {
+        const existing = finalTotals[todayIndex];
+        if (existing) {
+          finalTotals[todayIndex] = {
+            ...existing,
+            totalDurationMs: existing.totalDurationMs + elapsed,
+            totalVisits: existing.totalVisits + 1,
+            uniqueDomainsCount: existing.uniqueDomainsCount + (isNewDomainForToday ? 1 : 0),
+            updatedAt: Date.now(),
+          };
+        }
+      } else {
+        finalTotals.push({
+          date: todayStr,
+          totalDurationMs: elapsed,
+          totalVisits: 1,
+          uniqueDomainsCount: 1,
+          schemaVersion: 1,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       }
-    } else {
-      finalTotals.push({
-        date: todayStr,
-        totalDurationMs: elapsed,
-        totalVisits: 1,
-        uniqueDomainsCount: 1,
-        schemaVersion: 1,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
 
-    // Find if domain already exists for today in finalDomainStats
-    const domainStatIndex = finalDomainStats.findIndex(
-      (s) => s.date === todayStr && s.domain === activeSession.domain
-    );
-    if (domainStatIndex >= 0) {
-      const existing = finalDomainStats[domainStatIndex];
-      if (existing) {
-        finalDomainStats[domainStatIndex] = {
-          ...existing,
-          durationMs: existing.durationMs + elapsed,
-          visitCount: existing.visitCount + 1,
-          updatedAt: now,
-        };
+      // Find if domain already exists for today in finalDomainStats
+      const domainStatIndex = finalDomainStats.findIndex(
+        (s) => s.date === todayStr && s.domain === activeSession.domain
+      );
+      if (domainStatIndex >= 0) {
+        const existing = finalDomainStats[domainStatIndex];
+        if (existing) {
+          finalDomainStats[domainStatIndex] = {
+            ...existing,
+            durationMs: existing.durationMs + elapsed,
+            visitCount: existing.visitCount + 1,
+            updatedAt: Date.now(),
+          };
+        }
+      } else {
+        finalDomainStats.push({
+          date: todayStr,
+          domain: activeSession.domain,
+          durationMs: elapsed,
+          visitCount: 1,
+          schemaVersion: 1,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       }
-    } else {
-      finalDomainStats.push({
-        date: todayStr,
-        domain: activeSession.domain,
-        durationMs: elapsed,
-        visitCount: 1,
-        schemaVersion: 1,
-        createdAt: now,
-        updatedAt: now,
-      });
     }
-  }
 
-  // 4. Perform pure deterministic aggregations and metrics transformations
-  const domainCategories: Record<string, ProductivityCategory> = {};
-  for (const stat of finalDomainStats) {
-    if (stat && stat.domain && !domainCategories[stat.domain]) {
-      domainCategories[stat.domain] = classifier.classifyDomain(stat.domain).category;
+    // Perform pure deterministic aggregations and metrics transformations
+    const domainCategories: Record<string, ProductivityCategory> = {};
+    for (const stat of finalDomainStats) {
+      if (stat && stat.domain && !domainCategories[stat.domain]) {
+        domainCategories[stat.domain] = classifier.classifyDomain(stat.domain).category;
+      }
     }
-  }
-  if (activeSession && activeSession.domain && !domainCategories[activeSession.domain]) {
-    domainCategories[activeSession.domain] = classifier.classifyDomain(activeSession.domain).category;
-  }
+    if (activeSession && activeSession.domain && !domainCategories[activeSession.domain]) {
+      domainCategories[activeSession.domain] = classifier.classifyDomain(activeSession.domain).category;
+    }
 
-  const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats, domainCategories);
+    const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats, domainCategories);
 
-  return {
-    trackingPaused,
-    metrics: historical.metrics,
-    timeline: historical.timeline,
-    topDomains: historical.topDomains,
-    snapshotGeneratedAt: now
-  };
+    const resultPayload: HistoricalStatsResponse = {
+      trackingPaused,
+      metrics: historical.metrics,
+      timeline: historical.timeline,
+      topDomains: historical.topDomains,
+      snapshotGeneratedAt: Date.now()
+    };
+
+    // Deep freeze and set in cache
+    setHistoricalCache(key, resultPayload);
+    return resultPayload;
+  })();
+
+  // Track promise to merge concurrent requests
+  inFlightPromises.set(key, computePromise);
+
+  try {
+    const finalPayload = await computePromise;
+    const computeTimeMs = performance.now() - tStart;
+    
+    cacheMetrics.misses += 1;
+    cacheMetrics.computesCount += 1;
+    cacheMetrics.totalComputeTimeMs += computeTimeMs;
+    cacheEventsLog.push({
+      timestamp: Date.now(),
+      type: "miss",
+      cacheType: "historical",
+      key,
+      computeTimeMs,
+      estimatedBytes: estimatePayloadSize(finalPayload)
+    });
+
+    return finalPayload;
+  } finally {
+    // Cleanup in-flight map
+    inFlightPromises.delete(key);
+  }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -509,6 +849,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Asynchronous reply
   }
 
+  if (msg.type === "GET_CACHE_METRICS") {
+    sendResponse({
+      metrics: cacheMetrics,
+      eventsLog: cacheEventsLog.get(),
+      maintenanceLog: maintenanceEventsLog.get(),
+      historicalCacheSize: historicalSnapshotCache.size,
+      historicalCacheKeys: Array.from(historicalSnapshotCache.keys())
+    });
+    return false; // Synchronous response
+  }
+
   if (msg.type === "GET_TRACKING_STATUS") {
     sendResponse({
       trackingPaused: engine.getPaused()
@@ -520,7 +871,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getCustomRules()
       .then((rules) => {
         classifier.compileRules(rules);
-        invalidateCache();
+        invalidateAllCaches();
       })
       .catch(() => {});
     return false; // Synchronous acknowledgment
@@ -552,7 +903,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then((res) => {
         if (res.success) {
           classifier.compileRules(rulesToSave);
-          invalidateCache();
+          invalidateAllCaches();
         }
         sendResponse(res);
       })
@@ -568,7 +919,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then((res) => {
         if (res.success) {
           classifier.compileRules([]);
-          invalidateCache();
+          invalidateAllCaches();
         }
         sendResponse(res);
       })
@@ -583,7 +934,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const desiredState = !!msg.paused;
     engine.setPaused(desiredState)
       .then(() => {
-        invalidateCache();
+        invalidateTodayCache();
         sendResponse({ success: true, trackingPaused: desiredState });
       })
       .catch((err) => {

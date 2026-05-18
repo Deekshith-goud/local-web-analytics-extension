@@ -101,4 +101,9 @@ export class ProductivityClassifier {
     this.lookupCache.set(cleanHostname, unknownResult);
     return unknownResult;
   }
+
+  /** Gets total count of compiled rules inside this classifier. */
+  public getRulesCount(): number {
+    return this.compiledRules.length;
+  }
 }

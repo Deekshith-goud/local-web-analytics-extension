@@ -93,7 +93,8 @@ export type RuntimeMessage =
   | { type: "GET_PRODUCTIVITY_RULES"; version: 1 }
   | { type: "SAVE_PRODUCTIVITY_RULES"; version: 1; rules: ProductivityRule[] }
   | { type: "RESET_PRODUCTIVITY_RULES"; version: 1 }
-  | { type: "BROADCAST_RULES_UPDATED"; version: 1 };
+  | { type: "BROADCAST_RULES_UPDATED"; version: 1 }
+  | { type: "GET_CACHE_METRICS"; version: 1 };
 
 export interface ActiveSessionResponse {
   activeSession: {
