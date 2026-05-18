@@ -86,6 +86,7 @@ export type RuntimeMessage =
   | { type: "GET_ACTIVE_SESSION"; version: 1 }
   | { type: "GET_TODAY_STATS"; version: 1 }
   | { type: "GET_POPUP_SNAPSHOT"; version: 1 }
+  | { type: "GET_HISTORICAL_STATS"; version: 1; startMs: number; endMs: number }
   | { type: "GET_TRACKING_STATUS"; version: 1 }
   | { type: "TOGGLE_TRACKING"; version: 1; paused: boolean };
 
@@ -127,6 +128,29 @@ export interface PopupSnapshotResponse {
   snapshotGeneratedAt: number; // Sync validation & stale prevention
 }
 
+export interface HistoricalStatsResponse {
+  trackingPaused: boolean;
+  metrics: {
+    totalDurationMs: number;
+    totalVisits: number;
+    uniqueDomainsCount: number;
+    averageSessionMs: number;
+    focusHours: number;
+    metricsVersion: number;
+  };
+  timeline: Array<{
+    date: string;
+    durationMs: number;
+    visitCount: number;
+  }>;
+  topDomains: Array<{
+    domain: string;
+    durationMs: number;
+    visitCount: number;
+  }>;
+  snapshotGeneratedAt: number;
+}
+
 // ─── Floating Blob UI State ──────────────────────────────────────────────────
 
 export type AnchorCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -137,3 +161,4 @@ export interface BlobUIState {
   offsetY: number; // Offset from vertical anchor edge
   isCollapsed: boolean;
 }
+

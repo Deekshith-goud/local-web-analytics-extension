@@ -15,14 +15,25 @@ import {
   getDailyTotal,
   getDailyDomainStatsForDate
 } from "./storage/repository";
-import { getLocalTodayDateString } from "./analytics/selectors";
+import {
+  getLocalTodayDateString,
+  getLocalDateString,
+  getDateRangeList
+} from "./utils/date-utils";
+import {
+  getDailyTotalsRange,
+  getDailyDomainStatsRange
+} from "./analytics/selectors/queries";
+import { aggregateHistoricalStats } from "./analytics/selectors/transforms";
 import type {
   RuntimeMessage,
   ActiveSessionResponse,
   TodayStatsResponse,
-  PopupSnapshotResponse
+  PopupSnapshotResponse,
+  HistoricalStatsResponse
 } from "./types/tracking";
 import { logger } from "./utils/logger";
+
 
 export {};
 
@@ -249,6 +260,94 @@ async function getLivePopupSnapshot(
   };
 }
 
+async function handleGetHistoricalStats(
+  startMs: number,
+  endMs: number,
+  activeSession: { domain: string; startTime: number } | null,
+  trackingPaused: boolean
+): Promise<HistoricalStatsResponse> {
+  const now = Date.now();
+  
+  // 1. Get dates range in YYYY-MM-DD format
+  const dates = getDateRangeList(startMs, endMs);
+  const startDateStr = dates[0] || getLocalDateString(startMs);
+  const endDateStr = dates[dates.length - 1] || getLocalDateString(endMs);
+
+  // 2. Fetch pre-aggregated records from IndexedDB range query
+  const [dbTotals, dbDomainStats] = await Promise.all([
+    getDailyTotalsRange(startDateStr, endDateStr),
+    getDailyDomainStatsRange(startDateStr, endDateStr)
+  ]);
+
+  // 3. Clone and overlay active dynamic session if active and inside the queried date range
+  const todayStr = getLocalTodayDateString(new Date(now));
+  const isTodayIncluded = dates.includes(todayStr);
+
+  const finalTotals = [...dbTotals];
+  const finalDomainStats = [...dbDomainStats];
+
+  if (activeSession && isTodayIncluded) {
+    const elapsed = Math.max(0, now - activeSession.startTime);
+
+    // Find if today already exists in dbTotals
+    const todayIndex = finalTotals.findIndex((t) => t.date === todayStr);
+    if (todayIndex >= 0) {
+      const existing = finalTotals[todayIndex];
+      finalTotals[todayIndex] = {
+        ...existing,
+        totalDurationMs: existing.totalDurationMs + elapsed,
+        totalVisits: existing.totalVisits + 1,
+        updatedAt: now,
+      };
+    } else {
+      finalTotals.push({
+        date: todayStr,
+        totalDurationMs: elapsed,
+        totalVisits: 1,
+        uniqueDomainsCount: 1,
+        schemaVersion: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Find if domain already exists for today in finalDomainStats
+    const domainStatIndex = finalDomainStats.findIndex(
+      (s) => s.date === todayStr && s.domain === activeSession.domain
+    );
+    if (domainStatIndex >= 0) {
+      const existing = finalDomainStats[domainStatIndex];
+      finalDomainStats[domainStatIndex] = {
+        ...existing,
+        durationMs: existing.durationMs + elapsed,
+        visitCount: existing.visitCount + 1,
+        updatedAt: now,
+      };
+    } else {
+      finalDomainStats.push({
+        date: todayStr,
+        domain: activeSession.domain,
+        durationMs: elapsed,
+        visitCount: 1,
+        schemaVersion: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // 4. Perform pure deterministic aggregations and metrics transformations
+  const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats);
+
+  return {
+    trackingPaused,
+    metrics: historical.metrics,
+    timeline: historical.timeline,
+    topDomains: historical.topDomains,
+    snapshotGeneratedAt: now
+  };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 1. Security Check: Reject untyped or loose payloads
   if (typeof message !== "object" || message === null) {
@@ -314,6 +413,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Asynchronous reply
   }
 
+  if (msg.type === "GET_HISTORICAL_STATS") {
+    const active = engine.getActiveSession();
+    const paused = engine.getPaused();
+    const activePayload = active ? { domain: active.domain, startTime: active.startTime } : null;
+
+    if (typeof msg.startMs !== "number" || typeof msg.endMs !== "number") {
+      sendResponse({
+        trackingPaused: paused,
+        metrics: {
+          totalDurationMs: 0,
+          totalVisits: 0,
+          uniqueDomainsCount: 0,
+          averageSessionMs: 0,
+          focusHours: 0,
+          metricsVersion: 1
+        },
+        timeline: [],
+        topDomains: [],
+        snapshotGeneratedAt: Date.now()
+      } as HistoricalStatsResponse);
+      return false;
+    }
+
+    handleGetHistoricalStats(msg.startMs, msg.endMs, activePayload, paused)
+      .then((res) => {
+        sendResponse(res);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to aggregate historical range", err);
+        sendResponse({
+          trackingPaused: paused,
+          metrics: {
+            totalDurationMs: 0,
+            totalVisits: 0,
+            uniqueDomainsCount: 0,
+            averageSessionMs: 0,
+            focusHours: 0,
+            metricsVersion: 1
+          },
+          timeline: [],
+          topDomains: [],
+          snapshotGeneratedAt: Date.now()
+        } as HistoricalStatsResponse);
+      });
+    return true; // Asynchronous reply
+  }
+
   if (msg.type === "GET_TRACKING_STATUS") {
     sendResponse({
       trackingPaused: engine.getPaused()
@@ -334,6 +480,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // Asynchronous reply
   }
+
 
   return false;
 });
