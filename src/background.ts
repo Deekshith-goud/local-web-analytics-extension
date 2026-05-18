@@ -18,13 +18,23 @@ import {
 import {
   getLocalTodayDateString,
   getLocalDateString,
-  getDateRangeList
+  getDateRangeList,
+  getStartOfDayTimestamp
 } from "./utils/date-utils";
+
 import {
   getDailyTotalsRange,
   getDailyDomainStatsRange
 } from "./analytics/selectors/queries";
 import { aggregateHistoricalStats } from "./analytics/selectors/transforms";
+import { ProductivityClassifier } from "./analytics/productivity-classifier";
+import { 
+  DEFAULT_RULES, 
+  getCustomRules, 
+  saveCustomRules, 
+  type ProductivityCategory, 
+  type ProductivityRule 
+} from "./analytics/productivity-rules";
 import type {
   RuntimeMessage,
   ActiveSessionResponse,
@@ -38,6 +48,7 @@ import { logger } from "./utils/logger";
 export {};
 
 const engine = new TrackingEngine();
+const classifier = new ProductivityClassifier([]);
 
 // ─── Today Stats Cache Memoization Layer (Sub-300ms Hydration) ──────────────────
 
@@ -71,6 +82,14 @@ function scheduleDrain(): void {
 
 async function initializeAndDrain(): Promise<void> {
   await engine.initialize();
+  // Fetch custom rules and compile classifier
+  try {
+    const customRules = await getCustomRules();
+    classifier.compileRules(customRules);
+    logger.info(`Productivity classifier compiled with ${customRules.length} custom rules.`);
+  } catch (err) {
+    logger.error("Failed to load custom rules on initialization:", err);
+  }
   // Immediate drain on wakeup catches records staged before last suspension
   await drainStaging();
 }
@@ -128,8 +147,8 @@ chrome.runtime.onSuspend.addListener(() => {
 async function getLiveTodayStats(): Promise<TodayStatsResponse> {
   const now = Date.now();
   const today = new Date();
-  // Local midnight today
-  const startOfDayMs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const dateStr = getLocalTodayDateString(today);
+  const startOfDayMs = getStartOfDayTimestamp(dateStr);
 
   // 1. Fetch all completed records for today from DB
   const records = await getActivityRecordsInRange(startOfDayMs, now);
@@ -289,16 +308,25 @@ async function handleGetHistoricalStats(
   if (activeSession && isTodayIncluded) {
     const elapsed = Math.max(0, now - activeSession.startTime);
 
+    // Find if domain already exists for today in finalDomainStats to check unique domains
+    const domainRecordedToday = finalDomainStats.some(
+      (s) => s.date === todayStr && s.domain === activeSession.domain
+    );
+    const isNewDomainForToday = !domainRecordedToday;
+
     // Find if today already exists in dbTotals
     const todayIndex = finalTotals.findIndex((t) => t.date === todayStr);
     if (todayIndex >= 0) {
       const existing = finalTotals[todayIndex];
-      finalTotals[todayIndex] = {
-        ...existing,
-        totalDurationMs: existing.totalDurationMs + elapsed,
-        totalVisits: existing.totalVisits + 1,
-        updatedAt: now,
-      };
+      if (existing) {
+        finalTotals[todayIndex] = {
+          ...existing,
+          totalDurationMs: existing.totalDurationMs + elapsed,
+          totalVisits: existing.totalVisits + 1,
+          uniqueDomainsCount: existing.uniqueDomainsCount + (isNewDomainForToday ? 1 : 0),
+          updatedAt: now,
+        };
+      }
     } else {
       finalTotals.push({
         date: todayStr,
@@ -317,12 +345,14 @@ async function handleGetHistoricalStats(
     );
     if (domainStatIndex >= 0) {
       const existing = finalDomainStats[domainStatIndex];
-      finalDomainStats[domainStatIndex] = {
-        ...existing,
-        durationMs: existing.durationMs + elapsed,
-        visitCount: existing.visitCount + 1,
-        updatedAt: now,
-      };
+      if (existing) {
+        finalDomainStats[domainStatIndex] = {
+          ...existing,
+          durationMs: existing.durationMs + elapsed,
+          visitCount: existing.visitCount + 1,
+          updatedAt: now,
+        };
+      }
     } else {
       finalDomainStats.push({
         date: todayStr,
@@ -337,7 +367,17 @@ async function handleGetHistoricalStats(
   }
 
   // 4. Perform pure deterministic aggregations and metrics transformations
-  const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats);
+  const domainCategories: Record<string, ProductivityCategory> = {};
+  for (const stat of finalDomainStats) {
+    if (stat && stat.domain && !domainCategories[stat.domain]) {
+      domainCategories[stat.domain] = classifier.classifyDomain(stat.domain).category;
+    }
+  }
+  if (activeSession && activeSession.domain && !domainCategories[activeSession.domain]) {
+    domainCategories[activeSession.domain] = classifier.classifyDomain(activeSession.domain).category;
+  }
+
+  const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats, domainCategories);
 
   return {
     trackingPaused,
@@ -427,6 +467,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           uniqueDomainsCount: 0,
           averageSessionMs: 0,
           focusHours: 0,
+          productiveDurationMs: 0,
+          distractingDurationMs: 0,
+          neutralDurationMs: 0,
+          unknownDurationMs: 0,
+          productivityScore: 0,
           metricsVersion: 1
         },
         timeline: [],
@@ -450,6 +495,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             uniqueDomainsCount: 0,
             averageSessionMs: 0,
             focusHours: 0,
+            productiveDurationMs: 0,
+            distractingDurationMs: 0,
+            neutralDurationMs: 0,
+            unknownDurationMs: 0,
+            productivityScore: 0,
             metricsVersion: 1
           },
           timeline: [],
@@ -465,6 +515,69 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       trackingPaused: engine.getPaused()
     });
     return false; // Synchronous response
+  }
+
+  if (msg.type === "BROADCAST_RULES_UPDATED") {
+    getCustomRules()
+      .then((rules) => {
+        classifier.compileRules(rules);
+        invalidateCache();
+      })
+      .catch(() => {});
+    return false; // Synchronous acknowledgment
+  }
+
+  if (msg.type === "GET_PRODUCTIVITY_RULES") {
+    getCustomRules()
+      .then((customRules) => {
+        sendResponse({
+          success: true,
+          customRules,
+          defaultRules: DEFAULT_RULES
+        });
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to get productivity rules", err);
+        sendResponse({ success: false, error: String(err) });
+      });
+    return true; // Asynchronous reply
+  }
+
+  if (msg.type === "SAVE_PRODUCTIVITY_RULES") {
+    if (!Array.isArray(msg.rules)) {
+      sendResponse({ success: false, error: "Rules payload must be a valid array." });
+      return false;
+    }
+    const rulesToSave = msg.rules;
+    saveCustomRules(rulesToSave)
+      .then((res) => {
+        if (res.success) {
+          classifier.compileRules(rulesToSave);
+          invalidateCache();
+        }
+        sendResponse(res);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to save productivity rules", err);
+        sendResponse({ success: false, error: String(err) });
+      });
+    return true; // Asynchronous reply
+  }
+
+  if (msg.type === "RESET_PRODUCTIVITY_RULES") {
+    saveCustomRules([])
+      .then((res) => {
+        if (res.success) {
+          classifier.compileRules([]);
+          invalidateCache();
+        }
+        sendResponse(res);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to reset productivity rules", err);
+        sendResponse({ success: false, error: String(err) });
+      });
+    return true; // Asynchronous reply
   }
 
   if (msg.type === "TOGGLE_TRACKING") {
