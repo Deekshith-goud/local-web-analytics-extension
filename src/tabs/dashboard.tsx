@@ -15,6 +15,32 @@ import { downsampleTimeline, computeBarCoordinates, computeLineCoordinates } fro
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
 import type { HistoricalStatsResponse, RuntimeMessage } from "../types/tracking";
 
+class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Dashboard caught error:", error, errorInfo);
+  }
+  override render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, color: "white", backgroundColor: "#b91c1c", minHeight: "100vh" }}>
+          <h2>Dashboard Crashed!</h2>
+          <pre style={{ whiteSpace: "pre-wrap", marginTop: 20 }}>{this.state.error?.toString()}</pre>
+          <pre style={{ whiteSpace: "pre-wrap", marginTop: 20 }}>{this.state.error?.stack}</pre>
+          <button onClick={() => window.location.reload()} style={{ marginTop: 20, padding: 10 }}>Reload Page</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Formatting utility for durations
 function formatDuration(ms: number): string {
   if (ms <= 0) return "0m";
@@ -170,11 +196,11 @@ export default function AnalyticsDashboard() {
 
   // ─── Productivity Rules Processing ───
   const allDisplayRules = useMemo(() => {
-    const defaultMapped = defaultRules.map(r => ({ ...r, isCustom: false }));
-    const customMapped = customRules.map(r => ({ ...r, isCustom: true }));
+    const defaultMapped = (defaultRules || []).map(r => ({ ...r, isCustom: false }));
+    const customMapped = (customRules || []).map(r => ({ ...r, isCustom: true }));
     
     // Custom overrides override defaults of the same domain in display listing
-    const customDomainSet = new Set(customRules.map(r => r.domain));
+    const customDomainSet = new Set((customRules || []).map(r => r.domain));
     const filteredDefaults = defaultMapped.filter(r => !customDomainSet.has(r.domain));
 
     return [...customMapped, ...filteredDefaults].sort((a, b) => {
@@ -376,9 +402,10 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="dashboard-wrapper">
-      {/* Header Controls */}
-      <header className="dashboard-header" role="banner">
+    <DashboardErrorBoundary>
+      <div className="dashboard-wrapper">
+        {/* Header Controls */}
+        <header className="dashboard-header" role="banner">
         <div className="brand-section">
           <h1>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -757,330 +784,346 @@ export default function AnalyticsDashboard() {
         </>
       )}
 
-      {activeTab === "rules" && (
-        /* PRODUCTIVITY RULES TAB PANEL */
-        <section className="rules-manager-layout" aria-label="Productivity classification preferences">
-          {/* Rules List Column */}
-          <div className="rules-list-panel">
-            <div className="rules-panel-header">
-              <input
-                type="text"
-                placeholder="Search domain rules..."
-                className="search-rules-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search classification rules"
-              />
-              
-              <div className="rules-type-filters" role="group" aria-label="Rules category type filters">
-                <button
-                  className={`rules-filter-btn ${ruleTypeFilter === "all" ? "active" : ""}`}
-                  onClick={() => setRuleTypeFilter("all")}
-                >
-                  All ({allDisplayRules.length})
-                </button>
-                <button
-                  className={`rules-filter-btn ${ruleTypeFilter === "default" ? "active" : ""}`}
-                  onClick={() => setRuleTypeFilter("default")}
-                >
-                  Built-in
-                </button>
-                <button
-                  className={`rules-filter-btn ${ruleTypeFilter === "custom" ? "active" : ""}`}
-                  onClick={() => setRuleTypeFilter("custom")}
-                >
-                  Custom ({customRules.length})
-                </button>
+
+        {activeTab === "rules" && (
+          /* PRODUCTIVITY RULES TAB PANEL */
+          <section className="rules-manager-layout" aria-label="Productivity classification preferences">
+            <div className="rules-sidebar">
+              <div className="rules-card">
+                <h3>Add Custom Rule</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+                  Override the semantic analysis engine with your own domain classification.
+                </p>
+
+                {formError && (
+                  <div className="rules-form-alert error" role="alert">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {formError}
+                  </div>
+                )}
+                {formSuccess && (
+                  <div className="rules-form-alert success" role="status">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    {formSuccess}
+                  </div>
+                )}
+
+                <form className="rules-form" onSubmit={handleAddRule}>
+                  <div className="form-group">
+                    <label htmlFor="domain-input">Domain (e.g. youtube.com)</label>
+                    <input
+                      id="domain-input"
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter hostname..."
+                      value={newDomain}
+                      onChange={(e) => setNewDomain(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="category-select">Classification Category</label>
+                    <select
+                      id="category-select"
+                      className="form-input"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
+                      required
+                    >
+                      <option value="productive">Productive (Deep Work)</option>
+                      <option value="distracting">Distracting (Entertainment)</option>
+                      <option value="neutral">Neutral (Utilities)</option>
+                      <option value="unknown">Unknown (Unclassified)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="priority-input">Evaluation Priority</label>
+                    <input
+                      id="priority-input"
+                      type="number"
+                      className="form-input"
+                      min="1"
+                      max="100"
+                      value={newPriority}
+                      onChange={(e) => setNewPriority(e.target.value)}
+                      required
+                    />
+                    <small style={{ display: "block", marginTop: "4px", fontSize: "11px", color: "var(--text-secondary)" }}>
+                      Higher numbers override lower priority rules (Defaults run at Priority 1)
+                    </small>
+                  </div>
+
+                  <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Save Custom Rule
+                  </button>
+                </form>
+              </div>
+
+              <div className="rules-card">
+                <h3>Portability</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+                  Export your meticulously crafted custom ruleset to a JSON file for backup or import to another device.
+                </p>
+                <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+                  <button type="button" className="btn-secondary" onClick={handleExportRules} style={{ justifyContent: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export Ruleset (.json)
+                  </button>
+                  <label className="btn-secondary" style={{ display: "flex", justifyContent: "center", cursor: "pointer", margin: 0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Import Ruleset
+                    <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportRules} />
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="rules-table-wrapper">
-              <table className="rules-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Domain</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Priority</th>
-                    <th scope="col">Source</th>
-                    <th scope="col" style={{ width: "60px", textAlign: "center" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {searchedRules.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: "center", color: "var(--text-secondary)", padding: "32px" }}>
-                        No rules matching your filter selection.
-                      </td>
-                    </tr>
-                  ) : (
-                    searchedRules.map((rule) => (
-                      <tr key={rule.domain}>
-                        <td style={{ fontWeight: 500 }}>{rule.domain}</td>
-                        <td>
-                          <span className={`badge-category ${rule.category}`}>
-                            {rule.category}
-                          </span>
-                        </td>
-                        <td>{rule.priority}</td>
-                        <td>
-                          <span className="rule-source-tag">
-                            {rule.isCustom ? "Custom" : "System"}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", justifyContent: "center" }}>
-                            {rule.isCustom ? (
-                              <button
-                                className="btn-delete-rule"
-                                onClick={() => handleDeleteRule(rule.domain)}
-                                title={`Delete custom rule for ${rule.domain}`}
-                                aria-label={`Delete custom rule for ${rule.domain}`}
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6" />
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                  <line x1="10" y1="11" x2="10" y2="17" />
-                                  <line x1="14" y1="11" x2="14" y2="17" />
-                                </svg>
-                              </button>
-                            ) : (
-                              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Locked</span>
-                            )}
-                          </div>
-                        </td>
+            <div className="rules-main">
+              <div className="rules-card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                  <div>
+                    <h3>Active Classifications</h3>
+                    <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                      Showing both custom overrides and default baseline engine rules.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Search domains..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ width: "200px" }}
+                      aria-label="Search rules by domain"
+                    />
+                    <select
+                      className="form-input"
+                      value={ruleTypeFilter}
+                      onChange={(e) => setRuleTypeFilter(e.target.value as any)}
+                      aria-label="Filter rules by type"
+                      style={{ width: "130px" }}
+                    >
+                      <option value="all">All Types</option>
+                      <option value="custom">Custom Only</option>
+                      <option value="default">Default Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="rules-table-container">
+                  <table className="rules-table">
+                    <thead>
+                      <tr>
+                        <th>Domain Match</th>
+                        <th>Classification</th>
+                        <th>Priority</th>
+                        <th>Source</th>
+                        <th style={{ width: "80px", textAlign: "right" }}>Actions</th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {searchedRules.length === 0 ? (
+                        <tr>
+                          <td colSpan={5}>
+                            <div className="vis-empty" style={{ minHeight: "150px" }}>
+                              <p className="vis-empty-title">No Rules Found</p>
+                              <p className="vis-empty-desc">Adjust your search or filter settings.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        searchedRules.map((rule) => (
+                          <tr key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
+                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>
+                              {rule.domain}
+                            </td>
+                            <td>
+                              <span className={`badge-category ${rule.category}`}>
+                                {rule.category.charAt(0).toUpperCase() + rule.category.slice(1)}
+                              </span>
+                            </td>
+                            <td>
+                              {rule.priority}
+                            </td>
+                            <td>
+                              {rule.isCustom ? (
+                                <span className="source-badge custom" title="User overridden rule">Custom</span>
+                              ) : (
+                                <span className="source-badge default" title="Pre-bundled system rule">System</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: "right" }}>
+                              {rule.isCustom ? (
+                                <button
+                                  type="button"
+                                  className="btn-delete-rule"
+                                  onClick={() => handleDeleteRule(rule.domain)}
+                                  title={`Remove custom override for ${rule.domain}`}
+                                  aria-label={`Delete custom rule for ${rule.domain}`}
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                  </svg>
+                                </button>
+                              ) : (
+                                <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontStyle: "italic" }}>Read-only</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Interactive action buttons */}
-            <div className="rules-toolbar">
-              <button className="btn-secondary-action" onClick={handleExportRules}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Export JSON Rules
-              </button>
-
-              <div className="file-import-wrapper">
-                <button className="btn-secondary-action">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  Import JSON Rules
-                </button>
-                <input
-                  type="file"
-                  accept=".json"
-                  className="file-import-input"
-                  onChange={handleImportRules}
-                  aria-label="Upload JSON productivity configurations"
-                />
+                {customRules.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+                    <button type="button" className="btn-danger-outline" onClick={handleResetRules}>
+                      Reset All Custom Rules
+                    </button>
+                  </div>
+                )}
               </div>
-
-              <button className="btn-secondary-action" onClick={handleResetRules} style={{ color: "#f87171" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                </svg>
-                Reset Custom Overrides
-              </button>
             </div>
-          </div>
+          </section>
+        )}
 
-          {/* Right Column: Custom Rule Creator Form Card */}
-          <form className="rule-form-card" onSubmit={handleAddRule} aria-label="Add classification custom rule">
-            <h2 className="rule-form-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="16" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
-              Add Domain Override
-            </h2>
-
-            <div className="form-group">
-              <label htmlFor="input-rule-domain" className="form-label">Domain Hostname</label>
-              <input
-                id="input-rule-domain"
-                type="text"
-                placeholder="e.g. music.youtube.com"
-                className="form-input"
-                value={newDomain}
-                onChange={(e) => {
-                  setNewDomain(e.target.value);
-                  setFormError(null);
-                  setFormSuccess(null);
-                }}
-                required
-              />
-              <span style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.3 }}>
-                Use lowercase hostnames without protocol prefixes (`https://`), slashes (`/`), or wildcards (`*`).
-              </span>
+        {activeTab === "settings" && (
+          <section className="settings-panel-layout" aria-label="Settings and Data Control">
+            <div className="settings-card">
+              <h3>🔒 Privacy & Local-First Policy</h3>
+              <p>
+                Your browsing activity is processed and stored <strong>entirely on your local machine</strong>.
+                No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.
+              </p>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="select-rule-cat" className="form-label">Category</label>
-              <select
-                id="select-rule-cat"
-                className="form-input"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
-                style={{ appearance: "none" }}
-              >
-                <option value="productive">Productive (Emerald)</option>
-                <option value="distracting">Distracting (Crimson)</option>
-                <option value="neutral">Neutral (Indigo)</option>
-              </select>
+            <div className="settings-card">
+              <h3>💾 Local Storage Behavior</h3>
+              <p>
+                The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs.
+                All tracking state runs asynchronously in service worker background threads with zero UI blocking.
+                Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.
+              </p>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="input-rule-priority" className="form-label">Override Priority (1 - 100)</label>
-              <input
-                id="input-rule-priority"
-                type="number"
-                min="1"
-                max="100"
-                className="form-input"
-                value={newPriority}
-                onChange={(e) => {
-                  setNewPriority(e.target.value);
-                  setFormError(null);
-                  setFormSuccess(null);
-                }}
-                required
-              />
-              <span style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.3 }}>
-                Higher priorities override more generic domain matches. Subdomain specific rules win over broader hostnames.
-              </span>
-            </div>
-
-            {formError && <div className="banner-form-error" role="alert">{formError}</div>}
-            {formSuccess && <div className="banner-form-success" role="alert">{formSuccess}</div>}
-
-            <button type="submit" className="btn-primary-form">
-              Save Rule Override
-            </button>
-          </form>
-        </section>
-      )}
-
-      {activeTab === "settings" && (
-        <section className="settings-panel-layout" aria-label="Settings and Data Control">
-          <div className="settings-card">
-            <h3>🔒 Privacy & Local-First Policy</h3>
-            <p>
-              Your browsing activity is processed and stored <strong>entirely on your local machine</strong>.
-              No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.
-            </p>
-          </div>
-
-          <div className="settings-card">
-            <h3>💾 Local Storage Behavior</h3>
-            <p>
-              The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs.
-              All tracking state runs asynchronously in service worker background threads with zero UI blocking.
-              Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.
-            </p>
-          </div>
-
-          <div className="settings-card danger-zone">
-            <h4>⚠️ Danger Zone: Permanent Purge</h4>
-            <p style={{ marginBottom: "16px", color: "var(--text-secondary)" }}>
-              Purging the on-device database is destructive and irreversible. This will instantly wipe all website session logs,
-              daily domain indicators, customized classification rules, volatile ring-buffered caches, and active state keys.
-            </p>
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => {
-                setShowPurgeModal(true);
-                setPurgeConfirmText("");
-              }}
-              aria-haspopup="dialog"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "4px" }}>
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              Purge On-Device Database
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* MULTI-STEP CONFIRMATION MODAL OVERLAY */}
-      {showPurgeModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
-          <div className="modal-content">
-            <h3 id="purge-modal-title" className="modal-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              Confirm Permanent Purge
-            </h3>
-            <p className="modal-desc">
-              This action is destructive and <strong>absolutely irreversible</strong>. Your on-device data will be permanently wiped.
-              To proceed, please type <strong>PURGE</strong> in the input field below to authorize this request:
-            </p>
-            <input
-              type="text"
-              className="modal-input"
-              value={purgeConfirmText}
-              onChange={(e) => setPurgeConfirmText(e.target.value.toUpperCase())}
-              placeholder="Type PURGE to delete"
-              disabled={isPurging}
-              autoFocus
-            />
-            <div className="modal-actions">
+            <div className="settings-card danger-zone">
+              <h4>⚠️ Danger Zone: Permanent Purge</h4>
+              <p style={{ marginBottom: "16px", color: "var(--text-secondary)" }}>
+                Purging the on-device database is destructive and irreversible. This will instantly wipe all website session logs,
+                daily domain indicators, customized classification rules, volatile ring-buffered caches, and active state keys.
+              </p>
               <button
                 type="button"
-                className="btn-modal-cancel"
+                className="btn-danger"
                 onClick={() => {
-                  setShowPurgeModal(false);
+                  setShowPurgeModal(true);
                   setPurgeConfirmText("");
                 }}
-                disabled={isPurging}
+                aria-haspopup="dialog"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn-modal-confirm"
-                onClick={handleExecutePurge}
-                disabled={purgeConfirmText !== "PURGE" || isPurging}
-              >
-                {isPurging ? "Purging..." : "Confirm Purge"}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "4px" }}>
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                Purge On-Device Database
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </section>
+        )}
 
-      {/* Footer Info */}
-      <footer className="dashboard-footer" role="contentinfo">
-        <div className="status-indicator">
-          <span
-            className={`status-dot-indicator ${stats?.trackingPaused ? "paused" : ""}`}
-            aria-hidden="true"
-          ></span>
-          <span>
-            {stats?.trackingPaused ? "Tracking paused" : "Real-time tracking active"}
-          </span>
-        </div>
-        <div>
-          <span>Data freshness: {stats ? `Last synced locally at ${new Date(stats.snapshotGeneratedAt).toLocaleTimeString()}` : "Not synced"}</span>
-          <span style={{ marginLeft: "16px" }}>v1.0.0</span>
-        </div>
-      </footer>
-    </div>
+        {/* MULTI-STEP CONFIRMATION MODAL OVERLAY */}
+        {showPurgeModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
+            <div className="modal-content">
+              <h3 id="purge-modal-title" className="modal-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                Confirm Permanent Purge
+              </h3>
+              <p className="modal-desc">
+                This action is destructive and <strong>absolutely irreversible</strong>. Your on-device data will be permanently wiped.
+                To proceed, please type <strong>PURGE</strong> in the input field below to authorize this request:
+              </p>
+              <input
+                type="text"
+                className="modal-input"
+                value={purgeConfirmText}
+                onChange={(e) => setPurgeConfirmText(e.target.value.toUpperCase())}
+                placeholder="Type PURGE to delete"
+                disabled={isPurging}
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => {
+                    setShowPurgeModal(false);
+                    setPurgeConfirmText("");
+                  }}
+                  disabled={isPurging}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-confirm"
+                  onClick={handleExecutePurge}
+                  disabled={purgeConfirmText !== "PURGE" || isPurging}
+                >
+                  {isPurging ? "Purging..." : "Confirm Purge"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer Info */}
+        <footer className="dashboard-footer" role="contentinfo">
+          <div className="status-indicator">
+            <span
+              className={`status-dot-indicator ${stats?.trackingPaused ? "paused" : ""}`}
+              aria-hidden="true"
+            ></span>
+            <span>
+              {stats?.trackingPaused ? "Tracking paused" : "Real-time tracking active"}
+            </span>
+          </div>
+          <div>
+            <span>Data freshness: {stats ? `Last synced locally at ${new Date(stats.snapshotGeneratedAt).toLocaleTimeString()}` : "Not synced"}</span>
+            <span style={{ marginLeft: "16px" }}>v1.0.0</span>
+          </div>
+        </footer>
+      </div>
+    </DashboardErrorBoundary>
   );
 }
