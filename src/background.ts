@@ -478,22 +478,22 @@ async function getLivePopupSnapshot(
   if (!todaySnapshotCache || todaySnapshotCache.date !== dateStr) {
     logger.debug("[Background] Today cache miss. Fetching from IndexedDB repository...");
     const tStart = performance.now();
-    const [dbTotal, dbDomainStats] = await Promise.all([
-      getDailyTotal(dateStr),
-      getDailyDomainStatsForDate(dateStr)
-    ]);
+    const startOfDayMs = getStartOfDayTimestamp(dateStr);
+    
+    // FETCH DIRECTLY FROM ACTIVITIES TABLE instead of unpopulated pre-aggregates
+    const records = await getActivityRecordsInRange(startOfDayMs, now);
 
-    const totalDurationMs = dbTotal ? dbTotal.totalDurationMs : 0;
-    const totalVisits = dbTotal ? dbTotal.totalVisits : 0;
+    let totalDurationMs = 0;
+    let totalVisits = 0;
     
     const uniqueDomains = new Set<string>();
     const domainDurations: Record<string, number> = {};
 
-    if (dbDomainStats) {
-      for (const stat of dbDomainStats) {
-        uniqueDomains.add(stat.domain);
-        domainDurations[stat.domain] = stat.durationMs;
-      }
+    for (const r of records) {
+      totalDurationMs += r.durationMs;
+      totalVisits += 1;
+      uniqueDomains.add(r.domain);
+      domainDurations[r.domain] = (domainDurations[r.domain] ?? 0) + r.durationMs;
     }
 
     todaySnapshotCache = {
@@ -614,14 +614,34 @@ async function handleGetHistoricalStats(
   // 4. Computation Promise Block
   const tStart = performance.now();
   const computePromise = (async () => {
-    // Fetch pre-aggregated records from IndexedDB range query
-    const [dbTotals, dbDomainStats] = await Promise.all([
-      getDailyTotalsRange(startDateStr, endDateStr),
-      getDailyDomainStatsRange(startDateStr, endDateStr)
-    ]);
-
-    const finalTotals = [...dbTotals];
-    const finalDomainStats = [...dbDomainStats];
+    // FETCH DIRECTLY FROM ACTIVITIES TABLE instead of unpopulated pre-aggregates
+    const rawActivities = await getActivityRecordsInRange(startMs, endMs);
+    
+    const dbTotalsMap: Record<string, any> = {};
+    const dbDomainStatsMap: Record<string, any> = {};
+    
+    for (const r of rawActivities) {
+      const dStr = getLocalTodayDateString(new Date(r.startTime));
+      if (!dbTotalsMap[dStr]) {
+        dbTotalsMap[dStr] = { date: dStr, totalDurationMs: 0, totalVisits: 0, uniqueDomainsCount: 0, schemaVersion: 1, createdAt: r.startTime, updatedAt: r.startTime };
+      }
+      dbTotalsMap[dStr].totalDurationMs += r.durationMs;
+      dbTotalsMap[dStr].totalVisits += 1;
+      
+      const domKey = `${dStr}:${r.domain}`;
+      if (!dbDomainStatsMap[domKey]) {
+        dbDomainStatsMap[domKey] = { date: dStr, domain: r.domain, durationMs: 0, visitCount: 0, schemaVersion: 1, createdAt: r.startTime, updatedAt: r.startTime };
+      }
+      dbDomainStatsMap[domKey].durationMs += r.durationMs;
+      dbDomainStatsMap[domKey].visitCount += 1;
+    }
+    
+    const finalTotals = Object.keys(dbTotalsMap).map(dStr => {
+      const uniqueCount = Object.keys(dbDomainStatsMap).filter(k => k.startsWith(dStr + ":")).length;
+      return { ...dbTotalsMap[dStr], uniqueDomainsCount: uniqueCount };
+    });
+    
+    const finalDomainStats = Object.values(dbDomainStatsMap);
 
     if (activeSession && containsToday) {
       const elapsed = Math.max(0, Date.now() - activeSession.startTime);
