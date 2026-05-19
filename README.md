@@ -4,8 +4,10 @@
   <p><strong>Private Time Analytics & Productivity Dashboard</strong></p>
   
   <p>
+    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml"><img src="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml/badge.svg" alt="CI Build Status" /></a>
+    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/releases"><img src="https://img.shields.io/github/v/release/Deekshith-goud/local-web-analytics-extension?style=flat-square" alt="Latest Release" /></a>
+    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/issues"><img src="https://img.shields.io/github/issues/Deekshith-goud/local-web-analytics-extension?style=flat-square" alt="Open Issues" /></a>
     <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/stargazers"><img src="https://img.shields.io/github/stars/Deekshith-goud/local-web-analytics-extension?style=social" alt="Stars" /></a>
-    <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version" />
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License" />
     <img src="https://img.shields.io/badge/privacy-100%25_local-success.svg" alt="Privacy First" />
     <img src="https://img.shields.io/badge/telemetry-ZERO-critical.svg" alt="Zero Telemetry" />
@@ -97,6 +99,36 @@ To build a production-ready zip file with automated security audits:
 bun run package
 ```
 *This runs the `package-extension.js` script to verify permissions, CSP, bundle size, and generates a deterministic `release-manifest.json` before zipping.*
+
+### 🏷️ Release Management & Tagging
+
+This project uses automated GitHub Actions workflows to publish releases and extension packages when new versions are tagged.
+
+#### How to publish a release:
+1. **Increment version**: Update the `version` field in `package.json` (e.g., `"1.0.0"` -> `"1.1.0"`).
+2. **Create and push a Git Tag**:
+   ```bash
+   git tag -a v1.1.0 -m "Release version 1.1.0"
+   git push origin v1.1.0
+   ```
+3. **Automated Workflow**:
+   - The `.github/workflows/release.yml` workflow triggers on the tag push.
+   - It performs strict security checks, permissions audits, and CSP scans.
+   - It generates `build/chrome-mv3-prod.zip` (extension package) and `build/chrome-mv3-prod/release-manifest.json` (build fingerprint).
+   - It automatically publishes a new GitHub Release with the build zip and manifest attached.
+
+#### 🛡️ Verifying Release Integrity:
+You can verify the authenticity of the release asset (`chrome-mv3-prod.zip`) against the fingerprint in `release-manifest.json`:
+1. Download both the zip and manifest from the GitHub Release.
+2. Run a SHA-256 checksum on the files:
+   ```bash
+   # Windows PowerShell
+   Get-FileHash chrome-mv3-prod.zip -Algorithm SHA256
+   
+   # Linux / macOS
+   shasum -a 256 chrome-mv3-prod.zip
+   ```
+3. Compare the checksum value with the hash of `chrome-mv3-prod.zip` inside `release-manifest.json`. They must match exactly.
 
 ---
 
