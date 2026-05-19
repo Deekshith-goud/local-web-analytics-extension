@@ -633,20 +633,28 @@ async function handleGetHistoricalStats(
       if (!dbTotalsMap[dStr]) {
         dbTotalsMap[dStr] = { date: dStr, totalDurationMs: 0, totalVisits: 0, uniqueDomainsCount: 0, schemaVersion: 1, createdAt: r.startTime, updatedAt: r.startTime };
       }
-      dbTotalsMap[dStr].totalDurationMs += r.durationMs;
-      dbTotalsMap[dStr].totalVisits += 1;
+      dbTotalsMap[dStr]!.totalDurationMs += r.durationMs;
+      dbTotalsMap[dStr]!.totalVisits += 1;
       
       const domKey = `${dStr}:${r.domain}`;
       if (!dbDomainStatsMap[domKey]) {
         dbDomainStatsMap[domKey] = { date: dStr, domain: r.domain, durationMs: 0, visitCount: 0, schemaVersion: 1, createdAt: r.startTime, updatedAt: r.startTime };
       }
-      dbDomainStatsMap[domKey].durationMs += r.durationMs;
-      dbDomainStatsMap[domKey].visitCount += 1;
+      dbDomainStatsMap[domKey]!.durationMs += r.durationMs;
+      dbDomainStatsMap[domKey]!.visitCount += 1;
     }
     
-    const finalTotals = Object.keys(dbTotalsMap).map(dStr => {
-      const uniqueCount = Object.keys(dbDomainStatsMap).filter(k => k.startsWith(dStr + ":")).length;
-      return { ...dbTotalsMap[dStr], uniqueDomainsCount: uniqueCount };
+    const finalTotals = Object.values(dbTotalsMap).map(entry => {
+      const uniqueCount = Object.keys(dbDomainStatsMap).filter(k => k.startsWith(entry.date + ":")).length;
+      return {
+        date: entry.date,
+        totalDurationMs: entry.totalDurationMs,
+        totalVisits: entry.totalVisits,
+        uniqueDomainsCount: uniqueCount,
+        schemaVersion: entry.schemaVersion,
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt
+      };
     });
     
     const finalDomainStats = Object.values(dbDomainStatsMap);
