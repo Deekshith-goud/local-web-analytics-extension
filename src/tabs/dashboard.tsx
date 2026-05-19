@@ -109,8 +109,10 @@ export default function AnalyticsDashboard() {
       } satisfies RuntimeMessage,
       (response: HistoricalStatsResponse) => {
         setIsLoading(false);
-        if (response) {
+        if (response && response.metrics) {
           setStats(response);
+        } else {
+          setStats(null);
         }
       }
     );
@@ -138,7 +140,7 @@ export default function AnalyticsDashboard() {
   }, [fetchRules, activeTab]);
 
   // 4. Memoized Transform coordinate projections
-  const totalTrackedDuration = stats?.metrics.totalDurationMs ?? 0;
+  const totalTrackedDuration = stats?.metrics?.totalDurationMs ?? 0;
   const isDatabaseEmpty = totalTrackedDuration === 0;
 
   // Downsampled timeline data for coordinates drawing (max 14 columns)
@@ -178,11 +180,11 @@ export default function AnalyticsDashboard() {
   }, [filteredDomains]);
 
   // ─── Productivity Overview Math ───
-  const productiveMs = stats?.metrics.productiveDurationMs ?? 0;
-  const distractingMs = stats?.metrics.distractingDurationMs ?? 0;
-  const neutralMs = stats?.metrics.neutralDurationMs ?? 0;
-  const unknownMs = stats?.metrics.unknownDurationMs ?? 0;
-  const productivityScore = stats?.metrics.productivityScore ?? 0;
+  const productiveMs = stats?.metrics?.productiveDurationMs ?? 0;
+  const distractingMs = stats?.metrics?.distractingDurationMs ?? 0;
+  const neutralMs = stats?.metrics?.neutralDurationMs ?? 0;
+  const unknownMs = stats?.metrics?.unknownDurationMs ?? 0;
+  const productivityScore = stats?.metrics?.productivityScore ?? 0;
 
   const totalClassifiedMs = productiveMs + distractingMs + neutralMs + unknownMs;
 
@@ -511,7 +513,7 @@ export default function AnalyticsDashboard() {
                 Focus Hours
               </span>
               <span className="metric-value" aria-labelledby="lbl-focus">
-                {isLoading ? "---" : `${stats?.metrics.focusHours ?? 0}h`}
+                {isLoading ? "---" : `${stats?.metrics?.focusHours ?? 0}h`}
               </span>
               <span className="metric-desc">Total productive browsing time</span>
             </div>
@@ -524,7 +526,7 @@ export default function AnalyticsDashboard() {
                 Total Visits
               </span>
               <span className="metric-value" aria-labelledby="lbl-visits">
-                {isLoading ? "---" : stats?.metrics.totalVisits ?? 0}
+                {isLoading ? "---" : stats?.metrics?.totalVisits ?? 0}
               </span>
               <span className="metric-desc">Sum of all navigation transitions</span>
             </div>
@@ -537,7 +539,7 @@ export default function AnalyticsDashboard() {
                 Unique Hostnames
               </span>
               <span className="metric-value" aria-labelledby="lbl-unique">
-                {isLoading ? "---" : stats?.metrics.uniqueDomainsCount ?? 0}
+                {isLoading ? "---" : stats?.metrics?.uniqueDomainsCount ?? 0}
               </span>
               <span className="metric-desc">Individual domains logged</span>
             </div>
