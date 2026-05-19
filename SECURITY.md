@@ -25,7 +25,7 @@ Only the latest release of the extension is supported for security patches. Plea
 If you discover a potential security vulnerability (e.g., cross-site scripting (XSS) in the dashboard, DOM injection in content scripts, or a sandbox escape), please report it responsibly:
 
 1. **Do NOT open a public issue** on GitHub for security vulnerabilities.
-2. Email reports to the maintainer: **Deekshith Goud** (vorigantideekshithgoud@gmail.com).
+2. Email reports to the maintainer: **Deekshith Goud** (deekshithgoud7101@gmail.com).
 3. In your report, please include:
    - A description of the vulnerability and its potential impact.
    - Detailed step-by-step instructions to reproduce the vulnerability (proof of concept).
