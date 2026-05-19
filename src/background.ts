@@ -12,22 +12,14 @@ import { TrackingEngine } from "./analytics/tracking-engine";
 import { drainStaging } from "./storage/drain-engine";
 import {
   getActivityRecordsInRange,
-  getDailyTotal,
-  getDailyDomainStatsForDate,
   pruneOldActivities,
   clearAllData
 } from "./storage/repository";
 import {
   getLocalTodayDateString,
-  getLocalDateString,
   getDateRangeList,
   getStartOfDayTimestamp
 } from "./utils/date-utils";
-
-import {
-  getDailyTotalsRange,
-  getDailyDomainStatsRange
-} from "./analytics/selectors/queries";
 import { aggregateHistoricalStats } from "./analytics/selectors/transforms";
 import { ProductivityClassifier } from "./analytics/productivity-classifier";
 import { 
@@ -580,8 +572,6 @@ async function handleGetHistoricalStats(
 ): Promise<HistoricalStatsResponse> {
   // 1. Get dates range in YYYY-MM-DD format (Canonical key boundaries)
   const dates = getDateRangeList(startMs, endMs);
-  const startDateStr = dates[0] || getLocalDateString(startMs);
-  const endDateStr = dates[dates.length - 1] || getLocalDateString(endMs);
 
   const key = getCacheKey(startMs, endMs);
 
@@ -617,8 +607,26 @@ async function handleGetHistoricalStats(
     // FETCH DIRECTLY FROM ACTIVITIES TABLE instead of unpopulated pre-aggregates
     const rawActivities = await getActivityRecordsInRange(startMs, endMs);
     
-    const dbTotalsMap: Record<string, any> = {};
-    const dbDomainStatsMap: Record<string, any> = {};
+    interface DbTotalEntry {
+      date: string;
+      totalDurationMs: number;
+      totalVisits: number;
+      uniqueDomainsCount: number;
+      schemaVersion: number;
+      createdAt: number;
+      updatedAt: number;
+    }
+    interface DbDomainStatEntry {
+      date: string;
+      domain: string;
+      durationMs: number;
+      visitCount: number;
+      schemaVersion: number;
+      createdAt: number;
+      updatedAt: number;
+    }
+    const dbTotalsMap: Record<string, DbTotalEntry> = {};
+    const dbDomainStatsMap: Record<string, DbDomainStatEntry> = {};
     
     for (const r of rawActivities) {
       const dStr = getLocalTodayDateString(new Date(r.startTime));

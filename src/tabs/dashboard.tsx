@@ -921,7 +921,7 @@ export default function AnalyticsDashboard() {
                     <select
                       className="form-input"
                       value={ruleTypeFilter}
-                      onChange={(e) => setRuleTypeFilter(e.target.value as any)}
+                      onChange={(e) => setRuleTypeFilter(e.target.value as "all" | "default" | "custom")}
                       aria-label="Filter rules by type"
                       style={{ width: "130px" }}
                     >
