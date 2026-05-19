@@ -10,6 +10,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import "./dashboard.css";
+import brandLogo from "url:~assets/icon.png";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates, computeLineCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
@@ -410,12 +411,8 @@ export default function AnalyticsDashboard() {
         <header className="dashboard-header" role="banner">
         <div className="brand-section">
           <h1>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 20V10" />
-              <path d="M18 20V4" />
-              <path d="M6 20v-4" />
-            </svg>
-            Local Browse Analytics
+            <img src={brandLogo} alt="Logo" width="24" height="24" style={{ borderRadius: 4, marginRight: 4 }} />
+            Local Browse Insights
           </h1>
           <p>Privacy-first. Secure local tracking dashboard.</p>
         </div>

@@ -1,6 +1,5 @@
 <div align="center">
-  <img src="assets/icon128.png" alt="Local Browse Analytics Logo" width="128" height="128" />
-  <h1>Local Browse Insights</h1>
+  <img src="assets/logo-banner.png" alt="Local Browse Insights Logo" width="600" />
   <p><strong>Private Time Analytics & Productivity Dashboard</strong></p>
   
   <p>
