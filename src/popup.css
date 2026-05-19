@@ -6,26 +6,51 @@
  * and high-contrast accessibility rules.
  */
 
-:root {
-  /* Premium Dark Theme Palette */
-  --bg-primary: hsl(224, 25%, 12%);
-  --bg-secondary: hsl(224, 25%, 16%);
-  --bg-hover: hsl(224, 25%, 22%);
-  --border-color: hsl(224, 20%, 24%);
+/* Color Tokens & Themes */
+:root, [data-theme="dark"] {
+  --bg-primary: #080c14;
+  --bg-secondary: rgba(15, 23, 42, 0.45);
+  --bg-hover: rgba(30, 41, 59, 0.6);
+  --bg-glass: rgba(11, 15, 25, 0.45);
+  --border-color: rgba(255, 255, 255, 0.08);
   
-  --text-primary: hsl(210, 40%, 98%);
-  --text-secondary: hsl(215, 20%, 65%);
-  --text-muted: hsl(215, 15%, 45%);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
 
-  --accent-color: hsl(210, 100%, 60%);       /* Technical clean blue */
-  --accent-success: hsl(142, 72%, 50%);      /* Vivid active green */
-  --accent-warning: hsl(38, 92%, 50%);       /* Bright standby orange */
+  --accent-color: #6366f1; /* Indigo */
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --blob-opacity: 0.15;
 
   --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-medium: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: rgba(255, 255, 255, 0.5);
+  --bg-hover: rgba(241, 245, 249, 0.75);
+  --bg-glass: rgba(248, 250, 252, 0.55);
+  --border-color: rgba(15, 23, 42, 0.08);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --accent-color: #4f46e5;
+  --accent-success: #059669;
+  --accent-warning: #d97706;
+
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  --blob-opacity: 0.1;
 }
 
 /* Base resets & layout rules */
@@ -43,6 +68,8 @@ body {
   min-height: 400px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  position: relative;
 }
 
 /* Focus states for Keyboard Navigation & Screen Readers */
@@ -60,6 +87,8 @@ input:focus-visible {
   padding: 16px;
   gap: 16px;
   min-height: 400px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Header bar */
@@ -166,9 +195,11 @@ input:checked + .slider:before {
 
 /* Stats Summary Card (Dynamic SVG circular gauge wrapper) */
 .hero-card {
-  background-color: var(--bg-secondary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
@@ -176,6 +207,12 @@ input:checked + .slider:before {
   position: relative;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-color);
 }
 
 /* Lightweight Circular SVG gauge */
@@ -197,7 +234,7 @@ input:checked + .slider:before {
 
 .gauge-bg {
   fill: none;
-  stroke: var(--bg-primary);
+  stroke: var(--bg-hover);
   stroke-width: 6px;
 }
 
@@ -289,14 +326,22 @@ input:checked + .slider:before {
 }
 
 .stat-cell {
-  background-color: var(--bg-secondary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-cell:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-color);
 }
 
 .stat-label {
@@ -367,7 +412,7 @@ input:checked + .slider:before {
 .bar-track {
   width: 100%;
   height: 6px;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-hover);
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -388,9 +433,11 @@ input:checked + .slider:before {
   justify-content: center;
   padding: 32px 16px;
   text-align: center;
-  background-color: var(--bg-secondary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px dashed var(--border-color);
-  border-radius: 12px;
+  border-radius: 16px;
   gap: 8px;
   margin-top: 10px;
 }
@@ -434,4 +481,52 @@ input:checked + .slider:before {
   height: 4px;
   background-color: var(--accent-success);
   border-radius: 50%;
+}
+
+/* Animated Fluid Glass Background Blobs for Popup */
+.glass-blob-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glass-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: var(--blob-opacity);
+  transition: opacity 0.5s ease;
+}
+
+.blob-purple {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, #c084fc 0%, rgba(192, 132, 252, 0) 70%);
+  top: -20px;
+  left: -20px;
+  animation: popup-float-1 12s infinite alternate ease-in-out;
+}
+
+.blob-indigo {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #6366f1 0%, rgba(99, 102, 241, 0) 70%);
+  bottom: -30px;
+  right: -30px;
+  animation: popup-float-2 15s infinite alternate ease-in-out;
+}
+
+@keyframes popup-float-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(20px, 30px) scale(1.1); }
+}
+
+@keyframes popup-float-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-30px, -20px) scale(1.05); }
 }

@@ -733,10 +733,41 @@ async function handleGetHistoricalStats(
 
     const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats, domainCategories);
 
+    // Build 24-bucket hourly timeline when querying a single day
+    let hourlyTimeline: Array<{ date: string; durationMs: number; visitCount: number }> | undefined;
+    if (dates.length === 1) {
+      // Initialize 24 zeroed buckets
+      const buckets = Array.from({ length: 24 }, (_, h) => ({
+        date: `${String(h).padStart(2, "0")}:00`,
+        durationMs: 0,
+        visitCount: 0
+      }));
+      // Accumulate each activity record into the correct hour bucket
+      for (const r of rawActivities) {
+        const hour = new Date(r.startTime).getHours();
+        if (hour >= 0 && hour < 24 && buckets[hour]) {
+          buckets[hour]!.durationMs += r.durationMs;
+          buckets[hour]!.visitCount += 1;
+        }
+      }
+      // Also fold in the current active session if within today
+      if (activeSession && containsToday) {
+        const elapsed = Math.max(0, Date.now() - activeSession.startTime);
+        const hour = new Date(activeSession.startTime).getHours();
+        if (hour >= 0 && hour < 24 && buckets[hour]) {
+          buckets[hour]!.durationMs += elapsed;
+          buckets[hour]!.visitCount += 1;
+        }
+      }
+      // Only include hours that have any data, or keep all 24 for a complete axis
+      hourlyTimeline = buckets;
+    }
+
     const resultPayload: HistoricalStatsResponse = {
       trackingPaused,
       metrics: historical.metrics,
       timeline: historical.timeline,
+      ...(hourlyTimeline && { hourlyTimeline }),
       topDomains: historical.topDomains,
       snapshotGeneratedAt: Date.now()
     };

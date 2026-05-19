@@ -63,6 +63,44 @@ export default function AnalyticsDashboard() {
   const [range, setRange] = useState<RangeType>("7days");
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
+
+  // Load and apply theme on startup
+  useEffect(() => {
+    chrome.storage.local.get(["theme"], (res) => {
+      const savedTheme = res.theme || "system";
+      setTheme(savedTheme);
+      applyTheme(savedTheme);
+    });
+  }, []);
+
+  const applyTheme = (targetTheme: "dark" | "light" | "system") => {
+    let active: string;
+    if (targetTheme === "system") {
+      active = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } else {
+      active = targetTheme;
+    }
+    document.documentElement.setAttribute("data-theme", active);
+  };
+
+  const handleThemeChange = (newTheme: "dark" | "light" | "system") => {
+    setTheme(newTheme);
+    chrome.storage.local.set({ theme: newTheme });
+    applyTheme(newTheme);
+  };
+
+  // Keep theme updated if system scheme changes and setting is system
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = () => {
+      if (theme === "system") {
+        applyTheme("system");
+      }
+    };
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+  }, [theme]);
 
   // Settings & Database Purge modal states
   const [showPurgeModal, setShowPurgeModal] = useState(false);
@@ -144,11 +182,24 @@ export default function AnalyticsDashboard() {
   const totalTrackedDuration = stats?.metrics?.totalDurationMs ?? 0;
   const isDatabaseEmpty = totalTrackedDuration === 0;
 
-  // Downsampled timeline data for coordinates drawing (max 14 columns)
+  // Downsampled timeline data for coordinates drawing
+  // For "today": use 24 hourly buckets from background (skip downsample)
+  // For multi-day: use daily timeline downsampled to max 14 columns
   const processedTimeline = useMemo(() => {
-    if (!stats || !stats.timeline) return [];
+    if (!stats) return [];
+    if (range === "today") {
+      // Use the pre-built 24-hour buckets from background
+      if (stats.hourlyTimeline && stats.hourlyTimeline.length > 0) {
+        // Only show hours 6am–current hour for a cleaner chart (skip empty early morning)
+        const now = new Date();
+        const currentHour = now.getHours();
+        return stats.hourlyTimeline.slice(0, currentHour + 1);
+      }
+      return [];
+    }
+    if (!stats.timeline) return [];
     return downsampleTimeline(stats.timeline, 14);
-  }, [stats]);
+  }, [stats, range]);
 
   // Pure SVG coordinate points (memoized to prevent resize layout thrashing)
   const barChartCoordinates = useMemo(() => {
@@ -179,6 +230,19 @@ export default function AnalyticsDashboard() {
     if (filteredDomains.length === 0) return 0;
     return Math.max(...filteredDomains.map(d => d.durationMs), 1);
   }, [filteredDomains]);
+
+  // Max duration for the chart Y-axis
+  const maxTimelineMs = useMemo(() => {
+    if (processedTimeline.length === 0) return 1000;
+    return Math.max(...processedTimeline.map(t => t.durationMs), 1000);
+  }, [processedTimeline]);
+
+  const formatAxisLabel = (ms: number) => {
+    if (ms <= 1000) return "0m"; // close to zero
+    const minutes = Math.round(ms / 60000);
+    if (minutes >= 60) return `${(ms / 3600000).toFixed(1)}h`;
+    return `${minutes}m`;
+  };
 
   // ─── Productivity Overview Math ───
   const productiveMs = stats?.metrics?.productiveDurationMs ?? 0;
@@ -407,67 +471,38 @@ export default function AnalyticsDashboard() {
   return (
     <DashboardErrorBoundary>
       <div className="dashboard-wrapper">
-        {/* Header Controls */}
-        <header className="dashboard-header" role="banner">
-        <div className="brand-section">
-          <h1>
-            <img src={brandLogo} alt="Logo" width="24" height="24" style={{ borderRadius: 4, marginRight: 4 }} />
-            Local Browse Insights
-          </h1>
-          <p>Privacy-first. Secure local tracking dashboard.</p>
+        {/* Animated Fluid Glass Background Blobs */}
+        <div className="glass-blob-container" aria-hidden="true">
+          <div className="glass-blob blob-purple"></div>
+          <div className="glass-blob blob-indigo"></div>
+          <div className="glass-blob blob-cyan"></div>
         </div>
 
-        {/* Tab switch navigation */}
-        <nav className="dashboard-nav" aria-label="Main sections">
-          <button
-            className={`nav-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
-            onClick={() => setActiveTab("analytics")}
-          >
-            Overview & Analytics
-          </button>
-          <button
-            className={`nav-tab-btn ${activeTab === "rules" ? "active" : ""}`}
-            onClick={() => setActiveTab("rules")}
-          >
-            Productivity Rules
-          </button>
-          <button
-            className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`}
-            onClick={() => setActiveTab("settings")}
-          >
-            Settings & Privacy
-          </button>
-        </nav>
+        {/* Header */}
+        <header className="dashboard-header" role="banner">
+          <div className="brand-section">
+            <h1>
+              <img src={brandLogo} alt="Logo" width="28" height="28" style={{ borderRadius: 6 }} />
+              Local Browse Insights
+            </h1>
+            <p>Privacy-first. Secure local tracking dashboard.</p>
+          </div>
 
-        {/* Date Filters (Only shown when activeTab is overview) */}
-        {activeTab === "analytics" && (
-          <nav aria-label="Dashboard range selection">
+          <nav className="dashboard-nav" aria-label="Main sections">
+            <button className={`nav-tab-btn ${activeTab === "analytics" ? "active" : ""}`} onClick={() => setActiveTab("analytics")}>Overview & Analytics</button>
+            <button className={`nav-tab-btn ${activeTab === "rules" ? "active" : ""}`} onClick={() => setActiveTab("rules")}>Productivity Rules</button>
+            <button className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Settings & Privacy</button>
+          </nav>
+
+          {/* Filter group always mounted to avoid layout shift; hidden via opacity when not on analytics tab */}
+          <nav aria-label="Dashboard range selection" style={{ visibility: activeTab === "analytics" ? "visible" : "hidden", transition: "opacity 0.2s", opacity: activeTab === "analytics" ? 1 : 0 }}>
             <div className="filter-group">
-              <button
-                className={`filter-btn ${range === "today" ? "active" : ""}`}
-                onClick={() => setRange("today")}
-                aria-pressed={range === "today"}
-              >
-                Today
-              </button>
-              <button
-                className={`filter-btn ${range === "7days" ? "active" : ""}`}
-                onClick={() => setRange("7days")}
-                aria-pressed={range === "7days"}
-              >
-                Last 7 Days
-              </button>
-              <button
-                className={`filter-btn ${range === "30days" ? "active" : ""}`}
-                onClick={() => setRange("30days")}
-                aria-pressed={range === "30days"}
-              >
-                Last 30 Days
-              </button>
+              <button className={`filter-btn ${range === "today" ? "active" : ""}`} onClick={() => setRange("today")} aria-pressed={range === "today"} tabIndex={activeTab === "analytics" ? 0 : -1}>Today</button>
+              <button className={`filter-btn ${range === "7days" ? "active" : ""}`} onClick={() => setRange("7days")} aria-pressed={range === "7days"} tabIndex={activeTab === "analytics" ? 0 : -1}>Last 7 Days</button>
+              <button className={`filter-btn ${range === "30days" ? "active" : ""}`} onClick={() => setRange("30days")} aria-pressed={range === "30days"} tabIndex={activeTab === "analytics" ? 0 : -1}>Last 30 Days</button>
             </div>
           </nav>
-        )}
-      </header>
+        </header>
 
       {/* Fresh install Onboarding preset displays */}
       {!isLoading && isDatabaseEmpty && activeTab === "analytics" && (
@@ -485,82 +520,85 @@ export default function AnalyticsDashboard() {
 
       {/* TABS CONTROLLER CONTAINER */}
       {activeTab === "analytics" && (
-        <>
+        <div className="tab-panel">
           {/* Derived Metric Cards Grid */}
           <section className="metrics-grid" aria-label="Browsing overview cards">
             <div className="metric-card">
-              <span className="metric-label" id="lbl-tracked">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                Total Tracked Time
-              </span>
-              <span className="metric-value" aria-labelledby="lbl-tracked">
-                {isLoading ? "---" : formatDuration(totalTrackedDuration)}
-              </span>
-              <span className="metric-desc">Aggregated duration for active range</span>
+              <div className="metric-icon purple" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </div>
+              <div className="metric-label" id="lbl-tracked">Total Tracked Time</div>
+              <div className="metric-value" aria-labelledby="lbl-tracked">{isLoading ? "---" : formatDuration(totalTrackedDuration)}</div>
+              <div className="metric-desc">Aggregated duration for active range</div>
             </div>
 
             <div className="metric-card">
-              <span className="metric-label" id="lbl-focus">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-                Focus Hours
-              </span>
-              <span className="metric-value" aria-labelledby="lbl-focus">
-                {isLoading ? "---" : `${stats?.metrics?.focusHours ?? 0}h`}
-              </span>
-              <span className="metric-desc">Total productive browsing time</span>
+              <div className="metric-icon green" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+              </div>
+              <div className="metric-label" id="lbl-focus">Focus Hours</div>
+              <div className="metric-value" aria-labelledby="lbl-focus">{isLoading ? "---" : `${stats?.metrics?.focusHours ?? 0}h`}</div>
+              <div className="metric-desc">Total productive browsing time</div>
             </div>
 
             <div className="metric-card">
-              <span className="metric-label" id="lbl-visits">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m12 3-1.912 5.886H3.82l4.912 3.57L6.82 18.342 12 14.772l5.18 3.57-1.912-5.886 4.912-3.57h-6.268z" />
-                </svg>
-                Total Visits
-              </span>
-              <span className="metric-value" aria-labelledby="lbl-visits">
-                {isLoading ? "---" : stats?.metrics?.totalVisits ?? 0}
-              </span>
-              <span className="metric-desc">Sum of all navigation transitions</span>
+              <div className="metric-icon blue" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.886H3.82l4.912 3.57L6.82 18.342 12 14.772l5.18 3.57-1.912-5.886 4.912-3.57h-6.268z" /></svg>
+              </div>
+              <div className="metric-label" id="lbl-visits">Total Visits</div>
+              <div className="metric-value" aria-labelledby="lbl-visits">{isLoading ? "---" : stats?.metrics?.totalVisits ?? 0}</div>
+              <div className="metric-desc">Sum of all navigation transitions</div>
             </div>
 
             <div className="metric-card">
-              <span className="metric-label" id="lbl-unique">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Unique Hostnames
-              </span>
-              <span className="metric-value" aria-labelledby="lbl-unique">
-                {isLoading ? "---" : stats?.metrics?.uniqueDomainsCount ?? 0}
-              </span>
-              <span className="metric-desc">Individual domains logged</span>
+              <div className="metric-icon orange" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              </div>
+              <div className="metric-label" id="lbl-unique">Unique Hostnames</div>
+              <div className="metric-value" aria-labelledby="lbl-unique">{isLoading ? "---" : stats?.metrics?.uniqueDomainsCount ?? 0}</div>
+              <div className="metric-desc">Individual domains logged</div>
             </div>
           </section>
 
           {/* Productivity Distribution Banner */}
           {!isLoading && !isDatabaseEmpty && (
-            <section 
-              className="productivity-overview-card" 
+            <section
+              className="productivity-overview-card"
               aria-label="Productivity breakdown diagnostics"
               style={{ "--score-angle": scoreAngle } as React.CSSProperties}
             >
               <div className="productivity-overview-header">
                 <div className="productivity-score-display">
-                  <div className="productivity-score-circle" role="img" aria-label={`Productivity score is ${productivityScore} percent`}>
+                  <div className="productivity-score-circle" role="img" aria-label={`Productivity score ${productivityScore}%`}>
                     <span className="productivity-score-text">{productivityScore}%</span>
                   </div>
-                  <div className="welcome-info">
-                    <h2 style={{ fontSize: "15px", fontWeight: 600 }}>Productivity Score</h2>
-                    <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Ratio of productive vs distracting domain activities</p>
+                  <div className="productivity-score-info">
+                    <h2>
+                      Productivity Score 
+                      <span className={`badge-category ${productivityScore >= 50 ? 'productive' : 'distracting'}`} style={{ fontSize: "11px", marginLeft: 8 }}>
+                        {productivityScore >= 50 ? 'Focus Mode Stable' : 'Highly Distracted'}
+                      </span>
+                    </h2>
+                    <p>Ratio of productive vs distracting domain activities</p>
                   </div>
                 </div>
-                <div className="status-indicator">
-                  <span className="badge-category productive">Focus Mode Stable</span>
+                <div className={`prod-score-illus ${productivityScore >= 50 ? 'productive' : 'distracted'}`} aria-hidden="true">
+                  {productivityScore >= 50 ? (
+                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                      <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
+                      <path d="M32 44v-8c0-4 4-8 8-8 0 4-4 8-8 8v-4c0-4-4-8-8-8 0 4 4 8 8 8" stroke="#2ed573" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="32" cy="44" r="6" fill="#745542"/>
+                    </svg>
+                  ) : (
+                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                      <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
+                      <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
+                      <path d="M26 27 L30 31 M30 27 L26 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M34 27 L38 31 M38 27 L34 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M27 38 Q29 36 32 38 Q35 40 37 38" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M20 18 L16 14 M44 18 L48 14 M16 32 L12 32 M48 32 L52 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  )}
                 </div>
               </div>
 
@@ -667,9 +705,9 @@ export default function AnalyticsDashboard() {
                     <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
 
                     {/* Y-axis labels */}
-                    <text x="12" y="24" className="chart-axis-text">Max</text>
-                    <text x="12" y="100" className="chart-axis-text">Mid</text>
-                    <text x="12" y="174" className="chart-axis-text">Min</text>
+                    <text x="12" y="24" className="chart-axis-text">{formatAxisLabel(maxTimelineMs)}</text>
+                    <text x="12" y="100" className="chart-axis-text">{formatAxisLabel(maxTimelineMs / 2)}</text>
+                    <text x="12" y="174" className="chart-axis-text">0m</text>
 
                     {/* Bar components or line elements based on size */}
                     {range === "today" ? (
@@ -689,15 +727,27 @@ export default function AnalyticsDashboard() {
                           d={lineChartCoordinates.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x} ${c.y}`).join(" ")}
                         />
                         {lineChartCoordinates.map((c, idx) => (
-                          <circle
-                            key={idx}
-                            cx={c.x}
-                            cy={c.y}
-                            r="4"
-                            className="chart-point"
-                            role="img"
-                            aria-label={`Time: ${c.rawDate}, Duration: ${c.valueLabel}`}
-                          />
+                          <g key={idx}>
+                            <circle
+                              cx={c.x}
+                              cy={c.y}
+                              r="4"
+                              className="chart-point"
+                              role="img"
+                              aria-label={`Time: ${c.rawDate}, Duration: ${c.valueLabel}`}
+                            />
+                            {/* Render label for every 3rd hour or the last hour to prevent crowding */}
+                            {(idx % 3 === 0 || idx === lineChartCoordinates.length - 1) && (
+                              <text
+                                x={c.x}
+                                y="225"
+                                textAnchor="middle"
+                                className="chart-axis-text"
+                              >
+                                {c.rawDate}
+                              </text>
+                            )}
+                          </g>
                         ))}
                       </>
                     ) : (
@@ -780,13 +830,13 @@ export default function AnalyticsDashboard() {
               )}
             </section>
           </div>
-        </>
+        </div>
       )}
 
 
         {activeTab === "rules" && (
           /* PRODUCTIVITY RULES TAB PANEL */
-          <section className="rules-manager-layout" aria-label="Productivity classification preferences">
+          <section className="rules-manager-layout tab-panel" aria-label="Productivity classification preferences">
             <div className="rules-sidebar">
               <div className="rules-card">
                 <h3>Add Custom Rule</h3>
@@ -955,43 +1005,19 @@ export default function AnalyticsDashboard() {
                       ) : (
                         searchedRules.map((rule) => (
                           <tr key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
-                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>
-                              {rule.domain}
-                            </td>
-                            <td>
-                              <span className={`badge-category ${rule.category}`}>
-                                {rule.category.charAt(0).toUpperCase() + rule.category.slice(1)}
-                              </span>
-                            </td>
-                            <td>
-                              {rule.priority}
-                            </td>
-                            <td>
-                              {rule.isCustom ? (
-                                <span className="source-badge custom" title="User overridden rule">Custom</span>
-                              ) : (
-                                <span className="source-badge default" title="Pre-bundled system rule">System</span>
-                              )}
-                            </td>
+                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>{rule.domain}</td>
+                            <td><span className={`badge-category ${rule.category}`}>{rule.category.charAt(0).toUpperCase() + rule.category.slice(1)}</span></td>
+                            <td>{rule.priority}</td>
+                            <td>{rule.isCustom ? <span className="source-badge">Custom</span> : <span className="source-badge">System</span>}</td>
                             <td style={{ textAlign: "right" }}>
-                              {rule.isCustom ? (
-                                <button
-                                  type="button"
-                                  className="btn-delete-rule"
-                                  onClick={() => handleDeleteRule(rule.domain)}
-                                  title={`Remove custom override for ${rule.domain}`}
-                                  aria-label={`Delete custom rule for ${rule.domain}`}
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                  </svg>
+                              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                                <button type="button" className="btn-icon" title={`Edit rule for ${rule.domain}`} aria-label={`Edit rule for ${rule.domain}`} disabled={!rule.isCustom} style={{ opacity: rule.isCustom ? 1 : 0.35 }}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </button>
-                              ) : (
-                                <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontStyle: "italic" }}>Read-only</span>
-                              )}
+                                <button type="button" className="btn-icon danger" onClick={() => rule.isCustom && handleDeleteRule(rule.domain)} title={`Delete rule for ${rule.domain}`} aria-label={`Delete rule for ${rule.domain}`} style={{ opacity: rule.isCustom ? 1 : 0.35 }}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -1013,45 +1039,122 @@ export default function AnalyticsDashboard() {
         )}
 
         {activeTab === "settings" && (
-          <section className="settings-panel-layout" aria-label="Settings and Data Control">
+        <section className="settings-panel-layout tab-panel" aria-label="Settings and Data Control">
+            {/* Privacy card */}
             <div className="settings-card">
-              <h3>🔒 Privacy & Local-First Policy</h3>
-              <p>
-                Your browsing activity is processed and stored <strong>entirely on your local machine</strong>.
-                No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.
-              </p>
-            </div>
-
-            <div className="settings-card">
-              <h3>💾 Local Storage Behavior</h3>
-              <p>
-                The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs.
-                All tracking state runs asynchronously in service worker background threads with zero UI blocking.
-                Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.
-              </p>
-            </div>
-
-            <div className="settings-card danger-zone">
-              <h4>⚠️ Danger Zone: Permanent Purge</h4>
-              <p style={{ marginBottom: "16px", color: "var(--text-secondary)" }}>
-                Purging the on-device database is destructive and irreversible. This will instantly wipe all website session logs,
-                daily domain indicators, customized classification rules, volatile ring-buffered caches, and active state keys.
-              </p>
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={() => {
-                  setShowPurgeModal(true);
-                  setPurgeConfirmText("");
-                }}
-                aria-haspopup="dialog"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "4px" }}>
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <div className="settings-card-icon purple" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b57e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Privacy &amp; Local-First Policy</h3>
+                <p>Your browsing activity is processed and stored <strong>entirely on your local machine</strong>. No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.</p>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(91,87,230,0.08)" />
+                  <rect x="22" y="34" width="36" height="26" rx="4" fill="rgba(91,87,230,0.15)" stroke="#5b57e6" strokeWidth="1.5"/>
+                  <path d="M30 34V28a10 10 0 0 1 20 0v6" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="40" cy="47" r="4" fill="#5b57e6"/>
+                  <line x1="40" y1="51" x2="40" y2="55" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="58" cy="24" r="3" fill="rgba(91,87,230,0.3)"/>
+                  <circle cx="20" cy="56" r="2" fill="rgba(91,87,230,0.2)"/>
                 </svg>
-                Purge On-Device Database
-              </button>
+              </div>
+            </div>
+
+            {/* Storage card */}
+            <div className="settings-card">
+              <div className="settings-card-icon green" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Local Storage Behavior</h3>
+                <p>The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs. All tracking state runs asynchronously in service worker background threads with zero UI blocking. Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.</p>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(16,185,129,0.08)" />
+                  <ellipse cx="40" cy="28" rx="18" ry="6" fill="rgba(16,185,129,0.2)" stroke="#10b981" strokeWidth="1.5"/>
+                  <path d="M22 28v10c0 3.31 8.06 6 18 6s18-2.69 18-6V28" stroke="#10b981" strokeWidth="1.5"/>
+                  <path d="M22 38v10c0 3.31 8.06 6 18 6s18-2.69 18-6V38" stroke="#10b981" strokeWidth="1.5"/>
+                  <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
+                  <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Theme card */}
+            <div className="settings-card" style={{ flexWrap: "wrap" }}>
+              <div className="settings-card-icon blue" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Theme Settings</h3>
+                <p style={{ marginBottom: 12 }}>Select your preferred user interface appearance. All themes support our premium liquid glass look.</p>
+                <div className="theme-selector-group">
+                  <select
+                    value={theme}
+                    onChange={(e) => handleThemeChange(e.target.value as "dark" | "light" | "system")}
+                    className="theme-select-input"
+                    aria-label="Select color theme"
+                  >
+                    <option value="system">🖥️ System Default</option>
+                    <option value="dark">🌙 Dark Glass</option>
+                    <option value="light">☀️ Light Glass</option>
+                  </select>
+                </div>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(59,130,246,0.08)" />
+                  <rect x="18" y="22" width="44" height="32" rx="4" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" strokeWidth="1.5"/>
+                  <rect x="22" y="26" width="36" height="20" rx="2" fill="rgba(59,130,246,0.08)"/>
+                  <circle cx="32" cy="36" r="7" fill="rgba(59,130,246,0.25)" stroke="#3b82f6" strokeWidth="1"/>
+                  <line x1="42" y1="30" x2="54" y2="30" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="42" y1="34" x2="52" y2="34" stroke="rgba(59,130,246,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="54" cy="54" r="4" fill="rgba(59,130,246,0.3)"/>
+                  <circle cx="66" cy="30" r="3" fill="rgba(59,130,246,0.2)"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="settings-card danger-zone">
+              <div className="settings-card-icon red" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Danger Zone: Permanent Purge</h3>
+                <p style={{ marginBottom: 16 }}>Purging the on-device database is destructive and irreversible. This will instantly wipe all website session logs, daily domain indicators, customized classification rules, volatile ring-buffered caches, and active state keys.</p>
+                <button
+                  type="button"
+                  className="btn-danger"
+                  onClick={() => { setShowPurgeModal(true); setPurgeConfirmText(""); }}
+                  aria-haspopup="dialog"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  Purge On-Device Database
+                </button>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(239,68,68,0.06)" />
+                  <rect x="24" y="30" width="32" height="34" rx="3" fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth="1.5"/>
+                  <rect x="20" y="26" width="40" height="6" rx="2" fill="rgba(239,68,68,0.2)" stroke="#ef4444" strokeWidth="1"/>
+                  <rect x="34" y="22" width="12" height="6" rx="2" fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth="1"/>
+                  <line x1="33" y1="38" x2="33" y2="57" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="40" y1="38" x2="40" y2="57" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="47" y1="38" x2="47" y2="57" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="58" cy="58" r="8" fill="#ef4444"/>
+                  <line x1="55" y1="55" x2="61" y2="61" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="61" y1="55" x2="55" y2="61" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="20" cy="36" r="3" fill="rgba(239,68,68,0.3)"/>
+                  <circle cx="62" cy="28" r="2" fill="rgba(239,68,68,0.2)"/>
+                </svg>
+              </div>
             </div>
           </section>
         )}

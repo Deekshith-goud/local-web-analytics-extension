@@ -73,8 +73,8 @@ export default function BlobContent() {
   // Collision clamping logic to prevent offscreen coordinates
   const clampPosition = React.useCallback((anchor: AnchorCorner, ox: number, oy: number) => {
     const minPadding = 16;
-    const widgetWidth = uiState === "expanded" ? 300 : 70;
-    const widgetHeight = uiState === "expanded" ? 340 : 70;
+    const widgetWidth = position.isCollapsed ? 56 : 288;
+    const widgetHeight = position.isCollapsed ? 56 : 380;
 
     const maxW = window.innerWidth - widgetWidth - minPadding;
     const maxH = window.innerHeight - widgetHeight - minPadding;
@@ -84,7 +84,7 @@ export default function BlobContent() {
       ox: Math.max(minPadding, Math.min(ox, maxW)),
       oy: Math.max(minPadding, Math.min(oy, maxH))
     };
-  }, [uiState]);
+  }, [position.isCollapsed]);
 
   // Helper to query stats safely from background
   const fetchFreshStats = React.useCallback(() => {
@@ -271,8 +271,8 @@ export default function BlobContent() {
     const resolvedAnchor = `${vAnchor}-${hAnchor}` as AnchorCorner;
 
     // Calculate actual coordinate spacing relative to matching anchor corner
-    const offsetH = isLeft ? targetX : window.innerWidth - targetX - (uiState === "expanded" ? 300 : 70);
-    const offsetV = isTop ? targetY : window.innerHeight - targetY - (uiState === "expanded" ? 340 : 70);
+    const offsetH = isLeft ? targetX : window.innerWidth - targetX - (position.isCollapsed ? 56 : 288);
+    const offsetV = isTop ? targetY : window.innerHeight - targetY - (position.isCollapsed ? 56 : 340);
 
     // Save variables into mutable refs for the RAF loop to read instantly
     targetAnchorRef.current = resolvedAnchor;
@@ -364,6 +364,8 @@ export default function BlobContent() {
 
   const inlinePos = getInlineCoordinates();
 
+  const isCollapsed = uiState === "collapsed" || (uiState === "dragging" && position.isCollapsed);
+
   return (
     <div
       style={{
@@ -390,147 +392,35 @@ export default function BlobContent() {
         }}
         className="flex items-center justify-center"
       >
-        {uiState === "expanded" ? (
-          // ─── 1. Highly Premium Expanded Glassmorphic Panel ──────────────────
+        <div
+          ref={blobRef}
+          className="widget-frame"
+          style={{
+            width: isCollapsed ? "56px" : "288px",
+            height: isCollapsed ? "56px" : "380px",
+            borderRadius: isCollapsed ? "28px" : "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            flexShrink: 0,
+            flexGrow: 0
+          }}
+        >
+          {/* 1. Collapsed View */}
           <div
-            className="w-72 bg-slate-950/90 border border-slate-800/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden text-slate-100 flex flex-col transition-all duration-300 transform scale-100"
-            role="dialog"
-            aria-label="Local Browse Analytics Panel"
-            tabIndex={-1}
-          >
-            {/* Header / Drag Bar */}
-            <div
-              onMouseDown={onMouseDown}
-              className="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between cursor-grab active:cursor-grabbing"
-              title="Drag to reposition widget"
-            >
-              <div className="flex items-center gap-2">
-                {/* Glow Active Pulse */}
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
-                </span>
-                <span className="text-xs font-semibold tracking-wider text-violet-400 uppercase">
-                  Local Analytics
-                </span>
-              </div>
-              <button
-                onClick={() => transitionToState("collapsed")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    transitionToState("collapsed");
-                  }
-                }}
-                className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-850 rounded-lg text-xs"
-                aria-label="Minimize statistics dashboard"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Contents */}
-            <div className="p-4 flex flex-col gap-4 flex-1">
-              {/* Active Ticking Site Details */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-3">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 block mb-1">
-                  Active Domain
-                </span>
-                <span className="text-sm font-semibold truncate text-white block">
-                  {stats.activeSession?.domain || "Idle / Inactive"}
-                </span>
-                {stats.activeSession && (
-                  <div className="flex items-baseline gap-1 mt-1.5">
-                    <span className="text-2xl font-bold tracking-tight text-violet-400">
-                      {formatDuration(localLiveDurationMs)}
-                    </span>
-                    <span className="text-[10px] text-slate-500">this session</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Today's Stats grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-3 flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 block mb-1">
-                    {"Today's Total"}
-                  </span>
-                  <span className="text-lg font-bold text-white">
-                    {formatDuration(stats.totalDurationMs)}
-                  </span>
-                </div>
-                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-3 flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 block mb-1">
-                    Unique Sites
-                  </span>
-                  <span className="text-lg font-bold text-white">
-                    {stats.uniqueDomainsCount}
-                  </span>
-                </div>
-              </div>
-
-              {/* Top Domains Usage list with gauges */}
-              <div className="flex flex-col gap-2.5">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 block">
-                  Top Domains Visited Today
-                </span>
-                {stats.topDomains.length === 0 ? (
-                  <span className="text-xs text-slate-500 text-center py-2">
-                    No data recorded today
-                  </span>
-                ) : (
-                  <div className="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
-                    {stats.topDomains.map((item) => {
-                      // Gauge percentage math
-                      const percent = stats.totalDurationMs > 0
-                        ? Math.min(100, Math.round((item.durationMs / stats.totalDurationMs) * 100))
-                        : 0;
-
-                      return (
-                        <div key={item.domain} className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="truncate max-w-[170px] text-slate-300 font-medium">
-                              {item.domain}
-                            </span>
-                            <span className="text-slate-400 font-mono">
-                              {formatDuration(item.durationMs)}
-                            </span>
-                          </div>
-                          {/* Gauge Bar */}
-                          <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                            <div
-                              style={{ width: `${percent}%` }}
-                              className="h-full bg-gradient-to-r from-violet-500 to-indigo-400 rounded-full transition-all duration-500"
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Footer lock indicator */}
-            <div className="px-4 py-2 border-t border-slate-900 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between">
-              <span>🔒 Encrypted local-only analytics</span>
-              <span>v1.0.0</span>
-            </div>
-          </div>
-        ) : (
-          // ─── 2. Highly Premium Glowing Blob Mode ────────────────────────────
-          <div
-            ref={blobRef}
             onMouseDown={onMouseDown}
-            tabIndex={0}
+            tabIndex={isCollapsed ? 0 : -1}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 transitionToState("expanded");
               }
             }}
             title="Drag to move. Click to expand local browsing analytics stats."
-            className="h-14 w-14 bg-slate-950/90 border border-slate-800/80 backdrop-blur-xl rounded-full shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-500 relative group"
+            className={`widget-collapsed-view group ${isCollapsed ? "fade-in-content" : "fade-out-content"}`}
             role="button"
             aria-label="Expand local browse analytics dashboard"
-            aria-expanded={false}
+            aria-expanded={!isCollapsed}
           >
             {/* Ping Indicator Glow */}
             <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
@@ -566,7 +456,172 @@ export default function BlobContent() {
               Today: {formatDuration(stats.totalDurationMs)}
             </div>
           </div>
-        )}
+
+          {/* 2. Expanded Glassmorphic Panel */}
+          <div
+            className={`widget-expanded-view ${!isCollapsed ? "fade-in-content" : "fade-out-content"}`}
+            role="dialog"
+            aria-label="Local Browse Analytics Panel"
+            tabIndex={!isCollapsed ? 0 : -1}
+            style={{ display: "flex", flexDirection: "column", width: "288px", height: "380px", overflow: "hidden" }}
+          >
+            {/* Header / Drag Bar — fixed height ~44px */}
+            <div
+              onMouseDown={onMouseDown}
+              className="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between cursor-grab active:cursor-grabbing"
+              title="Drag to reposition widget"
+              style={{ flexShrink: 0 }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+                </span>
+                <span className="text-xs font-semibold tracking-wider text-violet-400 uppercase">
+                  Local Analytics
+                </span>
+              </div>
+              <button
+                onClick={() => transitionToState("collapsed")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    transitionToState("collapsed");
+                  }
+                }}
+                className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-850 rounded-lg text-xs"
+                aria-label="Minimize statistics dashboard"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contents — rigid flex column, takes all remaining space */}
+            <div
+              style={{
+                flex: "1 1 0",
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                padding: "12px 14px",
+                overflow: "hidden"
+              }}
+            >
+              {/* Active Site card — compact, fixed height */}
+              <div
+                className="bg-slate-900/40 border border-slate-800/50 rounded-xl"
+                style={{ flexShrink: 0, padding: "8px 12px" }}
+              >
+                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "2px" }}>
+                  Active Domain
+                </span>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {stats.activeSession?.domain || "Idle / Inactive"}
+                </span>
+                {stats.activeSession && (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
+                    <span style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "#a78bfa" }}>
+                      {formatDuration(localLiveDurationMs)}
+                    </span>
+                    <span style={{ fontSize: "9px", color: "#64748b" }}>this session</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Grid stats — compact fixed height */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", flexShrink: 0 }}>
+                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl" style={{ padding: "8px 12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "1px" }}>
+                    Today&apos;s Total
+                  </span>
+                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#fff" }}>
+                    {formatDuration(stats.totalDurationMs)}
+                  </span>
+                </div>
+                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl" style={{ padding: "8px 12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "1px" }}>
+                    Unique Sites
+                  </span>
+                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#fff" }}>
+                    {stats.uniqueDomainsCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Top 5 Domains — fixed 5 rows, no scroll needed */}
+              <div
+                style={{
+                  flex: "1 1 0",
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px"
+                }}
+              >
+                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", flexShrink: 0, marginBottom: "2px" }}>
+                  Top Domains Visited Today
+                </span>
+                {stats.topDomains.length === 0 ? (
+                  <span style={{ fontSize: "11px", color: "#64748b", textAlign: "center", paddingTop: "8px" }}>
+                    No data recorded today
+                  </span>
+                ) : (
+                  <div
+                    style={{
+                      flex: "1 1 0",
+                      minHeight: 0,
+                      overflowY: "auto",
+                      overflowX: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                      paddingRight: "2px"
+                    }}
+                  >
+                    {stats.topDomains.slice(0, 5).map((item) => {
+                      const percent = stats.totalDurationMs > 0
+                        ? Math.min(100, Math.round((item.durationMs / stats.totalDurationMs) * 100))
+                        : 0;
+
+                      return (
+                        <div key={item.domain} style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px" }}>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "155px", color: "#cbd5e1", fontWeight: 500 }}>
+                              {item.domain}
+                            </span>
+                            <span style={{ color: "#94a3b8", fontFamily: "monospace", flexShrink: 0, marginLeft: "4px", fontSize: "11px" }}>
+                              {formatDuration(item.durationMs)}
+                            </span>
+                          </div>
+                          <div style={{ height: "4px", width: "100%", background: "rgba(15,23,42,0.8)", borderRadius: "2px", overflow: "hidden" }}>
+                            <div
+                              style={{
+                                width: `${percent}%`,
+                                height: "100%",
+                                background: "linear-gradient(to right, #7c3aed, #6366f1)",
+                                borderRadius: "2px",
+                                transition: "width 500ms ease"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer — fixed height, always pinned to bottom */}
+            <div
+              className="px-4 py-2 border-t border-slate-900 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between"
+              style={{ flexShrink: 0 }}
+            >
+              <span>🔒 Encrypted local-only analytics</span>
+              <span>v1.0.0</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

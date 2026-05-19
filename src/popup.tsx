@@ -61,6 +61,32 @@ export default function Popup() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Load and apply theme on startup
+  useEffect(() => {
+    chrome.storage.local.get(["theme"], (res) => {
+      const savedTheme = res.theme || "system";
+      applyTheme(savedTheme);
+    });
+
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      if (changes.theme) {
+        applyTheme(changes.theme.newValue || "system");
+      }
+    };
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, []);
+
+  const applyTheme = (targetTheme: "dark" | "light" | "system") => {
+    let active = "dark";
+    if (targetTheme === "system") {
+      active = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } else {
+      active = targetTheme;
+    }
+    document.documentElement.setAttribute("data-theme", active);
+  };
+
   // Load popup snapshot
   const loadSnapshot = useCallback(async () => {
     try {
@@ -163,6 +189,12 @@ export default function Popup() {
 
   return (
     <div className="popup-container">
+      {/* Animated Fluid Glass Background Blobs */}
+      <div className="glass-blob-container" aria-hidden="true">
+        <div className="glass-blob blob-purple"></div>
+        <div className="glass-blob blob-indigo"></div>
+      </div>
+
       {/* Header section */}
       <header className="popup-header">
         <div className="brand-section">
