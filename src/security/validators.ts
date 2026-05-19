@@ -145,33 +145,42 @@ export function deriveSurface(sender: chrome.runtime.MessageSender): ExtensionSu
     return "unknown";
   }
 
+  const url = sender.url;
+  if (!url) {
+    if (sender.tab !== undefined) {
+      return "content";
+    }
+    return "background";
+  }
+
+  // Ensure the message originates from our internal extension bundle context
+  const extensionOrigin = `chrome-extension://${chrome.runtime.id}`;
+  const isInternal = url.startsWith(extensionOrigin);
+
+  if (isInternal) {
+    if (url.includes("/popup.html")) {
+      return "popup";
+    }
+
+    // Handle standard option dashboards (/tabs/dashboard.html or options.html)
+    if (url.includes("/dashboard.html")) {
+      return "dashboard";
+    }
+
+    // Classify system service worker context
+    if (
+      url.includes("/background.js") ||
+      url.includes("/background.ts") ||
+      url.includes("service-worker.js") ||
+      url.includes("_generated_background_page.html")
+    ) {
+      return "background";
+    }
+  }
+
   // Webpage content scripts possess an associated active browser tab context
   if (sender.tab !== undefined) {
     return "content";
-  }
-
-  const url = sender.url;
-  if (!url) {
-    return "background";
-  }
-
-  if (url.includes("/popup.html")) {
-    return "popup";
-  }
-
-  // Handle standard option dashboards (/tabs/dashboard.html or options.html)
-  if (url.includes("/dashboard.html")) {
-    return "dashboard";
-  }
-
-  // Classify system service worker context
-  if (
-    url.includes("/background.js") ||
-    url.includes("/background.ts") ||
-    url.includes("service-worker.js") ||
-    url.includes("_generated_background_page.html")
-  ) {
-    return "background";
   }
 
   return "unknown";
