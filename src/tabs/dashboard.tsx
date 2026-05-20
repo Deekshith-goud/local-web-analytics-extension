@@ -12,7 +12,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import "./dashboard.css";
 import brandLogo from "url:~assets/icon.png";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
-import { downsampleTimeline, computeBarCoordinates, computeLineCoordinates } from "../analytics/selectors/transforms";
+import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
 import type { HistoricalStatsResponse, RuntimeMessage } from "../types/tracking";
 
@@ -176,6 +176,22 @@ function renderScoreIllustration(score: number) {
 
 type RangeType = "today" | "7days" | "30days";
 
+const computeSmoothPath = (points: {x: number, y: number}[]) => {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const curr = points[i];
+    const next = points[i+1];
+    const cp1x = curr.x + (next.x - curr.x) / 3;
+    const cp1y = curr.y;
+    const cp2x = next.x - (next.x - curr.x) / 3;
+    const cp2y = next.y;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+  }
+  return d;
+}
+
 export default function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings">("analytics");
   const [range, setRange] = useState<RangeType>("7days");
@@ -235,10 +251,10 @@ export default function AnalyticsDashboard() {
   const [newDomain, setNewDomain] = useState("");
   const [newCategory, setNewCategory] = useState<ProductivityCategory>("productive");
   const [newPriority, setNewPriority] = useState("10");
-  const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const [hoveredTooltip, setHoveredTooltip] = useState<{x: number, y: number, title: string, content: React.ReactNode} | null>(null);
+  const [activeChart, setActiveChart] = useState<"total" | "productivity">("total");
 
 
   // 1. Core range calculation
@@ -325,15 +341,6 @@ export default function AnalyticsDashboard() {
   // Pure SVG coordinate points (memoized to prevent resize layout thrashing)
   const barChartCoordinates = useMemo(() => {
     return computeBarCoordinates(processedTimeline, 720, 240, {
-      top: 20,
-      bottom: 30,
-      left: 40,
-      right: 20
-    });
-  }, [processedTimeline]);
-
-  const lineChartCoordinates = useMemo(() => {
-    return computeLineCoordinates(processedTimeline, 720, 240, {
       top: 20,
       bottom: 30,
       left: 40,
@@ -762,9 +769,43 @@ export default function AnalyticsDashboard() {
           <div className="visualization-section">
             {/* Left Column: Visual SVG Chart */}
             <section className="vis-card" aria-label="Browsing history timeline chart">
-              <div className="vis-card-title">
-                Total Browsing Time
-                <span>{range === "today" ? "Hourly intervals" : "Daily aggregates"}</span>
+              <div className="vis-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {activeChart === "total" ? "Total Browsing Time" : "Productivity vs Distraction"}
+                  <span style={{ margin: 0 }}>{range === "today" ? "Hourly intervals" : "Daily aggregates"}</span>
+                </div>
+                <div className="chart-tabs" style={{ display: 'flex', gap: '4px', fontSize: '12px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
+                   <button 
+                     onClick={() => setActiveChart("total")} 
+                     style={{ 
+                       padding: '6px 12px', 
+                       borderRadius: '6px', 
+                       background: activeChart === "total" ? 'var(--bg-elevated)' : 'transparent', 
+                       border: 'none', 
+                       boxShadow: activeChart === "total" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                       color: activeChart === "total" ? 'var(--text-primary)' : 'var(--text-secondary)', 
+                       cursor: 'pointer',
+                       fontWeight: activeChart === "total" ? 600 : 400
+                     }}
+                   >
+                     Total Time
+                   </button>
+                   <button 
+                     onClick={() => setActiveChart("productivity")} 
+                     style={{ 
+                       padding: '6px 12px', 
+                       borderRadius: '6px', 
+                       background: activeChart === "productivity" ? 'var(--bg-elevated)' : 'transparent', 
+                       border: 'none', 
+                       boxShadow: activeChart === "productivity" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                       color: activeChart === "productivity" ? 'var(--text-primary)' : 'var(--text-secondary)', 
+                       cursor: 'pointer',
+                       fontWeight: activeChart === "productivity" ? 600 : 400
+                     }}
+                   >
+                     Productivity
+                   </button>
+                </div>
               </div>
 
               {isLoading ? (
@@ -785,92 +826,195 @@ export default function AnalyticsDashboard() {
                 </div>
               ) : (
                 <div className="chart-container" style={{ position: 'relative' }}>
-                  {/* Screen reader table summary for accessibility */}
-                  <table className="sr-only" aria-label="Browsing duration history table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Date</th>
-                        <th scope="col">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {processedTimeline.map((item) => (
-                        <tr key={item.date}>
-                          <td>{item.date}</td>
-                          <td>{formatDuration(item.durationMs)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {activeChart === "total" && (
+                    <svg className="chart-svg" viewBox="0 0 720 240" role="img" aria-label="Visual timeline chart showing browsing duration trend.">
+                      <defs>
+                        <linearGradient id="capsuleBrandGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#fca5a5" />
+                          <stop offset="100%" stopColor="#fef08a" />
+                        </linearGradient>
+                        <linearGradient id="capsuleHighlightGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" />
+                          <stop offset="100%" stopColor="#fcd34d" />
+                        </linearGradient>
+                      </defs>
 
-                  {/* Inline raw SVG coordinates chart */}
-                  <svg className="chart-svg" viewBox="0 0 720 240" role="img" aria-label="Visual timeline chart showing browsing duration trend.">
-                    <defs>
-                      <linearGradient id="capsuleBrandGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#fca5a5" />
-                        <stop offset="100%" stopColor="#fef08a" />
-                      </linearGradient>
-                      <linearGradient id="capsuleHighlightGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f97316" />
-                        <stop offset="100%" stopColor="#fcd34d" />
-                      </linearGradient>
-                    </defs>
+                      {/* Y-axis gridlines */}
+                      <line x1="40" y1="20" x2="700" y2="20" className="chart-grid-line" />
+                      <line x1="40" y1="95" x2="700" y2="95" className="chart-grid-line" />
+                      <line x1="40" y1="170" x2="700" y2="170" className="chart-grid-line" />
+                      <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
 
-                    {/* Y-axis gridlines */}
-                    <line x1="40" y1="20" x2="700" y2="20" className="chart-grid-line" />
-                    <line x1="40" y1="95" x2="700" y2="95" className="chart-grid-line" />
-                    <line x1="40" y1="170" x2="700" y2="170" className="chart-grid-line" />
-                    <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
+                      {/* Y-axis labels */}
+                      <text x="12" y="24" className="chart-axis-text">{formatAxisLabel(maxTimelineMs)}</text>
+                      <text x="12" y="100" className="chart-axis-text">{formatAxisLabel(maxTimelineMs / 2)}</text>
+                      <text x="12" y="174" className="chart-axis-text">0m</text>
 
-                    {/* Y-axis labels */}
-                    <text x="12" y="24" className="chart-axis-text">{formatAxisLabel(maxTimelineMs)}</text>
-                    <text x="12" y="100" className="chart-axis-text">{formatAxisLabel(maxTimelineMs / 2)}</text>
-                    <text x="12" y="174" className="chart-axis-text">0m</text>
+                      {/* Capsule Bars for all ranges */}
+                      {barChartCoordinates.map((bar, idx) => {
+                         const maxBarHeight = Math.max(...barChartCoordinates.map(b => b.height));
+                         const isMax = bar.height >= maxBarHeight * 0.99 && bar.height > 2; // Tolerance for floats
+                         return (
+                          <g key={idx}>
+                            <rect
+                              x={bar.x + bar.width * 0.1}
+                              y={bar.y}
+                              width={bar.width * 0.8}
+                              height={bar.height}
+                              rx={(bar.width * 0.8) / 2}
+                              fill={isMax ? "url(#capsuleHighlightGradient)" : "url(#capsuleBrandGradient)"}
+                              className="chart-capsule"
+                              style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: isMax ? 1 : 0.6 }}
+                              onMouseEnter={() => setHoveredTooltip({
+                                x: bar.x + bar.width / 2,
+                                y: bar.y - 10,
+                                title: bar.rawDate,
+                                content: <div style={{fontWeight: 600}}>{bar.valueLabel} total</div>
+                              })}
+                              onMouseLeave={() => setHoveredTooltip(null)}
+                            />
+                            {(idx % Math.ceil(barChartCoordinates.length / 8) === 0 || idx === barChartCoordinates.length - 1) && (
+                              <text
+                                x={bar.x + bar.width / 2}
+                                y="225"
+                                textAnchor="middle"
+                                className="chart-axis-text"
+                              >
+                                {bar.label}
+                              </text>
+                            )}
+                            {isMax && (
+                              <text x={bar.x + bar.width / 2} y={bar.y - 10} textAnchor="middle" fill="var(--text-secondary)" fontSize="10px" fontWeight="600">
+                                Max
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  )}
 
-                    {/* Capsule Bars for all ranges */}
-                    {barChartCoordinates.map((bar, idx) => {
-                       const maxBarHeight = Math.max(...barChartCoordinates.map(b => b.height));
-                       const isMax = bar.height >= maxBarHeight * 0.99 && bar.height > 2; // Tolerance for floats
-                       return (
-                        <g key={idx}>
-                          <rect
-                            x={bar.x + bar.width * 0.1} // Slight inset to make them more pill-like
-                            y={bar.y}
-                            width={bar.width * 0.8}
-                            height={bar.height}
-                            rx={(bar.width * 0.8) / 2}
-                            fill={isMax ? "url(#capsuleHighlightGradient)" : "url(#capsuleBrandGradient)"}
-                            className="chart-capsule"
-                            style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: isMax ? 1 : 0.6 }}
-                            onMouseEnter={() => setHoveredTooltip({
-                              x: bar.x + bar.width / 2,
-                              y: bar.y - 10,
-                              title: bar.rawDate,
-                              content: <div style={{fontWeight: 600}}>{bar.valueLabel} total</div>
+                  {activeChart === "productivity" && (
+                    <svg className="chart-svg" viewBox="0 0 720 240">
+                      <defs>
+                        <linearGradient id="prodArea" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                        </linearGradient>
+                        <linearGradient id="distArea" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+
+                      <line x1="40" y1="20" x2="700" y2="20" className="chart-grid-line" />
+                      <line x1="40" y1="95" x2="700" y2="95" className="chart-grid-line" />
+                      <line x1="40" y1="170" x2="700" y2="170" className="chart-grid-line" />
+                      <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
+
+                      {(() => {
+                        const maxCompMs = Math.max(...processedTimeline.map(t => Math.max(t.productiveMs || 0, t.distractingMs || 0)), 1000);
+                        const ptCount = processedTimeline.length;
+                        const stepX = ptCount > 1 ? 660 / (ptCount - 1) : 660;
+                        
+                        const prodPoints = processedTimeline.map((item, idx) => ({
+                          x: 40 + idx * stepX,
+                          y: 210 - ((item.productiveMs || 0) / maxCompMs) * 190,
+                          val: item.productiveMs || 0,
+                          date: item.date
+                        }));
+                        
+                        const distPoints = processedTimeline.map((item, idx) => ({
+                          x: 40 + idx * stepX,
+                          y: 210 - ((item.distractingMs || 0) / maxCompMs) * 190,
+                          val: item.distractingMs || 0,
+                          date: item.date
+                        }));
+
+                        const prodPath = computeSmoothPath(prodPoints);
+                        const distPath = computeSmoothPath(distPoints);
+
+                        return (
+                          <>
+                            {/* Y-axis labels */}
+                            <text x="12" y="24" className="chart-axis-text">{formatAxisLabel(maxCompMs)}</text>
+                            <text x="12" y="100" className="chart-axis-text">{formatAxisLabel(maxCompMs / 2)}</text>
+                            <text x="12" y="174" className="chart-axis-text">0m</text>
+                            
+                            {/* Productivity Line & Area */}
+                            {prodPoints.length > 0 && (
+                              <>
+                                <path
+                                  d={`${prodPath} L ${prodPoints[prodPoints.length - 1]?.x ?? 700} 210 L ${prodPoints[0]?.x ?? 40} 210 Z`}
+                                  fill="url(#prodArea)"
+                                />
+                                <path
+                                  d={prodPath}
+                                  fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                />
+                              </>
+                            )}
+                            
+                            {/* Distraction Line & Area */}
+                            {distPoints.length > 0 && (
+                              <>
+                                <path
+                                  d={`${distPath} L ${distPoints[distPoints.length - 1]?.x ?? 700} 210 L ${distPoints[0]?.x ?? 40} 210 Z`}
+                                  fill="url(#distArea)"
+                                />
+                                <path
+                                  d={distPath}
+                                  fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                />
+                              </>
+                            )}
+
+                            {/* Interactive Overlay Zones for tooltips */}
+                            {processedTimeline.map((item, idx) => {
+                              const x = 40 + idx * stepX;
+                              const pMs = item.productiveMs || 0;
+                              const dMs = item.distractingMs || 0;
+                              return (
+                                <g key={`overlay-${idx}`}>
+                                  <rect
+                                    x={x - stepX/2}
+                                    y={20}
+                                    width={stepX}
+                                    height={190}
+                                    fill="transparent"
+                                    style={{ cursor: 'crosshair' }}
+                                    onMouseEnter={() => setHoveredTooltip({
+                                      x: x,
+                                      y: Math.min(prodPoints[idx]?.y ?? 100, distPoints[idx]?.y ?? 100) - 10,
+                                      title: item.date,
+                                      content: (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+                                          <div style={{ color: '#10b981', fontWeight: 600 }}>• Productive: {formatDuration(pMs)}</div>
+                                          <div style={{ color: '#ef4444', fontWeight: 600 }}>• Distracted: {formatDuration(dMs)}</div>
+                                        </div>
+                                      )
+                                    })}
+                                    onMouseLeave={() => setHoveredTooltip(null)}
+                                  />
+                                  <circle cx={x} cy={prodPoints[idx]?.y} r="4" fill="#10b981" style={{ pointerEvents: 'none' }} />
+                                  <circle cx={x} cy={distPoints[idx]?.y} r="4" fill="#ef4444" style={{ pointerEvents: 'none' }} />
+                                  
+                                  {/* X-axis labels */}
+                                  {(idx % Math.ceil(ptCount / 8) === 0 || idx === ptCount - 1) && (
+                                    <text x={x} y="225" textAnchor="middle" className="chart-axis-text">
+                                      {range === "today" ? item.date : item.date.substring(5)}
+                                    </text>
+                                  )}
+                                </g>
+                              );
                             })}
-                            onMouseLeave={() => setHoveredTooltip(null)}
-                          />
-                          {(idx % Math.ceil(barChartCoordinates.length / 8) === 0 || idx === barChartCoordinates.length - 1) && (
-                            <text
-                              x={bar.x + bar.width / 2}
-                              y="225"
-                              textAnchor="middle"
-                              className="chart-axis-text"
-                            >
-                              {bar.label}
-                            </text>
-                          )}
-                          {isMax && (
-                            <text x={bar.x + bar.width / 2} y={bar.y - 10} textAnchor="middle" fill="var(--text-secondary)" fontSize="10px" fontWeight="600">
-                              Max
-                            </text>
-                          )}
-                        </g>
-                      );
-                    })}
-                  </svg>
-                  
-                  {/* Hover Tooltip Overlay */}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  )}
+
+                  {/* Tooltip Overlay (Shared) */}
                   {hoveredTooltip && (
                     <div style={{
                       position: 'absolute',
@@ -888,163 +1032,15 @@ export default function AnalyticsDashboard() {
                       textAlign: 'center',
                       fontSize: '12px'
                     }}>
-                      <div style={{ color: 'var(--text-secondary)', marginBottom: '4px', fontSize: '11px' }}>{hoveredTooltip.title}</div>
-                      <div style={{ color: 'var(--text-primary)' }}>{hoveredTooltip.content}</div>
+                      <div style={{ color: 'var(--text-secondary)', marginBottom: '4px', fontSize: '11px', borderBottom: activeChart === "productivity" ? '1px solid var(--border-subtle)' : 'none', paddingBottom: activeChart === "productivity" ? '4px' : '0' }}>
+                        {range === "today" ? `Time: ${hoveredTooltip.title}` : `Date: ${hoveredTooltip.title}`}
+                      </div>
+                      <div>{hoveredTooltip.content}</div>
                     </div>
                   )}
                 </div>
               )}
             </section>
-
-            {/* Chart 2: Productivity vs Distraction Comparison */}
-            {!isLoading && !isDatabaseEmpty && (
-            <section className="vis-card" aria-label="Productivity vs Distraction chart" style={{ marginTop: '24px' }}>
-              <div className="vis-card-title">
-                Productivity vs Distraction
-                <span>Daily Comparison</span>
-              </div>
-              <div className="chart-container" style={{ position: 'relative' }}>
-                <svg className="chart-svg" viewBox="0 0 720 240">
-                  <defs>
-                    <linearGradient id="prodArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                    </linearGradient>
-                    <linearGradient id="distArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
-                  <line x1="40" y1="20" x2="700" y2="20" className="chart-grid-line" />
-                  <line x1="40" y1="95" x2="700" y2="95" className="chart-grid-line" />
-                  <line x1="40" y1="170" x2="700" y2="170" className="chart-grid-line" />
-                  <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
-
-                  {(() => {
-                    const maxCompMs = Math.max(...processedTimeline.map(t => Math.max(t.productiveMs || 0, t.distractingMs || 0)), 1000);
-                    const ptCount = processedTimeline.length;
-                    const stepX = ptCount > 1 ? 660 / (ptCount - 1) : 660;
-                    
-                    const prodPoints = processedTimeline.map((item, idx) => ({
-                      x: 40 + idx * stepX,
-                      y: 210 - ((item.productiveMs || 0) / maxCompMs) * 190,
-                      val: item.productiveMs || 0,
-                      date: item.date
-                    }));
-                    
-                    const distPoints = processedTimeline.map((item, idx) => ({
-                      x: 40 + idx * stepX,
-                      y: 210 - ((item.distractingMs || 0) / maxCompMs) * 190,
-                      val: item.distractingMs || 0,
-                      date: item.date
-                    }));
-
-                    return (
-                      <>
-                        {/* Y-axis labels */}
-                        <text x="12" y="24" className="chart-axis-text">{formatAxisLabel(maxCompMs)}</text>
-                        <text x="12" y="100" className="chart-axis-text">{formatAxisLabel(maxCompMs / 2)}</text>
-                        <text x="12" y="174" className="chart-axis-text">0m</text>
-                        
-                        {/* Productivity Line & Area */}
-                        {prodPoints.length > 0 && (
-                          <>
-                            <path
-                              d={`M ${prodPoints[0]?.x ?? 40} 210 ${prodPoints.map(p => `L ${p.x} ${p.y}`).join(" ")} L ${prodPoints[prodPoints.length - 1]?.x ?? 700} 210 Z`}
-                              fill="url(#prodArea)"
-                            />
-                            <path
-                              d={prodPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")}
-                              fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                            />
-                          </>
-                        )}
-                        
-                        {/* Distraction Line & Area */}
-                        {distPoints.length > 0 && (
-                          <>
-                            <path
-                              d={`M ${distPoints[0]?.x ?? 40} 210 ${distPoints.map(p => `L ${p.x} ${p.y}`).join(" ")} L ${distPoints[distPoints.length - 1]?.x ?? 700} 210 Z`}
-                              fill="url(#distArea)"
-                            />
-                            <path
-                              d={distPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")}
-                              fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                            />
-                          </>
-                        )}
-
-                        {/* Interactive Overlay Zones for tooltips */}
-                        {processedTimeline.map((item, idx) => {
-                          const x = 40 + idx * stepX;
-                          const pMs = item.productiveMs || 0;
-                          const dMs = item.distractingMs || 0;
-                          return (
-                            <g key={`overlay-${idx}`}>
-                              <rect
-                                x={x - stepX/2}
-                                y={20}
-                                width={stepX}
-                                height={190}
-                                fill="transparent"
-                                style={{ cursor: 'crosshair' }}
-                                onMouseEnter={() => setHoveredTooltip({
-                                  x: x,
-                                  y: Math.min(prodPoints[idx]?.y ?? 100, distPoints[idx]?.y ?? 100) - 10,
-                                  title: item.date,
-                                  content: (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-                                      <div style={{ color: '#10b981', fontWeight: 600 }}>• Productive: {formatDuration(pMs)}</div>
-                                      <div style={{ color: '#ef4444', fontWeight: 600 }}>• Distracted: {formatDuration(dMs)}</div>
-                                    </div>
-                                  )
-                                })}
-                                onMouseLeave={() => setHoveredTooltip(null)}
-                              />
-                              <circle cx={x} cy={prodPoints[idx]?.y} r="3.5" fill="#10b981" style={{ pointerEvents: 'none' }} />
-                              <circle cx={x} cy={distPoints[idx]?.y} r="3.5" fill="#ef4444" style={{ pointerEvents: 'none' }} />
-                              
-                              {/* X-axis labels */}
-                              {(idx % Math.ceil(ptCount / 8) === 0 || idx === ptCount - 1) && (
-                                <text x={x} y="225" textAnchor="middle" className="chart-axis-text">
-                                  {range === "today" ? item.date : item.date.substring(5)}
-                                </text>
-                              )}
-                            </g>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
-                </svg>
-
-                {/* Second Tooltip Overlay (reused state) */}
-                {hoveredTooltip && (
-                  <div style={{
-                    position: 'absolute',
-                    left: `${(hoveredTooltip.x / 720) * 100}%`,
-                    top: `${(Math.max(20, hoveredTooltip.y) / 240) * 100}%`,
-                    transform: 'translate(-50%, -100%)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    border: '1px solid var(--border-subtle)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    pointerEvents: 'none',
-                    zIndex: 10,
-                    minWidth: '130px',
-                    fontSize: '12px'
-                  }}>
-                    <div style={{ color: 'var(--text-secondary)', marginBottom: '6px', fontSize: '11px', textAlign: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '4px' }}>
-                      {range === "today" ? `Time: ${hoveredTooltip.title}` : `Date: ${hoveredTooltip.title}`}
-                    </div>
-                    <div>{hoveredTooltip.content}</div>
-                  </div>
-                )}
-              </div>
-            </section>
-            )}
 
             {/* Right Column: Top Domains Table Leaderboard */}
             <section className="vis-card" aria-label="Top active domain listings">
@@ -1278,7 +1274,7 @@ export default function AnalyticsDashboard() {
                             <td>{rule.isCustom ? <span className="source-badge">Custom</span> : <span className="source-badge">System</span>}</td>
                             <td style={{ textAlign: "right" }}>
                               <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                                <button type="button" className="btn-icon" onClick={() => handleEditRule(rule as any)} title={`Edit rule for ${rule.domain}`} aria-label={`Edit rule for ${rule.domain}`}>
+                                <button type="button" className="btn-icon" onClick={() => handleEditRule(rule)} title={`Edit rule for ${rule.domain}`} aria-label={`Edit rule for ${rule.domain}`}>
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </button>
                                 <button type="button" className="btn-icon danger" onClick={() => rule.isCustom && handleDeleteRule(rule.domain)} title={`Delete rule for ${rule.domain}`} aria-label={`Delete rule for ${rule.domain}`} style={{ opacity: rule.isCustom ? 1 : 0.35 }}>
