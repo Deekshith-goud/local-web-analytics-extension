@@ -396,9 +396,9 @@ export default function BlobContent() {
           ref={blobRef}
           className="widget-frame"
           style={{
-            width: isCollapsed ? "56px" : "288px",
-            height: isCollapsed ? "56px" : "380px",
-            borderRadius: isCollapsed ? "28px" : "16px",
+            width: isCollapsed ? "52px" : "284px",
+            height: isCollapsed ? "52px" : "380px",
+            borderRadius: isCollapsed ? "26px" : "18px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -422,24 +422,27 @@ export default function BlobContent() {
             aria-label="Expand local browse analytics dashboard"
             aria-expanded={!isCollapsed}
           >
-            {/* Ping Indicator Glow */}
+          {/* Ping Indicator Glow */}
             <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
             </span>
 
             {/* Display ticking duration or icon */}
-            <div className="flex flex-col items-center justify-center text-center">
+            <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1px" }}>
               {stats.activeSession ? (
-                <span className="text-[10px] font-bold text-violet-400 tracking-tight font-mono">
-                  {formatDuration(localLiveDurationMs)}
-                </span>
+                <>
+                  <span style={{ fontSize: "8px", fontWeight: 700, color: "rgba(167,139,250,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1 }}>live</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#c4b5fd", fontFamily: "monospace", lineHeight: 1, letterSpacing: "-0.01em" }}>
+                    {formatDuration(localLiveDurationMs)}
+                  </span>
+                </>
               ) : (
                 <svg
-                  className="w-5 h-5 text-violet-400 group-hover:text-white transition-colors"
+                  style={{ width: "20px", height: "20px", color: "rgba(139,92,246,0.85)" }}
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="1.8"
                   viewBox="0 0 24 24"
                 >
                   <path
@@ -452,7 +455,7 @@ export default function BlobContent() {
             </div>
 
             {/* Micro Hover Tooltip */}
-            <div className="absolute whitespace-nowrap bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded px-2 py-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none -top-8 left-1/2 transform -translate-x-1/2">
+            <div className="absolute whitespace-nowrap text-[10px] text-slate-300 rounded-lg px-2.5 py-1.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none -top-9 left-1/2 transform -translate-x-1/2" style={{ background: "rgba(6,8,18,0.95)", border: "1px solid rgba(139,92,246,0.3)", backdropFilter: "blur(12px)" }}>
               Today: {formatDuration(stats.totalDurationMs)}
             </div>
           </div>
@@ -465,19 +468,27 @@ export default function BlobContent() {
             tabIndex={!isCollapsed ? 0 : -1}
             style={{ display: "flex", flexDirection: "column", width: "288px", height: "380px", overflow: "hidden" }}
           >
-            {/* Header / Drag Bar — fixed height ~44px */}
+            {/* Header / Drag Bar */}
             <div
               onMouseDown={onMouseDown}
-              className="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between cursor-grab active:cursor-grabbing"
               title="Drag to reposition widget"
-              style={{ flexShrink: 0 }}
+              style={{
+                flexShrink: 0,
+                padding: "12px 14px 10px",
+                background: "linear-gradient(180deg, rgba(109,40,217,0.15) 0%, transparent 100%)",
+                borderBottom: "1px solid rgba(139,92,246,0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "grab"
+              }}
             >
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
                 </span>
-                <span className="text-xs font-semibold tracking-wider text-violet-400 uppercase">
+                <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em", color: "#a78bfa", textTransform: "uppercase" }}>
                   Local Analytics
                 </span>
               </div>
@@ -488,7 +499,21 @@ export default function BlobContent() {
                     transitionToState("collapsed");
                   }
                 }}
-                className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-850 rounded-lg text-xs"
+                style={{
+                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(139,92,246,0.2)",
+                  color: "#a78bfa",
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                  lineHeight: 1,
+                  transition: "all 0.15s ease"
+                }}
                 aria-label="Minimize statistics dashboard"
               >
                 ✕
@@ -507,42 +532,47 @@ export default function BlobContent() {
                 overflow: "hidden"
               }}
             >
-              {/* Active Site card — compact, fixed height */}
+              {/* Active Site card */}
               <div
-                className="bg-slate-900/40 border border-slate-800/50 rounded-xl"
-                style={{ flexShrink: 0, padding: "8px 12px" }}
+                style={{
+                  flexShrink: 0,
+                  padding: "10px 13px",
+                  background: "linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(79,70,229,0.10) 100%)",
+                  border: "1px solid rgba(139,92,246,0.22)",
+                  borderRadius: "14px"
+                }}
               >
-                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "2px" }}>
+                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(167,139,250,0.6)", display: "block", marginBottom: "3px", fontWeight: 700 }}>
                   Active Domain
                 </span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#e2d9f3", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {stats.activeSession?.domain || "Idle / Inactive"}
                 </span>
                 {stats.activeSession && (
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
-                    <span style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "#a78bfa" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "5px", marginTop: "4px" }}>
+                    <span style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "#c4b5fd", textShadow: "0 0 12px rgba(139,92,246,0.5)", fontFamily: "monospace" }}>
                       {formatDuration(localLiveDurationMs)}
                     </span>
-                    <span style={{ fontSize: "9px", color: "#64748b" }}>this session</span>
+                    <span style={{ fontSize: "9px", color: "rgba(148,163,184,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>this session</span>
                   </div>
                 )}
               </div>
 
-              {/* Grid stats — compact fixed height */}
+              {/* Grid stats */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", flexShrink: 0 }}>
-                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl" style={{ padding: "8px 12px" }}>
-                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "1px" }}>
+                <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(148,163,184,0.6)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
                     Today&apos;s Total
                   </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#fff" }}>
+                  <span style={{ fontSize: "17px", fontWeight: 800, color: "#e2d9f3", fontFamily: "monospace" }}>
                     {formatDuration(stats.totalDurationMs)}
                   </span>
                 </div>
-                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl" style={{ padding: "8px 12px" }}>
-                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "1px" }}>
+                <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(148,163,184,0.6)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
                     Unique Sites
                   </span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#fff" }}>
+                  <span style={{ fontSize: "17px", fontWeight: 800, color: "#e2d9f3" }}>
                     {stats.uniqueDomainsCount}
                   </span>
                 </div>
@@ -612,13 +642,23 @@ export default function BlobContent() {
               </div>
             </div>
 
-            {/* Footer — fixed height, always pinned to bottom */}
+            {/* Footer */}
             <div
-              className="px-4 py-2 border-t border-slate-900 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between"
-              style={{ flexShrink: 0 }}
+              style={{
+                flexShrink: 0,
+                padding: "8px 14px",
+                borderTop: "1px solid rgba(139,92,246,0.12)",
+                background: "rgba(4,5,12,0.8)",
+                fontSize: "9px",
+                color: "rgba(148,163,184,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                letterSpacing: "0.04em"
+              }}
             >
-              <span>🔒 Encrypted local-only analytics</span>
-              <span>v1.0.0</span>
+              <span>🔒 Local-only · zero telemetry</span>
+              <span style={{ color: "rgba(139,92,246,0.6)", fontWeight: 700 }}>v1.0.0</span>
             </div>
           </div>
         </div>

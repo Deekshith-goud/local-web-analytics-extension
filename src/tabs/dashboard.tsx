@@ -66,112 +66,74 @@ function getProductivityLabel(score: number): string {
 }
 
 function renderScoreIllustration(score: number) {
+  // Productive tiers: thriving plants → moderate → dying
+  // Distracted tiers: spooked → dizzy → critical
+  let emoji: string;
+  let label: string;
+  let bg: string;
+  let glow: string;
+
   if (score >= 90) {
-    // Clean Highly Productive
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-90" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-90)"/>
-        <circle cx="32" cy="32" r="16" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="2.5" />
-        <path d="M24 30 Q27 26 30 30" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M34 30 Q37 26 40 30" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M26 38 Q32 44 38 38" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        <path d="M48 16 L50 20 L54 22 L50 24 L48 28 L46 24 L42 22 L46 20 Z" fill="#10b981" opacity="0.6" />
-      </svg>
-    );
+    emoji = "🌳";  label = "Thriving";
+    bg = "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)";
+    glow = "0 8px 24px rgba(16,185,129,0.25)";
   } else if (score >= 70) {
-    // Clean Focus Mode Stable
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-70" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-70)"/>
-        <circle cx="32" cy="32" r="16" fill="#22c55e" fillOpacity="0.1" stroke="#22c55e" strokeWidth="2.5" />
-        <circle cx="27" cy="29" r="2" fill="#22c55e" />
-        <circle cx="37" cy="29" r="2" fill="#22c55e" />
-        <path d="M27 38 Q32 42 37 38" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      </svg>
-    );
+    emoji = "🌻";  label = "Flourishing";
+    bg = "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)";
+    glow = "0 8px 24px rgba(34,197,94,0.2)";
   } else if (score >= 50) {
-    // Clean Moderately Productive
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-50" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-50)"/>
-        <circle cx="32" cy="32" r="16" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2.5" />
-        <circle cx="27" cy="29" r="2" fill="#3b82f6" />
-        <circle cx="37" cy="29" r="2" fill="#3b82f6" />
-        <path d="M28 38 L36 38" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      </svg>
-    );
+    emoji = "🪴";  label = "Growing";
+    bg = "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)";
+    glow = "0 8px 24px rgba(59,130,246,0.2)";
   } else if (score >= 30) {
-    // Clean Mildly Distracted
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-30" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-30)"/>
-        <circle cx="32" cy="32" r="16" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="2.5" />
-        <circle cx="26" cy="29" r="2" fill="#f59e0b" />
-        <circle cx="36" cy="29" r="2" fill="#f59e0b" />
-        <path d="M28 38 Q32 36 36 38" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      </svg>
-    );
+    emoji = "😨";  label = "Distracted";
+    bg = "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)";
+    glow = "0 8px 24px rgba(245,158,11,0.2)";
   } else if (score >= 15) {
-    // Clean Highly Distracted
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-15" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-15)"/>
-        <circle cx="32" cy="32" r="16" fill="#ef4444" fillOpacity="0.1" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 4" />
-        <path d="M25 27 L29 31 M29 27 L25 31" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M35 27 L39 31 M39 27 L35 31" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M28 39 Q32 35 36 39" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      </svg>
-    );
+    emoji = "😵‍💫";  label = "Very Distracted";
+    bg = "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
+    glow = "0 8px 24px rgba(239,68,68,0.2)";
   } else {
-    // Clean Critically Distracted
-    return (
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <radialGradient id="prod-glow-0" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#dc2626" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="32" fill="url(#prod-glow-0)"/>
-        <circle cx="32" cy="32" r="16" fill="#dc2626" fillOpacity="0.1" stroke="#dc2626" strokeWidth="3" />
-        <path d="M25 27 L29 31 M29 27 L25 31" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" />
-        <path d="M35 27 L39 31 M39 27 L35 31" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" />
-        <path d="M28 40 Q32 34 36 40" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" fill="none" />
-        <circle cx="48" cy="16" r="8" fill="#dc2626" />
-        <path d="M48 11 L48 17 M48 20 L48 21" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
+    emoji = "😱";  label = "Critical";
+    bg = "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)";
+    glow = "0 8px 24px rgba(220,38,38,0.3)";
   }
+
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "6px",
+    }}>
+      <div style={{
+        width: "72px",
+        height: "72px",
+        borderRadius: "50%",
+        background: bg,
+        boxShadow: glow,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "32px",
+        lineHeight: 1,
+        transition: "transform 0.3s ease",
+      }}
+        title={label}
+      >
+        {emoji}
+      </div>
+      <span style={{
+        fontSize: "10px",
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        color: "var(--text2)",
+        opacity: 0.8,
+      }}>{label}</span>
+    </div>
+  );
 }
 
 type RangeType = "today" | "7days" | "30days";
@@ -787,14 +749,15 @@ export default function AnalyticsDashboard() {
                       textAlign: 'center',
                       fontSize: '12px',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '12px'
+                      gap: '4px',
+                      minWidth: '140px'
                     }}>
-                      <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
-                        {hoveredTooltip.title}
+                      <div style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {range === "today" ? `Time: ${hoveredTooltip.title}` : hoveredTooltip.title}
                       </div>
-                      <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)' }} />
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         {hoveredTooltip.content}
                       </div>
@@ -895,7 +858,7 @@ export default function AnalyticsDashboard() {
                               rx={(bar.width * 0.8) / 2}
                               fill={isMax ? "url(#capsuleHighlightGradient)" : "url(#capsuleBrandGradient)"}
                               className="chart-capsule"
-                              style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: isMax ? 1 : 0.6 }}
+                              style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: 1 }}
                               onMouseEnter={() => setHoveredTooltip({
                                 x: 0, y: 0,
                                 title: bar.rawDate,
@@ -1017,9 +980,9 @@ export default function AnalyticsDashboard() {
                                       x: 0, y: 0,
                                       title: item.date,
                                       content: (
-                                        <div style={{ display: 'flex', gap: '12px' }}>
-                                          <div style={{ color: '#10b981', fontWeight: 600 }}>Prod: {formatDuration(pMs)}</div>
-                                          <div style={{ color: '#ef4444', fontWeight: 600 }}>Dist: {formatDuration(dMs)}</div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                          <div style={{ color: '#10b981', fontWeight: 600 }}>Productive: {formatDuration(pMs)}</div>
+                                          <div style={{ color: '#ef4444', fontWeight: 600 }}>Distracted: {formatDuration(dMs)}</div>
                                         </div>
                                       )
                                     })}

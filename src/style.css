@@ -2,27 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium Floating Widget styles */
+/* ── Widget Frame ── */
 .widget-frame {
-  background: rgba(8, 12, 20, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  background: rgba(6, 8, 18, 0.9);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 6px rgba(99, 102, 241, 0.08);
   overflow: hidden;
   position: relative;
-  transition: width 350ms cubic-bezier(0.34, 1.56, 0.64, 1), 
-              height 350ms cubic-bezier(0.34, 1.56, 0.64, 1), 
-              border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1), 
-              border-color 200ms ease,
-              box-shadow 200ms ease;
+  transition:
+    width 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .widget-frame:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(99, 102, 241, 0.14);
 }
 
+/* ── Collapsed Blob ── */
 .widget-collapsed-view {
   position: absolute;
   inset: 0;
@@ -31,21 +33,57 @@
   justify-content: center;
   transition: opacity 200ms ease, transform 200ms ease;
   cursor: grab;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
-.widget-collapsed-view:active {
-  cursor: grabbing;
+/* Subtle inner centre glow — does NOT affect layout */
+.widget-collapsed-view::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.18) 0%, transparent 65%);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: pulse-glow 3s ease-in-out infinite alternate;
 }
 
+@keyframes pulse-glow {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}
+
+/* Animated border shimmer on the frame when collapsed */
+@keyframes border-breathe {
+  0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 0 rgba(139,92,246,0); }
+  50%      { box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 10px 2px rgba(139,92,246,0.15); }
+}
+
+.widget-collapsed-view:active { cursor: grabbing; }
+
+/* ── Expanded Panel ── */
 .widget-expanded-view {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   transition: opacity 200ms ease, transform 200ms ease;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
-/* Transitions for sub-elements */
+/* Hairline gradient accent on top edge */
+.widget-expanded-view::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Transitions ── */
 .fade-in-content {
   opacity: 1;
   pointer-events: auto;
@@ -58,22 +96,17 @@
   transform: scale(0.92);
 }
 
-/* Thin custom scrollbar for the domains list — prevents OS scrollbar from leaking into widget */
-.widget-frame *::-webkit-scrollbar {
-  width: 3px;
-}
-.widget-frame *::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ── Scrollbar ── */
+.widget-frame *::-webkit-scrollbar { width: 3px; }
+.widget-frame *::-webkit-scrollbar-track { background: transparent; }
 .widget-frame *::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.3);
   border-radius: 2px;
 }
 .widget-frame *::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.7);
+  background: rgba(139, 92, 246, 0.55);
 }
-/* Firefox */
 .widget-frame * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.4) transparent;
+  scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
 }

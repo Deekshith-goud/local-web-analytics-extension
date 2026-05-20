@@ -119,56 +119,62 @@ body {
 @media(max-width:900px){ .metrics-grid { grid-template-columns: repeat(2,1fr); } }
 
 .metric-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px;
-  box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03), inset 0 2px 0 rgba(255,255,255,0.4);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
   position: relative; overflow: hidden;
 }
-.metric-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.08); }
+.metric-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08), inset 0 2px 0 rgba(255,255,255,0.5); }
 
 .metric-icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-.metric-icon.purple { background: var(--accent-bg); color: var(--accent); }
-.metric-icon.green  { background: var(--green-bg); color: var(--green); }
-.metric-icon.blue   { background: rgba(59,130,246,0.1); color: #3b82f6; }
-.metric-icon.orange { background: var(--orange-bg); color: var(--orange); }
+.metric-icon.purple { background: linear-gradient(135deg, rgba(91,87,230,0.15), rgba(91,87,230,0.05)); color: var(--accent); border: 1px solid rgba(91,87,230,0.1); }
+.metric-icon.green  { background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); color: var(--green); border: 1px solid rgba(16,185,129,0.1); }
+.metric-icon.blue   { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05)); color: #3b82f6; border: 1px solid rgba(59,130,246,0.1); }
+.metric-icon.orange { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); color: var(--orange); border: 1px solid rgba(245,158,11,0.1); }
 
-.metric-label { font-size: 13px; color: var(--text2); font-weight: 500; margin-bottom: 4px; }
-.metric-value { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-.metric-desc  { font-size: 11px; color: var(--text3); margin-top: 6px; }
+.metric-label { font-size: 13px; color: var(--text2); font-weight: 600; margin-bottom: 6px; letter-spacing: 0.02em; }
+.metric-value { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; background: linear-gradient(180deg, var(--text) 0%, var(--text2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.metric-desc  { font-size: 11px; color: var(--text3); margin-top: 8px; font-weight: 500; }
 .metric-sparkline { margin-top: 14px; height: 36px; }
 .metric-sparkline svg { width: 100%; height: 100%; }
 
 /* ── Productivity Card ── */
 .productivity-overview-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
-  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 20px;
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px; margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03), inset 0 2px 0 rgba(255,255,255,0.4); display: flex; flex-direction: column; gap: 24px;
 }
 .productivity-overview-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .productivity-score-display { display: flex; align-items: center; gap: 20px; }
 .productivity-score-circle {
-  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  width: 84px; height: 84px; border-radius: 50%; flex-shrink: 0;
   background: conic-gradient(var(--green) var(--score-angle,0deg), #e5e7eb 0deg);
   display: flex; align-items: center; justify-content: center; position: relative;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.15);
 }
 .productivity-score-circle::after {
-  content: ""; position: absolute; width: 62px; height: 62px;
+  content: ""; position: absolute; width: 66px; height: 66px;
   background: var(--surface); border-radius: 50%;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 .productivity-score-text { position: relative; z-index: 2; font-weight: 700; font-size: 16px; }
 .productivity-score-info h2 { font-size: 17px; font-weight: 600; }
 .productivity-score-info p  { font-size: 12px; color: var(--text2); margin-top: 3px; }
 
 .prod-score-illus {
-  width: 80px; height: 80px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.prod-score-illus.productive { background: var(--green-bg); }
-.prod-score-illus.distracted { background: var(--red-bg); }
+.prod-score-illus.productive { }
+.prod-score-illus.distracted { }
 
 .badge-category {
   display: inline-block; font-size: 11px; font-weight: 600;
@@ -180,14 +186,15 @@ body {
 .badge-category.unknown      { background: rgba(107,114,128,0.1); color: var(--text2); }
 
 .productivity-overview-bar {
-  height: 12px; border-radius: 6px; overflow: hidden;
+  height: 16px; border-radius: 8px; overflow: hidden;
   background: #e5e7eb; display: flex;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
 }
-.prod-bar-segment { height: 100%; transition: width 0.4s ease; }
-.prod-bar-segment.productive  { background: var(--green); }
-.prod-bar-segment.distracting { background: var(--red); }
-.prod-bar-segment.neutral     { background: var(--accent); }
-.prod-bar-segment.unknown     { background: #9ca3af; }
+.prod-bar-segment { height: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.prod-bar-segment.productive  { background: linear-gradient(90deg, #10b981, #34d399); }
+.prod-bar-segment.distracting { background: linear-gradient(90deg, #ef4444, #f87171); }
+.prod-bar-segment.neutral     { background: linear-gradient(90deg, var(--accent), #818cf8); }
+.prod-bar-segment.unknown     { background: linear-gradient(90deg, #9ca3af, #d1d5db); }
 
 .productivity-legend { display: flex; gap: 24px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
