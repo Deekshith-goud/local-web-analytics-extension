@@ -56,6 +56,84 @@ function formatDuration(ms: number): string {
   return `${min}m`;
 }
 
+function getProductivityLabel(score: number): string {
+  if (score >= 90) return "Highly Productive";
+  if (score >= 70) return "Focus Mode Stable";
+  if (score >= 50) return "Moderately Productive";
+  if (score >= 30) return "Mildly Distracted";
+  if (score >= 15) return "Highly Distracted";
+  return "Critically Distracted";
+}
+
+function renderScoreIllustration(score: number) {
+  if (score >= 90) {
+    // Adult Tree
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
+        <path d="M30 46 L30 30 L34 30 L34 46" fill="#745542"/>
+        <circle cx="32" cy="22" r="12" fill="#2ed573"/>
+        <circle cx="24" cy="28" r="10" fill="#2ed573"/>
+        <circle cx="40" cy="28" r="10" fill="#2ed573"/>
+        <circle cx="32" cy="46" r="6" fill="#745542"/>
+      </svg>
+    );
+  } else if (score >= 70) {
+    // Growth Plant
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
+        <path d="M32 44v-8c0-4 4-8 8-8 0 4-4 8-8 8v-4c0-4-4-8-8-8 0 4 4 8 8 8" stroke="#2ed573" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="32" cy="44" r="6" fill="#745542"/>
+      </svg>
+    );
+  } else if (score >= 50) {
+    // Initial Bud/Sprout
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
+        <path d="M32 42 L32 36 Q34 34 36 34 Q36 36 32 38" stroke="#2ed573" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <path d="M32 38 Q30 36 28 36 Q28 34 32 36" stroke="#2ed573" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <circle cx="32" cy="42" r="5" fill="#745542"/>
+      </svg>
+    );
+  } else if (score >= 30) {
+    // Mild Distraction (Confused Brain)
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
+        <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
+        <path d="M26 30 Q32 26 38 30 Q35 34 32 32 Q29 34 26 30" stroke="#ef4444" strokeWidth="2" fill="none" strokeLinecap="round"/>
+        <text x="14" y="24" fill="#ef4444" fontSize="14" fontWeight="bold">?</text>
+        <text x="44" y="20" fill="#ef4444" fontSize="12" fontWeight="bold">?</text>
+      </svg>
+    );
+  } else if (score >= 15) {
+    // Worse Distraction (Fried Brain with X eyes)
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
+        <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
+        <path d="M26 27 L30 31 M30 27 L26 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M34 27 L38 31 M38 27 L34 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M27 38 Q29 36 32 38 Q35 40 37 38" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M20 18 L16 14 M44 18 L48 14 M16 32 L12 32 M48 32 L52 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    );
+  } else {
+    // Much Worse Distraction (Melted/Fire Skull)
+    return (
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
+        <path d="M22 36 Q22 20 32 20 Q42 20 42 36 Q42 42 38 46 Q32 42 26 46 Q22 42 22 36 Z" stroke="#ef4444" strokeWidth="3" fill="none"/>
+        <path d="M25 28 L29 32 M29 28 L25 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M35 28 L39 32 M39 28 L35 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M32 20 Q28 12 32 8 Q36 12 32 20 M26 22 Q22 16 26 12 Q30 16 26 22 M38 22 Q42 16 38 12 Q34 16 38 22" fill="#ef4444"/>
+      </svg>
+    );
+  }
+}
+
 type RangeType = "today" | "7days" | "30days";
 
 export default function AnalyticsDashboard() {
@@ -576,29 +654,14 @@ export default function AnalyticsDashboard() {
                     <h2>
                       Productivity Score 
                       <span className={`badge-category ${productivityScore >= 50 ? 'productive' : 'distracting'}`} style={{ fontSize: "11px", marginLeft: 8 }}>
-                        {productivityScore >= 50 ? 'Focus Mode Stable' : 'Highly Distracted'}
+                        {getProductivityLabel(productivityScore)}
                       </span>
                     </h2>
                     <p>Ratio of productive vs distracting domain activities</p>
                   </div>
                 </div>
                 <div className={`prod-score-illus ${productivityScore >= 50 ? 'productive' : 'distracted'}`} aria-hidden="true">
-                  {productivityScore >= 50 ? (
-                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-                      <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
-                      <path d="M32 44v-8c0-4 4-8 8-8 0 4-4 8-8 8v-4c0-4-4-8-8-8 0 4 4 8 8 8" stroke="#2ed573" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="32" cy="44" r="6" fill="#745542"/>
-                    </svg>
-                  ) : (
-                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-                      <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
-                      <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
-                      <path d="M26 27 L30 31 M30 27 L26 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M34 27 L38 31 M38 27 L34 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M27 38 Q29 36 32 38 Q35 40 37 38" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M20 18 L16 14 M44 18 L48 14 M16 32 L12 32 M48 32 L52 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  )}
+                  {renderScoreIllustration(productivityScore)}
                 </div>
               </div>
 
