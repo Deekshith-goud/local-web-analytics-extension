@@ -67,68 +67,144 @@ function getProductivityLabel(score: number): string {
 
 function renderScoreIllustration(score: number) {
   if (score >= 90) {
-    // Adult Tree
+    // Elegant Adult Tree
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
-        <path d="M30 46 L30 30 L34 30 L34 46" fill="#745542"/>
-        <circle cx="32" cy="22" r="12" fill="#2ed573"/>
-        <circle cx="24" cy="28" r="10" fill="#2ed573"/>
-        <circle cx="40" cy="28" r="10" fill="#2ed573"/>
-        <circle cx="32" cy="46" r="6" fill="#745542"/>
+        <defs>
+          <radialGradient id="tree-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#2ed573" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#2ed573" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="tree-canopy" x1="32" y1="12" x2="32" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#7bed9f" />
+            <stop offset="100%" stopColor="#2ed573" />
+          </linearGradient>
+          <linearGradient id="tree-trunk" x1="32" y1="36" x2="32" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#d1d8e0" />
+            <stop offset="100%" stopColor="#7a8288" />
+          </linearGradient>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#2ed573" floodOpacity="0.2" />
+          </filter>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#tree-glow)"/>
+        <g filter="url(#shadow)">
+          <path d="M26 46 Q32 48 38 46 L36 50 Q32 52 28 50 Z" fill="#2f3542" />
+          <path d="M31 36 L31 46 Q32 47 33 46 L33 36 Z" fill="url(#tree-trunk)" />
+          <path d="M32 14 C22 14 18 24 24 30 C20 34 26 40 32 38 C38 40 44 34 40 30 C46 24 42 14 32 14 Z" fill="url(#tree-canopy)" />
+          <path d="M28 20 Q32 18 36 20" stroke="#ffffff" strokeOpacity="0.5" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </g>
       </svg>
     );
   } else if (score >= 70) {
-    // Growth Plant
+    // Elegant Growth Plant
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
-        <path d="M32 44v-8c0-4 4-8 8-8 0 4-4 8-8 8v-4c0-4-4-8-8-8 0 4 4 8 8 8" stroke="#2ed573" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="32" cy="44" r="6" fill="#745542"/>
+        <defs>
+          <radialGradient id="plant-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#2ed573" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#2ed573" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="plant-leaf" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7bed9f" />
+            <stop offset="100%" stopColor="#2ed573" />
+          </linearGradient>
+          <filter id="plant-shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#2ed573" floodOpacity="0.2" />
+          </filter>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#plant-glow)"/>
+        <g filter="url(#plant-shadow)">
+          <ellipse cx="32" cy="46" rx="8" ry="3" fill="#2f3542" />
+          <path d="M32 46 Q30 38 32 30" stroke="#a4b0be" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M32 40 Q24 38 24 32 Q30 30 32 40 Z" fill="url(#plant-leaf)" />
+          <path d="M32 36 Q40 34 40 28 Q34 26 32 36 Z" fill="url(#plant-leaf)" />
+          <path d="M32 30 Q28 26 28 22 Q34 22 32 30 Z" fill="url(#plant-leaf)" />
+        </g>
       </svg>
     );
   } else if (score >= 50) {
-    // Initial Bud/Sprout
+    // Elegant Sprout
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(46,213,115,0.15)"/>
-        <path d="M32 42 L32 36 Q34 34 36 34 Q36 36 32 38" stroke="#2ed573" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        <path d="M32 38 Q30 36 28 36 Q28 34 32 36" stroke="#2ed573" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        <circle cx="32" cy="42" r="5" fill="#745542"/>
+        <defs>
+          <radialGradient id="sprout-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#2ed573" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#2ed573" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#sprout-glow)"/>
+        <ellipse cx="32" cy="42" rx="6" ry="2" fill="#2f3542" />
+        <path d="M32 42 L32 36" stroke="#2ed573" strokeWidth="2" strokeLinecap="round" />
+        <path d="M32 37 Q28 36 28 33 Q31 33 32 37 Z" fill="#2ed573" />
+        <path d="M32 36 Q36 34 36 31 Q33 31 32 36 Z" fill="#7bed9f" />
       </svg>
     );
   } else if (score >= 30) {
-    // Mild Distraction (Confused Brain)
+    // Elegant Mild Distraction
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
-        <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
-        <path d="M26 30 Q32 26 38 30 Q35 34 32 32 Q29 34 26 30" stroke="#ef4444" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        <text x="14" y="24" fill="#ef4444" fontSize="14" fontWeight="bold">?</text>
-        <text x="44" y="20" fill="#ef4444" fontSize="12" fontWeight="bold">?</text>
+        <defs>
+          <radialGradient id="knot-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#ff7f50" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#ff7f50" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#knot-glow)"/>
+        <path d="M22 32 C22 20 42 20 42 32 C42 44 22 44 22 32 Z" stroke="#ff7f50" strokeWidth="2" fill="none" strokeDasharray="4 2" />
+        <path d="M32 22 C20 22 20 42 32 42 C44 42 44 22 32 22 Z" stroke="#ff6b81" strokeWidth="2" fill="none" />
+        <circle cx="32" cy="32" r="4" fill="#ff4757" />
+        <text x="14" y="24" fill="#ff4757" fontSize="14" fontWeight="bold">?</text>
+        <text x="44" y="20" fill="#ff4757" fontSize="12" fontWeight="bold">?</text>
       </svg>
     );
   } else if (score >= 15) {
-    // Worse Distraction (Fried Brain with X eyes)
+    // Elegant Highly Distracted
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
-        <circle cx="32" cy="32" r="14" stroke="#ef4444" strokeWidth="3" fill="none"/>
-        <path d="M26 27 L30 31 M30 27 L26 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M34 27 L38 31 M38 27 L34 31" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M27 38 Q29 36 32 38 Q35 40 37 38" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M20 18 L16 14 M44 18 L48 14 M16 32 L12 32 M48 32 L52 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <defs>
+          <radialGradient id="fried-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#ff4757" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ff4757" stopOpacity="0" />
+          </radialGradient>
+          <filter id="fried-shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#ff4757" floodOpacity="0.3" />
+          </filter>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#fried-glow)"/>
+        <g filter="url(#fried-shadow)">
+          <path d="M32 18 A14 14 0 1 1 18 32" stroke="#ff4757" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M22 24 L26 28 M26 24 L22 28" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" />
+          <path d="M38 24 L42 28 M42 24 L38 28" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" />
+          <path d="M28 38 L36 38 L32 42 Z" fill="#ff4757" />
+          <path d="M42 16 L46 12 M48 20 L54 18 M16 46 L12 50" stroke="#ffa502" strokeWidth="2" strokeLinecap="round" />
+        </g>
       </svg>
     );
   } else {
-    // Much Worse Distraction (Melted/Fire Skull)
+    // Elegant Critically Distracted
     return (
       <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="32" fill="rgba(239,68,68,0.15)"/>
-        <path d="M22 36 Q22 20 32 20 Q42 20 42 36 Q42 42 38 46 Q32 42 26 46 Q22 42 22 36 Z" stroke="#ef4444" strokeWidth="3" fill="none"/>
-        <path d="M25 28 L29 32 M29 28 L25 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M35 28 L39 32 M39 28 L35 32" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M32 20 Q28 12 32 8 Q36 12 32 20 M26 22 Q22 16 26 12 Q30 16 26 22 M38 22 Q42 16 38 12 Q34 16 38 22" fill="#ef4444"/>
+        <defs>
+          <radialGradient id="fire-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stopColor="#ff4757" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#ff4757" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="fire-grad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#ff4757" />
+            <stop offset="50%" stopColor="#ff6b81" />
+            <stop offset="100%" stopColor="#ffa502" />
+          </linearGradient>
+          <filter id="fire-shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#ff4757" floodOpacity="0.4" />
+          </filter>
+        </defs>
+        <circle cx="32" cy="32" r="32" fill="url(#fire-glow)"/>
+        <g filter="url(#fire-shadow)">
+          <path d="M32 46 C22 46 22 36 26 30 C30 24 32 18 32 14 C32 20 36 22 38 26 C42 32 42 46 32 46 Z" fill="url(#fire-grad)" />
+          <path d="M31 28 L33 28 L32.5 36 L31.5 36 Z" fill="#1e272e" />
+          <circle cx="32" cy="40" r="1.5" fill="#1e272e" />
+        </g>
       </svg>
     );
   }
