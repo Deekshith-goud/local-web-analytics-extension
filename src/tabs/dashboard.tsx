@@ -251,6 +251,7 @@ export default function AnalyticsDashboard() {
   const [newDomain, setNewDomain] = useState("");
   const [newCategory, setNewCategory] = useState<ProductivityCategory>("productive");
   const [newPriority, setNewPriority] = useState("10");
+  const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const [hoveredTooltip, setHoveredTooltip] = useState<{x: number, y: number, title: string, content: React.ReactNode} | null>(null);
@@ -774,6 +775,36 @@ export default function AnalyticsDashboard() {
                   {activeChart === "total" ? "Total Browsing Time" : "Productivity vs Distraction"}
                   <span style={{ margin: 0 }}>{range === "today" ? "Hourly intervals" : "Daily aggregates"}</span>
                 </div>
+                
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                  {hoveredTooltip ? (
+                    <div style={{
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        {hoveredTooltip.title}
+                      </div>
+                      <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)' }} />
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {hoveredTooltip.content}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '12px', opacity: 0.5, fontStyle: 'italic' }}>
+                      Hover over chart for details
+                    </div>
+                  )}
+                </div>
                 <div className="chart-tabs" style={{ display: 'flex', gap: '4px', fontSize: '12px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
                    <button 
                      onClick={() => setActiveChart("total")} 
@@ -866,10 +897,9 @@ export default function AnalyticsDashboard() {
                               className="chart-capsule"
                               style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: isMax ? 1 : 0.6 }}
                               onMouseEnter={() => setHoveredTooltip({
-                                x: bar.x + bar.width / 2,
-                                y: bar.y - 10,
+                                x: 0, y: 0,
                                 title: bar.rawDate,
-                                content: <div style={{fontWeight: 600}}>{bar.valueLabel} total</div>
+                                content: <div style={{fontWeight: 600, color: 'var(--text-primary)'}}>{bar.valueLabel} total</div>
                               })}
                               onMouseLeave={() => setHoveredTooltip(null)}
                             />
@@ -984,13 +1014,12 @@ export default function AnalyticsDashboard() {
                                     fill="transparent"
                                     style={{ cursor: 'crosshair' }}
                                     onMouseEnter={() => setHoveredTooltip({
-                                      x: x,
-                                      y: Math.min(prodPoints[idx]?.y ?? 100, distPoints[idx]?.y ?? 100) - 10,
+                                      x: 0, y: 0,
                                       title: item.date,
                                       content: (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-                                          <div style={{ color: '#10b981', fontWeight: 600 }}>• Productive: {formatDuration(pMs)}</div>
-                                          <div style={{ color: '#ef4444', fontWeight: 600 }}>• Distracted: {formatDuration(dMs)}</div>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                          <div style={{ color: '#10b981', fontWeight: 600 }}>Prod: {formatDuration(pMs)}</div>
+                                          <div style={{ color: '#ef4444', fontWeight: 600 }}>Dist: {formatDuration(dMs)}</div>
                                         </div>
                                       )
                                     })}
@@ -1014,30 +1043,7 @@ export default function AnalyticsDashboard() {
                     </svg>
                   )}
 
-                  {/* Tooltip Overlay (Shared) */}
-                  {hoveredTooltip && (
-                    <div style={{
-                      position: 'absolute',
-                      left: `${(hoveredTooltip.x / 720) * 100}%`,
-                      top: `${(Math.max(20, hoveredTooltip.y) / 240) * 100}%`,
-                      transform: 'translate(-50%, -100%)',
-                      backgroundColor: 'var(--bg-elevated)',
-                      border: '1px solid var(--border-subtle)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      pointerEvents: 'none',
-                      zIndex: 10,
-                      minWidth: '100px',
-                      textAlign: 'center',
-                      fontSize: '12px'
-                    }}>
-                      <div style={{ color: 'var(--text-secondary)', marginBottom: '4px', fontSize: '11px', borderBottom: activeChart === "productivity" ? '1px solid var(--border-subtle)' : 'none', paddingBottom: activeChart === "productivity" ? '4px' : '0' }}>
-                        {range === "today" ? `Time: ${hoveredTooltip.title}` : `Date: ${hoveredTooltip.title}`}
-                      </div>
-                      <div>{hoveredTooltip.content}</div>
-                    </div>
-                  )}
+                  {/* Tooltip Overlay removed, moved to header! */}
                 </div>
               )}
             </section>
