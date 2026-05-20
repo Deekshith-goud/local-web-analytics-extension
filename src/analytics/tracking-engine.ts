@@ -270,15 +270,29 @@ export class TrackingEngine {
 
   private async onTabUpdated(tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab): Promise<void> {
     if (this.isPaused) return;
-    // Only act if URL changed and load completed
-    if (changeInfo.status === "complete" && tab.url) {
-      logger.debug("Tab updated", tabId, tab.url);
-      
+
+    // React immediately if the URL is known to prevent tracking delays.
+    // We no longer wait for changeInfo.status === "complete".
+    if (tab.url) {
+      const newDomain = extractHostname(tab.url);
+
       if (this.currentState && this.currentState.tabId === tabId) {
-        const newDomain = extractHostname(tab.url);
         if (newDomain !== this.currentState.domain) {
+          logger.debug("Tab URL updated", tabId, tab.url);
           await this.finalizeCurrentSession("url-change");
           await this.startTracking(tab, tab.windowId);
+        }
+      } else if (!this.currentState && tab.active && newDomain) {
+        // Handle transitions from untracked pages (e.g., chrome://newtab)
+        // to tracked pages while the tab remains active.
+        try {
+          const window = await chrome.windows.get(tab.windowId);
+          if (window.focused) {
+            logger.debug("Untracked active tab updated to trackable domain", tabId, tab.url);
+            await this.startTracking(tab, tab.windowId);
+          }
+        } catch (e) {
+          logger.error("Error retrieving window state during tab update", e);
         }
       }
     }
