@@ -17,6 +17,8 @@ export interface TimelineItem {
   date: string; // YYYY-MM-DD
   durationMs: number;
   visitCount: number;
+  productiveMs: number;
+  distractingMs: number;
 }
 
 export interface DomainLeaderboardItem {
@@ -64,13 +66,38 @@ export function aggregateHistoricalStats(
     totalsMap.set(t.date, t);
   }
 
-  // 2. Build continuous timeline series
+  // 2. Aggregate domain stats across the entire range and calculate daily classifications
+  const domainAggregates = new Map<string, { durationMs: number; visitCount: number }>();
+  const dailyClassifications = new Map<string, { productiveMs: number; distractingMs: number }>();
+
+  for (const stat of dbDomainStats) {
+    // Overall domain aggregates
+    const existing = domainAggregates.get(stat.domain) || { durationMs: 0, visitCount: 0 };
+    domainAggregates.set(stat.domain, {
+      durationMs: existing.durationMs + stat.durationMs,
+      visitCount: existing.visitCount + stat.visitCount,
+    });
+
+    // Daily productivity breakdown
+    const category = domainCategories[stat.domain] || "unknown";
+    const dailyExisting = dailyClassifications.get(stat.date) || { productiveMs: 0, distractingMs: 0 };
+    if (category === "productive") {
+      dailyExisting.productiveMs += stat.durationMs;
+    } else if (category === "distracting") {
+      dailyExisting.distractingMs += stat.durationMs;
+    }
+    dailyClassifications.set(stat.date, dailyExisting);
+  }
+
+  // 3. Build continuous timeline series
   let aggregatedMs = 0;
   let aggregatedVisits = 0;
   const timeline: TimelineItem[] = allDates.map((dateStr) => {
     const record = totalsMap.get(dateStr);
     const durationMs = record ? record.totalDurationMs : 0;
     const visitCount = record ? record.totalVisits : 0;
+    
+    const classifications = dailyClassifications.get(dateStr) || { productiveMs: 0, distractingMs: 0 };
 
     aggregatedMs += durationMs;
     aggregatedVisits += visitCount;
@@ -79,18 +106,12 @@ export function aggregateHistoricalStats(
       date: dateStr,
       durationMs,
       visitCount,
+      productiveMs: classifications.productiveMs,
+      distractingMs: classifications.distractingMs,
     };
   });
 
-  // 3. Aggregate domain stats across the entire range
-  const domainAggregates = new Map<string, { durationMs: number; visitCount: number }>();
-  for (const stat of dbDomainStats) {
-    const existing = domainAggregates.get(stat.domain) || { durationMs: 0, visitCount: 0 };
-    domainAggregates.set(stat.domain, {
-      durationMs: existing.durationMs + stat.durationMs,
-      visitCount: existing.visitCount + stat.visitCount,
-    });
-  }
+
 
   const topDomains: DomainLeaderboardItem[] = Array.from(domainAggregates.entries())
     .map(([domain, data]) => ({
@@ -167,11 +188,15 @@ export function downsampleTimeline(
 
     const durationMs = chunk.reduce((sum, item) => sum + item.durationMs, 0);
     const visitCount = chunk.reduce((sum, item) => sum + item.visitCount, 0);
+    const productiveMs = chunk.reduce((sum, item) => sum + item.productiveMs, 0);
+    const distractingMs = chunk.reduce((sum, item) => sum + item.distractingMs, 0);
 
     result.push({
       date: label,
       durationMs,
       visitCount,
+      productiveMs,
+      distractingMs,
     });
   }
 

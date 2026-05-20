@@ -734,13 +734,15 @@ async function handleGetHistoricalStats(
     const historical = aggregateHistoricalStats(dates, finalTotals, finalDomainStats, domainCategories);
 
     // Build 24-bucket hourly timeline when querying a single day
-    let hourlyTimeline: Array<{ date: string; durationMs: number; visitCount: number }> | undefined;
+    let hourlyTimeline: Array<{ date: string; durationMs: number; visitCount: number; productiveMs: number; distractingMs: number }> | undefined;
     if (dates.length === 1) {
       // Initialize 24 zeroed buckets
       const buckets = Array.from({ length: 24 }, (_, h) => ({
         date: `${String(h).padStart(2, "0")}:00`,
         durationMs: 0,
-        visitCount: 0
+        visitCount: 0,
+        productiveMs: 0,
+        distractingMs: 0
       }));
       // Accumulate each activity record into the correct hour bucket
       for (const r of rawActivities) {
@@ -748,6 +750,10 @@ async function handleGetHistoricalStats(
         if (hour >= 0 && hour < 24 && buckets[hour]) {
           buckets[hour]!.durationMs += r.durationMs;
           buckets[hour]!.visitCount += 1;
+          
+          const cat = domainCategories[r.domain] || "unknown";
+          if (cat === "productive") buckets[hour]!.productiveMs += r.durationMs;
+          else if (cat === "distracting") buckets[hour]!.distractingMs += r.durationMs;
         }
       }
       // Also fold in the current active session if within today
@@ -757,6 +763,10 @@ async function handleGetHistoricalStats(
         if (hour >= 0 && hour < 24 && buckets[hour]) {
           buckets[hour]!.durationMs += elapsed;
           buckets[hour]!.visitCount += 1;
+          
+          const cat = domainCategories[activeSession.domain] || "unknown";
+          if (cat === "productive") buckets[hour]!.productiveMs += elapsed;
+          else if (cat === "distracting") buckets[hour]!.distractingMs += elapsed;
         }
       }
       // Only include hours that have any data, or keep all 24 for a complete axis

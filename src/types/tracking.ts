@@ -155,12 +155,16 @@ export interface HistoricalStatsResponse {
     date: string;
     durationMs: number;
     visitCount: number;
+    productiveMs: number;
+    distractingMs: number;
   }>;
   /** 24-bucket hourly breakdown, only present when querying a single day (today) */
   hourlyTimeline?: Array<{
     date: string;        // "HH:00" label
     durationMs: number;
     visitCount: number;
+    productiveMs: number;
+    distractingMs: number;
   }>;
   topDomains: Array<{
     domain: string;
