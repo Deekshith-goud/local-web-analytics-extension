@@ -37,6 +37,8 @@ export default function BlobContent() {
   // Core Explicit UI State Machine
   const [uiState, setUiState] = useState<UIState>("collapsed");
 
+  const [blobStyle, setBlobStyle] = useState<"glass" | "brutalist">("glass");
+
   // Live aggregated stats from background
   const [stats, setStats] = useState<TodayStatsResponse>({
     activeSession: null,
@@ -127,7 +129,10 @@ export default function BlobContent() {
     setIsSensitive(false);
 
     // Load persisted coordinates from chrome.storage.local
-    chrome.storage.local.get(["blob_ui_state"], (result) => {
+    chrome.storage.local.get(["blob_ui_state", "blobStyle"], (result) => {
+      if (result.blobStyle) {
+        setBlobStyle(result.blobStyle as "glass" | "brutalist");
+      }
       const saved = validateBlobUIState(result.blob_ui_state);
       // Verify against window size to avoid offscreen positioning on lower res
       const clamped = clampPosition(saved.anchorCorner, saved.offsetX, saved.offsetY);
@@ -143,6 +148,17 @@ export default function BlobContent() {
     // Load base today stats from background
     fetchFreshStats();
   }, [clampPosition, fetchFreshStats]);
+
+  // Listen for blob style changes dynamically
+  useEffect(() => {
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === "local" && changes.blobStyle) {
+        setBlobStyle(changes.blobStyle.newValue as "glass" | "brutalist");
+      }
+    };
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, []);
 
   // 2. Poll aggregates VERY sparsely (every 30s only when expanded)
   useEffect(() => {
@@ -394,11 +410,11 @@ export default function BlobContent() {
       >
         <div
           ref={blobRef}
-          className="widget-frame"
+          className={`widget-frame widget-${blobStyle}`}
           style={{
             width: isCollapsed ? "52px" : "284px",
             height: isCollapsed ? "52px" : "380px",
-            borderRadius: isCollapsed ? "26px" : "18px",
+            borderRadius: isCollapsed ? "var(--w-radius-collapsed)" : "var(--w-radius-expanded)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -432,14 +448,14 @@ export default function BlobContent() {
             <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1px" }}>
               {stats.activeSession ? (
                 <>
-                  <span style={{ fontSize: "8px", fontWeight: 700, color: "rgba(167,139,250,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1 }}>live</span>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#c4b5fd", fontFamily: "monospace", lineHeight: 1, letterSpacing: "-0.01em" }}>
+                  <span style={{ fontSize: "8px", fontWeight: 700, color: "var(--w-text-accent-dim)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1 }}>live</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--w-text-accent)", fontFamily: "monospace", lineHeight: 1, letterSpacing: "-0.01em" }}>
                     {formatDuration(localLiveDurationMs)}
                   </span>
                 </>
               ) : (
                 <svg
-                  style={{ width: "20px", height: "20px", color: "rgba(139,92,246,0.85)" }}
+                  style={{ width: "20px", height: "20px", color: "var(--w-text-accent-dim)" }}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
@@ -455,7 +471,7 @@ export default function BlobContent() {
             </div>
 
             {/* Micro Hover Tooltip */}
-            <div className="absolute whitespace-nowrap text-[10px] text-slate-300 rounded-lg px-2.5 py-1.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none -top-9 left-1/2 transform -translate-x-1/2" style={{ background: "rgba(6,8,18,0.95)", border: "1px solid rgba(139,92,246,0.3)", backdropFilter: "blur(12px)" }}>
+            <div className="absolute whitespace-nowrap text-[10px] rounded-lg px-2.5 py-1.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none -top-9 left-1/2 transform -translate-x-1/2" style={{ background: "var(--w-footer-bg)", color: "var(--w-text-main)", border: "1px solid var(--w-border)", backdropFilter: "blur(12px)" }}>
               Today: {formatDuration(stats.totalDurationMs)}
             </div>
           </div>
@@ -475,8 +491,8 @@ export default function BlobContent() {
               style={{
                 flexShrink: 0,
                 padding: "12px 14px 10px",
-                background: "linear-gradient(180deg, rgba(109,40,217,0.15) 0%, transparent 100%)",
-                borderBottom: "1px solid rgba(139,92,246,0.15)",
+                background: "var(--w-header-bg)",
+                borderBottom: "1px solid var(--w-border)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -488,7 +504,7 @@ export default function BlobContent() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
                 </span>
-                <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em", color: "#a78bfa", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em", color: "var(--w-text-accent)", textTransform: "uppercase" }}>
                   Local Analytics
                 </span>
               </div>
@@ -500,9 +516,9 @@ export default function BlobContent() {
                   }
                 }}
                 style={{
-                  background: "rgba(139,92,246,0.1)",
-                  border: "1px solid rgba(139,92,246,0.2)",
-                  color: "#a78bfa",
+                  background: "var(--w-card-bg)",
+                  border: "1px solid var(--w-border)",
+                  color: "var(--w-text-accent)",
                   width: "22px",
                   height: "22px",
                   borderRadius: "6px",
@@ -537,42 +553,42 @@ export default function BlobContent() {
                 style={{
                   flexShrink: 0,
                   padding: "10px 13px",
-                  background: "linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(79,70,229,0.10) 100%)",
-                  border: "1px solid rgba(139,92,246,0.22)",
+                  background: "var(--w-active-bg)",
+                  border: "1px solid var(--w-border)",
                   borderRadius: "14px"
                 }}
               >
-                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(167,139,250,0.6)", display: "block", marginBottom: "3px", fontWeight: 700 }}>
+                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--w-text-accent-dim)", display: "block", marginBottom: "3px", fontWeight: 700 }}>
                   Active Domain
                 </span>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#e2d9f3", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--w-text-main)", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {stats.activeSession?.domain || "Idle / Inactive"}
                 </span>
                 {stats.activeSession && (
                   <div style={{ display: "flex", alignItems: "baseline", gap: "5px", marginTop: "4px" }}>
-                    <span style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "#c4b5fd", textShadow: "0 0 12px rgba(139,92,246,0.5)", fontFamily: "monospace" }}>
+                    <span style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--w-text-accent)", textShadow: "0 0 12px var(--w-glow-color)", fontFamily: "monospace" }}>
                       {formatDuration(localLiveDurationMs)}
                     </span>
-                    <span style={{ fontSize: "9px", color: "rgba(148,163,184,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>this session</span>
+                    <span style={{ fontSize: "9px", color: "var(--w-text-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>this session</span>
                   </div>
                 )}
               </div>
 
               {/* Grid stats */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", flexShrink: 0 }}>
-                <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px" }}>
-                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(148,163,184,0.6)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
+                <div style={{ padding: "9px 12px", background: "var(--w-card-bg)", border: "1px solid var(--w-card-border)", borderRadius: "12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--w-text-subtle)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
                     Today&apos;s Total
                   </span>
-                  <span style={{ fontSize: "17px", fontWeight: 800, color: "#e2d9f3", fontFamily: "monospace" }}>
+                  <span style={{ fontSize: "17px", fontWeight: 800, color: "var(--w-text-main)", fontFamily: "monospace" }}>
                     {formatDuration(stats.totalDurationMs)}
                   </span>
                 </div>
-                <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px" }}>
-                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(148,163,184,0.6)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
+                <div style={{ padding: "9px 12px", background: "var(--w-card-bg)", border: "1px solid var(--w-card-border)", borderRadius: "12px" }}>
+                  <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--w-text-subtle)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
                     Unique Sites
                   </span>
-                  <span style={{ fontSize: "17px", fontWeight: 800, color: "#e2d9f3" }}>
+                  <span style={{ fontSize: "17px", fontWeight: 800, color: "var(--w-text-main)" }}>
                     {stats.uniqueDomainsCount}
                   </span>
                 </div>
@@ -588,11 +604,11 @@ export default function BlobContent() {
                   gap: "4px"
                 }}
               >
-                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", flexShrink: 0, marginBottom: "2px" }}>
+                <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--w-text-muted)", display: "block", flexShrink: 0, marginBottom: "2px" }}>
                   Top Domains Visited Today
                 </span>
                 {stats.topDomains.length === 0 ? (
-                  <span style={{ fontSize: "11px", color: "#64748b", textAlign: "center", paddingTop: "8px" }}>
+                  <span style={{ fontSize: "11px", color: "var(--w-text-muted)", textAlign: "center", paddingTop: "8px" }}>
                     No data recorded today
                   </span>
                 ) : (
@@ -616,19 +632,19 @@ export default function BlobContent() {
                       return (
                         <div key={item.domain} style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px" }}>
-                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "155px", color: "#cbd5e1", fontWeight: 500 }}>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "155px", color: "var(--w-text-main)", fontWeight: 500 }}>
                               {item.domain}
                             </span>
-                            <span style={{ color: "#94a3b8", fontFamily: "monospace", flexShrink: 0, marginLeft: "4px", fontSize: "11px" }}>
+                            <span style={{ color: "var(--w-text-muted)", fontFamily: "monospace", flexShrink: 0, marginLeft: "4px", fontSize: "11px" }}>
                               {formatDuration(item.durationMs)}
                             </span>
                           </div>
-                          <div style={{ height: "4px", width: "100%", background: "rgba(15,23,42,0.8)", borderRadius: "2px", overflow: "hidden" }}>
+                          <div style={{ height: "4px", width: "100%", background: "var(--w-card-bg)", border: "1px solid var(--w-card-border)", borderRadius: "2px", overflow: "hidden" }}>
                             <div
                               style={{
                                 width: `${percent}%`,
                                 height: "100%",
-                                background: "linear-gradient(to right, #7c3aed, #6366f1)",
+                                background: "var(--w-text-accent)",
                                 borderRadius: "2px",
                                 transition: "width 500ms ease"
                               }}
@@ -647,10 +663,10 @@ export default function BlobContent() {
               style={{
                 flexShrink: 0,
                 padding: "8px 14px",
-                borderTop: "1px solid rgba(139,92,246,0.12)",
-                background: "rgba(4,5,12,0.8)",
+                borderTop: "1px solid var(--w-border)",
+                background: "var(--w-footer-bg)",
                 fontSize: "9px",
-                color: "rgba(148,163,184,0.5)",
+                color: "var(--w-text-subtle)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -658,7 +674,7 @@ export default function BlobContent() {
               }}
             >
               <span>🔒 Local-only · zero telemetry</span>
-              <span style={{ color: "rgba(139,92,246,0.6)", fontWeight: 700 }}>v1.0.0</span>
+              <span style={{ color: "var(--w-text-accent-dim)", fontWeight: 700 }}>v1.0.0</span>
             </div>
           </div>
         </div>

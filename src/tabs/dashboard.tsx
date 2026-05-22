@@ -193,14 +193,17 @@ export default function AnalyticsDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
   const [iconStyle, setIconStyle] = useState<"minimal" | "playful">("minimal");
+  const [blobStyle, setBlobStyle] = useState<"glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light">("glass-dark");
 
   // Load and apply theme on startup
   useEffect(() => {
-    chrome.storage.local.get(["theme", "iconStyle"], (res) => {
+    chrome.storage.local.get(["theme", "iconStyle", "blobStyle"], (res) => {
       const savedTheme = res.theme || "system";
       const savedIconStyle = res.iconStyle || "minimal";
+      const savedBlobStyle = res.blobStyle || "glass-dark";
       setTheme(savedTheme);
       setIconStyle(savedIconStyle);
+      setBlobStyle(savedBlobStyle);
       applyTheme(savedTheme);
     });
   }, []);
@@ -226,6 +229,11 @@ export default function AnalyticsDashboard() {
     chrome.storage.local.set({ iconStyle: newStyle });
   };
 
+  const handleBlobStyleChange = (newStyle: "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light") => {
+    setBlobStyle(newStyle);
+    chrome.storage.local.set({ blobStyle: newStyle });
+  };
+
   // Keep theme updated if system scheme changes and setting is system
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -243,6 +251,9 @@ export default function AnalyticsDashboard() {
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
   const [isPurging, setIsPurging] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
+  const [showAllDomainsModal, setShowAllDomainsModal] = useState(false);
+  const [allDomainsSort, setAllDomainsSort] = useState<"duration" | "visits">("duration");
+  const [allDomainsSearch, setAllDomainsSearch] = useState("");
 
   // Productivity Rules Tab States
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
@@ -675,40 +686,64 @@ export default function AnalyticsDashboard() {
         <div className="tab-panel">
           {/* Derived Metric Cards Grid */}
           <section className="metrics-grid" aria-label="Browsing overview cards">
-            <div className="metric-card">
-              <div className="metric-icon purple" aria-hidden="true">
+            <div className="metric-card" style={{ position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-20px', width: '150px', height: '150px', opacity: 0.08, pointerEvents: 'none', color: 'var(--accent)', transform: 'rotate(-15deg)', WebkitMaskImage: 'linear-gradient(to top left, black 40%, transparent 90%)', maskImage: 'linear-gradient(to top left, black 40%, transparent 90%)' }}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <div className="metric-icon purple" aria-hidden="true" style={{ position: 'relative', zIndex: 1 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
               </div>
-              <div className="metric-label" id="lbl-tracked">Total Tracked Time</div>
-              <div className="metric-value" aria-labelledby="lbl-tracked">{isLoading ? "---" : formatDuration(totalTrackedDuration)}</div>
-              <div className="metric-desc">Aggregated duration for active range</div>
+              <div className="metric-label" id="lbl-tracked" style={{ position: 'relative', zIndex: 1 }}>Total Tracked Time</div>
+              <div className="metric-value" aria-labelledby="lbl-tracked" style={{ position: 'relative', zIndex: 1 }}>{isLoading ? "---" : formatDuration(totalTrackedDuration)}</div>
+              <div className="metric-desc" style={{ position: 'relative', zIndex: 1 }}>Aggregated duration for active range</div>
             </div>
 
-            <div className="metric-card">
-              <div className="metric-icon green" aria-hidden="true">
+            <div className="metric-card" style={{ position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-20px', width: '150px', height: '150px', opacity: 0.08, pointerEvents: 'none', color: 'var(--green)', transform: 'rotate(10deg)', WebkitMaskImage: 'linear-gradient(to top left, black 40%, transparent 90%)', maskImage: 'linear-gradient(to top left, black 40%, transparent 90%)' }}>
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+              <div className="metric-icon green" aria-hidden="true" style={{ position: 'relative', zIndex: 1 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
               </div>
-              <div className="metric-label" id="lbl-focus">Focus Hours</div>
-              <div className="metric-value" aria-labelledby="lbl-focus">{isLoading ? "---" : `${stats?.metrics?.focusHours ?? 0}h`}</div>
-              <div className="metric-desc">Total productive browsing time</div>
+              <div className="metric-label" id="lbl-focus" style={{ position: 'relative', zIndex: 1 }}>Focus Hours</div>
+              <div className="metric-value" aria-labelledby="lbl-focus" style={{ position: 'relative', zIndex: 1 }}>{isLoading ? "---" : `${stats?.metrics?.focusHours ?? 0}h`}</div>
+              <div className="metric-desc" style={{ position: 'relative', zIndex: 1 }}>Total productive browsing time</div>
             </div>
 
-            <div className="metric-card">
-              <div className="metric-icon blue" aria-hidden="true">
+            <div className="metric-card" style={{ position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-20px', width: '150px', height: '150px', opacity: 0.08, pointerEvents: 'none', color: '#3b82f6', transform: 'rotate(-5deg)', WebkitMaskImage: 'linear-gradient(to top left, black 40%, transparent 90%)', maskImage: 'linear-gradient(to top left, black 40%, transparent 90%)' }}>
+                <path d="m12 3-1.912 5.886H3.82l4.912 3.57L6.82 18.342 12 14.772l5.18 3.57-1.912-5.886 4.912-3.57h-6.268z" />
+              </svg>
+              <div className="metric-icon blue" aria-hidden="true" style={{ position: 'relative', zIndex: 1 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.886H3.82l4.912 3.57L6.82 18.342 12 14.772l5.18 3.57-1.912-5.886 4.912-3.57h-6.268z" /></svg>
               </div>
-              <div className="metric-label" id="lbl-visits">Total Visits</div>
-              <div className="metric-value" aria-labelledby="lbl-visits">{isLoading ? "---" : stats?.metrics?.totalVisits ?? 0}</div>
-              <div className="metric-desc">Sum of all navigation transitions</div>
+              <div className="metric-label" id="lbl-visits" style={{ position: 'relative', zIndex: 1 }}>Total Visits</div>
+              <div className="metric-value" aria-labelledby="lbl-visits" style={{ position: 'relative', zIndex: 1 }}>{isLoading ? "---" : stats?.metrics?.totalVisits ?? 0}</div>
+              <div className="metric-desc" style={{ position: 'relative', zIndex: 1 }}>Sum of all navigation transitions</div>
             </div>
 
-            <div className="metric-card">
-              <div className="metric-icon orange" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            <div className="metric-card" style={{ position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-20px', width: '150px', height: '150px', opacity: 0.08, pointerEvents: 'none', color: 'var(--orange)', transform: 'rotate(15deg)', WebkitMaskImage: 'linear-gradient(to top left, black 40%, transparent 90%)', maskImage: 'linear-gradient(to top left, black 40%, transparent 90%)' }}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                <div className="metric-icon orange" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                </div>
+                {!isLoading && !isDatabaseEmpty && (
+                  <button 
+                    onClick={() => setShowAllDomainsModal(true)}
+                    className="hover-text-black"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  >
+                    View All &rarr;
+                  </button>
+                )}
               </div>
-              <div className="metric-label" id="lbl-unique">Unique Hostnames</div>
-              <div className="metric-value" aria-labelledby="lbl-unique">{isLoading ? "---" : stats?.metrics?.uniqueDomainsCount ?? 0}</div>
-              <div className="metric-desc">Individual domains logged</div>
+              <div className="metric-label" id="lbl-unique" style={{ position: 'relative', zIndex: 1 }}>Unique Hostnames</div>
+              <div className="metric-value" aria-labelledby="lbl-unique" style={{ position: 'relative', zIndex: 1 }}>{isLoading ? "---" : stats?.metrics?.uniqueDomainsCount ?? 0}</div>
+              <div className="metric-desc" style={{ position: 'relative', zIndex: 1 }}>Individual domains logged</div>
             </div>
           </section>
 
@@ -1138,13 +1173,21 @@ export default function AnalyticsDashboard() {
                       : (maxDomainMs > 0 ? (item.durationMs / maxDomainMs) * 100 : 0);
                     
                     return (
-                      <div className="leaderboard-row" key={item.domain}>
-                        <div className="leaderboard-meta">
-                          <span className="leaderboard-name" title={item.domain}>
-                            #{idx + 1} {item.domain}
-                          </span>
-                          <span className="leaderboard-time">
-                            {formatDuration(item.durationMs)} ({item.visitCount} visits)
+                      <div className="leaderboard-row" key={item.domain} style={{ padding: '8px 0' }}>
+                        <div className="leaderboard-meta" style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                            <img 
+                              src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + item.domain)}&size=64` : ""} 
+                              alt="" 
+                              style={{ width: '16px', height: '16px', borderRadius: '3px', marginRight: '8px', flexShrink: 0 }} 
+                            />
+                            <span className="leaderboard-name" title={item.domain} style={{ fontWeight: 600 }}>
+                              <span style={{ color: 'var(--text3)', marginRight: '6px', fontWeight: 500 }}>#{idx + 1}</span>
+                              {item.domain}
+                            </span>
+                          </div>
+                          <span className="leaderboard-time" style={{ color: 'var(--text2)', fontSize: '12px' }}>
+                            {formatDuration(item.durationMs)} <span style={{ opacity: 0.7 }}>({item.visitCount} visits)</span>
                           </span>
                         </div>
                         <div className="leaderboard-bar-track" aria-hidden="true">
@@ -1441,6 +1484,17 @@ export default function AnalyticsDashboard() {
                     <option value="minimal">🖋️ Minimal (Enterprise)</option>
                     <option value="playful">🌿 Playful (Emojis)</option>
                   </select>
+                  <select
+                    value={blobStyle}
+                    onChange={(e) => handleBlobStyleChange(e.target.value as "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light")}
+                    className="theme-select-input"
+                    aria-label="Select widget style"
+                  >
+                    <option value="glass-dark">🔮 Glass (Dark)</option>
+                    <option value="glass-light">☁️ Glass (Light)</option>
+                    <option value="brutalist-dark">⬛ Brutalist (Dark)</option>
+                    <option value="brutalist-light">⬜ Brutalist (Light)</option>
+                  </select>
                 </div>
               </div>
               <div className="settings-card-illus" aria-hidden="true">
@@ -1587,7 +1641,7 @@ export default function AnalyticsDashboard() {
                       <div style={{ width: '48px', height: '48px', borderRadius: iconStyle === "minimal" ? '12px' : '50%', background: item.bg, color: item.color, border: iconStyle === "minimal" ? `1px solid ${item.color}40` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: iconStyle === "playful" ? '24px' : undefined }}>
                         {item.icon}
                       </div>
-                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: `${item.color}15`, padding: '6px 12px', borderRadius: '8px', border: `1px solid ${item.color}30` }}>
+                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: item.bg, padding: '6px 12px', borderRadius: '8px', border: iconStyle === "minimal" ? `1px solid ${item.color}30` : `1px solid ${item.color}20` }}>
                         {item.score}
                       </div>
                     </div>
@@ -1598,6 +1652,92 @@ export default function AnalyticsDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Domains Modal */}
+        {showAllDomainsModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="all-domains-modal-title" onClick={() => setShowAllDomainsModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px', width: '95vw', padding: '24px', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
+                <h3 id="all-domains-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-orange)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px' }}>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  All Unique Domains
+                </h3>
+                <button className="btn-icon" onClick={() => setShowAllDomainsModal(false)} aria-label="Close modal">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexShrink: 0 }}>
+                <input 
+                  type="text" 
+                  placeholder="Search domains..." 
+                  value={allDomainsSearch}
+                  onChange={(e) => setAllDomainsSearch(e.target.value)}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px' }}
+                />
+                <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
+                  <button onClick={() => setAllDomainsSort("duration")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "duration" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "duration" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "duration" ? 600 : 400 }}>Duration</button>
+                  <button onClick={() => setAllDomainsSort("visits")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "visits" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "visits" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "visits" ? 600 : 400 }}>Sessions</button>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+                {(() => {
+                  if (!stats || !stats.topDomains) return <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No domains found</div>;
+                  
+                  const filtered = stats.topDomains.filter(d => d.domain.toLowerCase().includes(allDomainsSearch.toLowerCase()));
+                  filtered.sort((a, b) => allDomainsSort === "visits" ? b.visitCount - a.visitCount : b.durationMs - a.durationMs);
+                  
+                  const maxD = Math.max(...filtered.map(d => d.durationMs), 1);
+                  const maxV = Math.max(...filtered.map(d => d.visitCount), 1);
+
+                  if (filtered.length === 0) return <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No matching domains</div>;
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {filtered.map((item, idx) => {
+                        const fillWidth = allDomainsSort === "visits" ? (item.visitCount / maxV) * 100 : (item.durationMs / maxD) * 100;
+                        return (
+                          <div key={item.domain} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s', background: 'var(--bg-secondary)' }} className="hover-bg-elevated">
+                            <div style={{ width: '24px', color: 'var(--text-subtle)', fontSize: '12px', fontWeight: 500, marginRight: '12px', textAlign: 'right', flexShrink: 0 }}>
+                              {idx + 1}
+                            </div>
+                            
+                            <img 
+                              src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + item.domain)}&size=64` : ""} 
+                              alt="" 
+                              style={{ width: '18px', height: '18px', borderRadius: '3px', marginRight: '14px', flexShrink: 0 }} 
+                            />
+
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px', letterSpacing: '-0.01em' }}>{item.domain}</span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
+                                    {formatDuration(item.durationMs)}
+                                  </span>
+                                  <span style={{ color: 'var(--border-subtle)' }}>•</span>
+                                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                    {item.visitCount} visits
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ height: '3px', background: 'var(--bg-elevated)', borderRadius: '1.5px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${fillWidth}%`, background: 'var(--brand-purple, #8b5cf6)', borderRadius: '1.5px', opacity: 0.85 }} />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
