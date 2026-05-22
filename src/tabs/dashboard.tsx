@@ -56,46 +56,77 @@ function formatDuration(ms: number): string {
   return `${min}m`;
 }
 
-function getProductivityLabel(score: number): string {
-  if (score >= 90) return "Highly Productive";
-  if (score >= 70) return "Focus Mode Stable";
-  if (score >= 50) return "Moderately Productive";
-  if (score >= 30) return "Mildly Distracted";
-  if (score >= 15) return "Highly Distracted";
-  return "Critically Distracted";
+function getProductivityLabel(score: number, iconStyle: "minimal" | "playful"): string {
+  if (iconStyle === "playful") {
+    if (score >= 90) return "Highly Productive";
+    if (score >= 70) return "Focus Mode Stable";
+    if (score >= 50) return "Moderately Productive";
+    if (score >= 30) return "Mildly Distracted";
+    if (score >= 15) return "Highly Distracted";
+    return "Critically Distracted";
+  }
+  if (score >= 90) return "Optimal Focus";
+  if (score >= 70) return "Productive";
+  if (score >= 50) return "Stable";
+  if (score >= 30) return "Minor Distractions";
+  if (score >= 15) return "Distracted";
+  return "Critical Focus Loss";
 }
 
-function renderScoreIllustration(score: number) {
-  // Productive tiers: thriving plants → moderate → dying
-  // Distracted tiers: spooked → dizzy → critical
-  let emoji: string;
+function renderScoreIllustration(score: number, iconStyle: "minimal" | "playful") {
+  let icon: React.ReactNode;
   let label: string;
   let bg: string;
-  let glow: string;
+  let color: string;
+  let glow: string = "none";
 
   if (score >= 90) {
-    emoji = "🌳";  label = "Thriving";
-    bg = "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)";
+    icon = iconStyle === "minimal" 
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      : "🌳";
+    label = iconStyle === "minimal" ? "Optimal" : "Thriving";
+    bg = iconStyle === "minimal" ? "rgba(16, 185, 129, 0.1)" : "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)";
+    color = "#10b981";
     glow = "0 8px 24px rgba(16,185,129,0.25)";
   } else if (score >= 70) {
-    emoji = "🌻";  label = "Flourishing";
-    bg = "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)";
+    icon = iconStyle === "minimal"
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      : "🌻";
+    label = iconStyle === "minimal" ? "Productive" : "Flourishing";
+    bg = iconStyle === "minimal" ? "rgba(59, 130, 246, 0.1)" : "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)";
+    color = "#3b82f6";
     glow = "0 8px 24px rgba(34,197,94,0.2)";
   } else if (score >= 50) {
-    emoji = "🪴";  label = "Growing";
-    bg = "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)";
+    icon = iconStyle === "minimal"
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      : "🪴";
+    label = iconStyle === "minimal" ? "Stable" : "Growing";
+    bg = iconStyle === "minimal" ? "rgba(100, 116, 139, 0.1)" : "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)";
+    color = "#64748b";
     glow = "0 8px 24px rgba(59,130,246,0.2)";
   } else if (score >= 30) {
-    emoji = "😨";  label = "Distracted";
-    bg = "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)";
+    icon = iconStyle === "minimal"
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      : "😨";
+    label = iconStyle === "minimal" ? "Minor Issues" : "Distracted";
+    bg = iconStyle === "minimal" ? "rgba(245, 158, 11, 0.1)" : "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)";
+    color = "#f59e0b";
     glow = "0 8px 24px rgba(245,158,11,0.2)";
   } else if (score >= 15) {
-    emoji = "😵‍💫";  label = "Very Distracted";
-    bg = "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
+    icon = iconStyle === "minimal"
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      : "😵‍💫";
+    label = "Distracted";
+    bg = iconStyle === "minimal" ? "rgba(239, 68, 68, 0.1)" : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
+    color = "#ef4444";
     glow = "0 8px 24px rgba(239,68,68,0.2)";
   } else {
-    emoji = "😱";  label = "Critical";
-    bg = "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)";
+    icon = iconStyle === "minimal"
+      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      : "😱";
+    label = iconStyle === "minimal" ? "Critical Loss" : "Critical";
+    bg = iconStyle === "minimal" ? "rgba(225, 29, 72, 0.1)" : "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)";
+    color = "#e11d48";
     glow = "0 8px 24px rgba(220,38,38,0.3)";
   }
 
@@ -105,32 +136,33 @@ function renderScoreIllustration(score: number) {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: "6px",
+      gap: "8px",
     }}>
       <div style={{
-        width: "72px",
-        height: "72px",
-        borderRadius: "50%",
+        width: iconStyle === "minimal" ? "64px" : "72px",
+        height: iconStyle === "minimal" ? "64px" : "72px",
+        borderRadius: iconStyle === "minimal" ? "12px" : "50%",
         background: bg,
-        boxShadow: glow,
+        color: color,
+        border: iconStyle === "minimal" ? `1px solid ${color}40` : 'none',
+        boxShadow: iconStyle === "playful" ? glow : 'none',
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "32px",
-        lineHeight: 1,
-        transition: "transform 0.3s ease",
+        fontSize: iconStyle === "playful" ? "32px" : undefined,
+        lineHeight: iconStyle === "playful" ? 1 : undefined,
+        transition: "all 0.3s ease",
       }}
         title={label}
       >
-        {emoji}
+        {icon}
       </div>
       <span style={{
-        fontSize: "10px",
-        fontWeight: 700,
-        letterSpacing: "0.06em",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.02em",
         textTransform: "uppercase",
-        color: "var(--text2)",
-        opacity: 0.8,
+        color: "var(--text-secondary)",
       }}>{label}</span>
     </div>
   );
@@ -160,12 +192,15 @@ export default function AnalyticsDashboard() {
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
+  const [iconStyle, setIconStyle] = useState<"minimal" | "playful">("minimal");
 
   // Load and apply theme on startup
   useEffect(() => {
-    chrome.storage.local.get(["theme"], (res) => {
+    chrome.storage.local.get(["theme", "iconStyle"], (res) => {
       const savedTheme = res.theme || "system";
+      const savedIconStyle = res.iconStyle || "minimal";
       setTheme(savedTheme);
+      setIconStyle(savedIconStyle);
       applyTheme(savedTheme);
     });
   }, []);
@@ -186,6 +221,11 @@ export default function AnalyticsDashboard() {
     applyTheme(newTheme);
   };
 
+  const handleIconStyleChange = (newStyle: "minimal" | "playful") => {
+    setIconStyle(newStyle);
+    chrome.storage.local.set({ iconStyle: newStyle });
+  };
+
   // Keep theme updated if system scheme changes and setting is system
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -202,6 +242,7 @@ export default function AnalyticsDashboard() {
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
   const [isPurging, setIsPurging] = useState(false);
+  const [showCriteriaModal, setShowCriteriaModal] = useState(false);
 
   // Productivity Rules Tab States
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
@@ -218,6 +259,7 @@ export default function AnalyticsDashboard() {
 
   const [hoveredTooltip, setHoveredTooltip] = useState<{x: number, y: number, title: string, content: React.ReactNode} | null>(null);
   const [activeChart, setActiveChart] = useState<"total" | "productivity">("total");
+  const [domainSort, setDomainSort] = useState<"duration" | "visits">("duration");
 
 
   // 1. Core range calculation
@@ -314,12 +356,23 @@ export default function AnalyticsDashboard() {
   // Domain table limits (virtual limit to top 15 domains maximum to prevent DOM overhead)
   const filteredDomains = useMemo(() => {
     if (!stats || !stats.topDomains) return [];
-    return stats.topDomains.slice(0, 15);
-  }, [stats]);
+    const domains = [...stats.topDomains];
+    if (domainSort === "visits") {
+      domains.sort((a, b) => b.visitCount - a.visitCount);
+    } else {
+      domains.sort((a, b) => b.durationMs - a.durationMs);
+    }
+    return domains.slice(0, 15);
+  }, [stats, domainSort]);
 
   const maxDomainMs = useMemo(() => {
     if (filteredDomains.length === 0) return 0;
     return Math.max(...filteredDomains.map(d => d.durationMs), 1);
+  }, [filteredDomains]);
+
+  const maxVisitCount = useMemo(() => {
+    if (filteredDomains.length === 0) return 0;
+    return Math.max(...filteredDomains.map(d => d.visitCount), 1);
   }, [filteredDomains]);
 
   // Max duration for the chart Y-axis
@@ -672,17 +725,26 @@ export default function AnalyticsDashboard() {
                     <span className="productivity-score-text">{productivityScore}%</span>
                   </div>
                   <div className="productivity-score-info">
-                    <h2>
+                    <h2 style={{ display: 'flex', alignItems: 'center' }}>
                       Productivity Score 
+                      <button 
+                        onClick={() => setShowCriteriaModal(true)}
+                        className="btn-icon" 
+                        style={{ marginLeft: 6, opacity: 0.6, width: 20, height: 20, padding: 0 }}
+                        title="View Score Criteria"
+                        aria-label="View Score Criteria"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      </button>
                       <span className={`badge-category ${productivityScore >= 50 ? 'productive' : 'distracting'}`} style={{ fontSize: "11px", marginLeft: 8 }}>
-                        {getProductivityLabel(productivityScore)}
+                        {getProductivityLabel(productivityScore, iconStyle)}
                       </span>
                     </h2>
                     <p>Ratio of productive vs distracting domain activities</p>
                   </div>
                 </div>
                 <div className={`prod-score-illus ${productivityScore >= 50 ? 'productive' : 'distracted'}`} aria-hidden="true">
-                  {renderScoreIllustration(productivityScore)}
+                  {renderScoreIllustration(productivityScore, iconStyle)}
                 </div>
               </div>
 
@@ -1013,9 +1075,43 @@ export default function AnalyticsDashboard() {
 
             {/* Right Column: Top Domains Table Leaderboard */}
             <section className="vis-card" aria-label="Top active domain listings">
-              <div className="vis-card-title">
-                Top Domains
-                <span>Sorted by duration</span>
+              <div className="vis-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  Top Domains
+                  <span style={{ margin: 0 }}>Sorted by {domainSort === "visits" ? "sessions" : "duration"}</span>
+                </div>
+                <div className="chart-tabs" style={{ display: 'flex', gap: '4px', fontSize: '12px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
+                  <button 
+                    onClick={() => setDomainSort("duration")} 
+                    style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '6px', 
+                      background: domainSort === "duration" ? 'var(--bg-elevated)' : 'transparent', 
+                      border: 'none', 
+                      boxShadow: domainSort === "duration" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      color: domainSort === "duration" ? 'var(--text-primary)' : 'var(--text-secondary)', 
+                      cursor: 'pointer',
+                      fontWeight: domainSort === "duration" ? 600 : 400
+                    }}
+                  >
+                    Duration
+                  </button>
+                  <button 
+                    onClick={() => setDomainSort("visits")} 
+                    style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '6px', 
+                      background: domainSort === "visits" ? 'var(--bg-elevated)' : 'transparent', 
+                      border: 'none', 
+                      boxShadow: domainSort === "visits" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      color: domainSort === "visits" ? 'var(--text-primary)' : 'var(--text-secondary)', 
+                      cursor: 'pointer',
+                      fontWeight: domainSort === "visits" ? 600 : 400
+                    }}
+                  >
+                    Sessions
+                  </button>
+                </div>
               </div>
 
               {isLoading ? (
@@ -1037,7 +1133,9 @@ export default function AnalyticsDashboard() {
               ) : (
                 <div className="leaderboard-list">
                   {filteredDomains.map((item, idx) => {
-                    const fillWidth = maxDomainMs > 0 ? (item.durationMs / maxDomainMs) * 100 : 0;
+                    const fillWidth = domainSort === "visits"
+                      ? (maxVisitCount > 0 ? (item.visitCount / maxVisitCount) * 100 : 0)
+                      : (maxDomainMs > 0 ? (item.durationMs / maxDomainMs) * 100 : 0);
                     
                     return (
                       <div className="leaderboard-row" key={item.domain}>
@@ -1321,9 +1419,9 @@ export default function AnalyticsDashboard() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </div>
               <div className="settings-card-body">
-                <h3>Theme Settings</h3>
-                <p style={{ marginBottom: 12 }}>Select your preferred user interface appearance. All themes support our premium liquid glass look.</p>
-                <div className="theme-selector-group">
+                <h3>Theme & Appearance</h3>
+                <p style={{ marginBottom: 12 }}>Select your preferred user interface appearance and iconography style.</p>
+                <div className="theme-selector-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <select
                     value={theme}
                     onChange={(e) => handleThemeChange(e.target.value as "dark" | "light" | "system")}
@@ -1333,6 +1431,15 @@ export default function AnalyticsDashboard() {
                     <option value="system">🖥️ System Default</option>
                     <option value="dark">🌙 Dark Glass</option>
                     <option value="light">☀️ Light Glass</option>
+                  </select>
+                  <select
+                    value={iconStyle}
+                    onChange={(e) => handleIconStyleChange(e.target.value as "minimal" | "playful")}
+                    className="theme-select-input"
+                    aria-label="Select icon style"
+                  >
+                    <option value="minimal">🖋️ Minimal (Enterprise)</option>
+                    <option value="playful">🌿 Playful (Emojis)</option>
                   </select>
                 </div>
               </div>
@@ -1436,6 +1543,61 @@ export default function AnalyticsDashboard() {
                 >
                   {isPurging ? "Purging..." : "Confirm Purge"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Criteria Modal */}
+        {showCriteriaModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="criteria-modal-title" onClick={() => setShowCriteriaModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '95vw', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 id="criteria-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: '10px' }}>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  Productivity Score Criteria
+                </h3>
+                <button className="btn-icon" onClick={() => setShowCriteriaModal(false)} aria-label="Close modal">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <p className="modal-desc" style={{ marginBottom: '24px', fontSize: '15px' }}>
+                Your score is determined by the ratio of time spent on productive vs distracting domains. Here is how your focus levels break down.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                {(iconStyle === "minimal" ? [
+                  { score: "90 - 100", label: "Optimal Focus", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" },
+                  { score: "70 - 89", label: "Productive", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" },
+                  { score: "50 - 69", label: "Stable", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" },
+                  { score: "30 - 49", label: "Minor Distractions", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>, desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" },
+                  { score: "15 - 29", label: "Distracted", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" },
+                  { score: "0 - 14", label: "Critical Focus Loss", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "rgba(225, 29, 72, 0.1)", color: "#e11d48" }
+                ] : [
+                  { score: "90 - 100", label: "Highly Productive", icon: "🌳", desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" },
+                  { score: "70 - 89", label: "Focus Mode Stable", icon: "🌻", desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)", color: "#166534" },
+                  { score: "50 - 69", label: "Moderately Productive", icon: "🪴", desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e40af" },
+                  { score: "30 - 49", label: "Mildly Distracted", icon: "😨", desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)", color: "#854d0e" },
+                  { score: "15 - 29", label: "Highly Distracted", icon: "😵‍💫", desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" },
+                  { score: "0 - 14", label: "Critically Distracted", icon: "😱", desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)", color: "#9f1239" }
+                ]).map((item, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: iconStyle === "minimal" ? '12px' : '50%', background: item.bg, color: item.color, border: iconStyle === "minimal" ? `1px solid ${item.color}40` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: iconStyle === "playful" ? '24px' : undefined }}>
+                        {item.icon}
+                      </div>
+                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: `${item.color}15`, padding: '6px 12px', borderRadius: '8px', border: `1px solid ${item.color}30` }}>
+                        {item.score}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '16px', marginBottom: '6px' }}>{item.label}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5, flex: 1 }}>{item.desc}</div>
+                    <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '8px', borderLeft: `3px solid ${item.color}`, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.5 }}>
+                      &quot;{item.quote}&quot;
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
