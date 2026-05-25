@@ -56,7 +56,9 @@ function formatDuration(ms: number): string {
   return `${min}m`;
 }
 
-function getProductivityLabel(score: number, iconStyle: "minimal" | "playful"): string {
+type IconStyleType = "minimal" | "playful" | "neon" | "corporate";
+
+function getProductivityLabel(score: number, iconStyle: IconStyleType): string {
   if (iconStyle === "playful") {
     if (score >= 90) return "Highly Productive";
     if (score >= 70) return "Focus Mode Stable";
@@ -65,6 +67,23 @@ function getProductivityLabel(score: number, iconStyle: "minimal" | "playful"): 
     if (score >= 15) return "Highly Distracted";
     return "Critically Distracted";
   }
+  if (iconStyle === "corporate") {
+    if (score >= 90) return "Maximum Efficiency";
+    if (score >= 70) return "Productive Output";
+    if (score >= 50) return "Standard Operations";
+    if (score >= 30) return "Minor Deficit";
+    if (score >= 15) return "Attention Required";
+    return "Critical Intervention";
+  }
+  if (iconStyle === "neon") {
+    if (score >= 90) return "Hyper Focus";
+    if (score >= 70) return "In The Zone";
+    if (score >= 50) return "Flowing";
+    if (score >= 30) return "Glitchy";
+    if (score >= 15) return "Lagging";
+    return "System Failure";
+  }
+  // minimal
   if (score >= 90) return "Optimal Focus";
   if (score >= 70) return "Productive";
   if (score >= 50) return "Stable";
@@ -73,63 +92,120 @@ function getProductivityLabel(score: number, iconStyle: "minimal" | "playful"): 
   return "Critical Focus Loss";
 }
 
-function renderScoreIllustration(score: number, iconStyle: "minimal" | "playful") {
+function getScoreCriteria(iconStyle: IconStyleType) {
+  if (iconStyle === "playful") {
+    return [
+      { score: "90 - 100", label: "Highly Productive", icon: "🌳", desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" },
+      { score: "70 - 89", label: "Focus Mode Stable", icon: "🌻", desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)", color: "#166534" },
+      { score: "50 - 69", label: "Moderately Productive", icon: "🪴", desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e40af" },
+      { score: "30 - 49", label: "Mildly Distracted", icon: "😨", desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)", color: "#854d0e" },
+      { score: "15 - 29", label: "Highly Distracted", icon: "😵‍💫", desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" },
+      { score: "0 - 14", label: "Critically Distracted", icon: "😱", desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)", color: "#9f1239" }
+    ];
+  }
+  if (iconStyle === "neon") {
+    return [
+      { score: "90 - 100", label: "Hyper Focus", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, desc: "Ultimate focus mode engaged.", quote: "The future is built by deep work.", bg: "rgba(0, 255, 204, 0.1)", color: "#00ffcc" },
+      { score: "70 - 89", label: "In The Zone", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, desc: "High velocity and stable output.", quote: "Momentum is a product of consistency.", bg: "rgba(0, 170, 255, 0.1)", color: "#00aaff" },
+      { score: "50 - 69", label: "Flowing", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>, desc: "Standard performance matrix.", quote: "Keep the systems running.", bg: "rgba(168, 85, 247, 0.1)", color: "#a855f7" },
+      { score: "30 - 49", label: "Glitchy", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, desc: "Minor interruptions detected.", quote: "Realign your bandwidth.", bg: "rgba(255, 204, 0, 0.1)", color: "#ffcc00" },
+      { score: "15 - 29", label: "Lagging", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "High latency. Reconnect to tasks.", quote: "Disconnect the noise.", bg: "rgba(255, 51, 102, 0.1)", color: "#ff3366" },
+      { score: "0 - 14", label: "System Failure", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>, desc: "Complete breakdown of focus parameters.", quote: "Hard reset required.", bg: "rgba(255, 0, 0, 0.1)", color: "#ff0000" }
+    ];
+  }
+  if (iconStyle === "corporate") {
+    return [
+      { score: "90 - 100", label: "Maximum Efficiency", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, desc: "KPIs exceeded.", quote: "Productivity drives profitability.", bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" },
+      { score: "70 - 89", label: "Productive Output", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>, desc: "Strong quarterly performance equivalent.", quote: "Execution is everything.", bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" },
+      { score: "50 - 69", label: "Standard Operations", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>, desc: "Operating within acceptable parameters.", quote: "Maintain the baseline.", bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" },
+      { score: "30 - 49", label: "Minor Deficit", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, desc: "Operational inefficiencies detected.", quote: "Audit your time allocation.", bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" },
+      { score: "15 - 29", label: "Attention Required", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "Significant deviation from goals.", quote: "Refocus on deliverables.", bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" },
+      { score: "0 - 14", label: "Critical Intervention", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "Unacceptable performance metrics.", quote: "Immediate remediation necessary.", bg: "rgba(225, 29, 72, 0.1)", color: "#e11d48" }
+    ];
+  }
+  return [
+    { score: "90 - 100", label: "Optimal Focus", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" },
+    { score: "70 - 89", label: "Productive", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" },
+    { score: "50 - 69", label: "Stable", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" },
+    { score: "30 - 49", label: "Minor Distractions", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>, desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" },
+    { score: "15 - 29", label: "Distracted", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" },
+    { score: "0 - 14", label: "Critical Focus Loss", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "rgba(225, 29, 72, 0.1)", color: "#e11d48" }
+  ];
+}
+
+function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
   let icon: React.ReactNode;
   let label: string;
   let bg: string;
   let color: string;
   let glow: string = "none";
 
+  const neonGlow = (clr: string) => `inset 0 0 10px ${clr}40, 0 0 15px ${clr}60`;
+
   if (score >= 90) {
-    icon = iconStyle === "minimal" 
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      : "🌳";
-    label = iconStyle === "minimal" ? "Optimal" : "Thriving";
-    bg = iconStyle === "minimal" ? "rgba(16, 185, 129, 0.1)" : "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)";
-    color = "#10b981";
-    glow = "0 8px 24px rgba(16,185,129,0.25)";
+    if (iconStyle === "playful") icon = "🌳";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+    
+    label = "Optimal";
+    color = iconStyle === "neon" ? "#00ffcc" : "#10b981";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" : (iconStyle === "neon" ? "rgba(0, 255, 204, 0.1)" : "rgba(16, 185, 129, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(16,185,129,0.25)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 70) {
-    icon = iconStyle === "minimal"
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-      : "🌻";
-    label = iconStyle === "minimal" ? "Productive" : "Flourishing";
-    bg = iconStyle === "minimal" ? "rgba(59, 130, 246, 0.1)" : "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)";
-    color = "#3b82f6";
-    glow = "0 8px 24px rgba(34,197,94,0.2)";
+    if (iconStyle === "playful") icon = "🌻";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
+    
+    label = "Productive";
+    color = iconStyle === "neon" ? "#00aaff" : "#3b82f6";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)" : (iconStyle === "neon" ? "rgba(0, 170, 255, 0.1)" : "rgba(59, 130, 246, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(34,197,94,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 50) {
-    icon = iconStyle === "minimal"
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      : "🪴";
-    label = iconStyle === "minimal" ? "Stable" : "Growing";
-    bg = iconStyle === "minimal" ? "rgba(100, 116, 139, 0.1)" : "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)";
-    color = "#64748b";
-    glow = "0 8px 24px rgba(59,130,246,0.2)";
+    if (iconStyle === "playful") icon = "🪴";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+    
+    label = "Stable";
+    color = iconStyle === "neon" ? "#a855f7" : "#64748b";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)" : (iconStyle === "neon" ? "rgba(168, 85, 247, 0.1)" : "rgba(100, 116, 139, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(59,130,246,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 30) {
-    icon = iconStyle === "minimal"
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      : "😨";
-    label = iconStyle === "minimal" ? "Minor Issues" : "Distracted";
-    bg = iconStyle === "minimal" ? "rgba(245, 158, 11, 0.1)" : "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)";
-    color = "#f59e0b";
-    glow = "0 8px 24px rgba(245,158,11,0.2)";
+    if (iconStyle === "playful") icon = "😨";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+    
+    label = "Minor Issues";
+    color = iconStyle === "neon" ? "#ffcc00" : "#f59e0b";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)" : (iconStyle === "neon" ? "rgba(255, 204, 0, 0.1)" : "rgba(245, 158, 11, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(245,158,11,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 15) {
-    icon = iconStyle === "minimal"
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      : "😵‍💫";
+    if (iconStyle === "playful") icon = "😵‍💫";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+    
     label = "Distracted";
-    bg = iconStyle === "minimal" ? "rgba(239, 68, 68, 0.1)" : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
-    color = "#ef4444";
-    glow = "0 8px 24px rgba(239,68,68,0.2)";
+    color = iconStyle === "neon" ? "#ff3366" : "#ef4444";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)" : (iconStyle === "neon" ? "rgba(255, 51, 102, 0.1)" : "rgba(239, 68, 68, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(239,68,68,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else {
-    icon = iconStyle === "minimal"
-      ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-      : "😱";
-    label = iconStyle === "minimal" ? "Critical Loss" : "Critical";
-    bg = iconStyle === "minimal" ? "rgba(225, 29, 72, 0.1)" : "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)";
-    color = "#e11d48";
-    glow = "0 8px 24px rgba(220,38,38,0.3)";
+    if (iconStyle === "playful") icon = "😱";
+    else if (iconStyle === "neon") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+    else if (iconStyle === "corporate") icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>;
+    else icon = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>;
+    
+    label = "Critical";
+    color = iconStyle === "neon" ? "#ff0000" : "#e11d48";
+    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)" : (iconStyle === "neon" ? "rgba(255, 0, 0, 0.1)" : "rgba(225, 29, 72, 0.1)");
+    glow = iconStyle === "playful" ? "0 8px 24px rgba(220,38,38,0.3)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   }
 
+  const isSquare = iconStyle === "minimal" || iconStyle === "corporate" || iconStyle === "neon";
+  
   return (
     <div style={{
       display: "flex",
@@ -139,13 +215,13 @@ function renderScoreIllustration(score: number, iconStyle: "minimal" | "playful"
       gap: "8px",
     }}>
       <div style={{
-        width: iconStyle === "minimal" ? "64px" : "72px",
-        height: iconStyle === "minimal" ? "64px" : "72px",
-        borderRadius: iconStyle === "minimal" ? "12px" : "50%",
+        width: isSquare ? "64px" : "72px",
+        height: isSquare ? "64px" : "72px",
+        borderRadius: isSquare ? "12px" : "50%",
         background: bg,
         color: color,
-        border: iconStyle === "minimal" ? `1px solid ${color}40` : 'none',
-        boxShadow: iconStyle === "playful" ? glow : 'none',
+        border: (isSquare && iconStyle !== "neon") ? `1px solid ${color}40` : 'none',
+        boxShadow: glow !== "none" ? glow : 'none',
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -172,11 +248,14 @@ type RangeType = "today" | "7days" | "30days";
 
 const computeSmoothPath = (points: {x: number, y: number}[]) => {
   if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-  let d = `M ${points[0].x} ${points[0].y}`;
+  const firstPoint = points[0];
+  if (!firstPoint) return "";
+  if (points.length === 1) return `M ${firstPoint.x} ${firstPoint.y}`;
+  let d = `M ${firstPoint.x} ${firstPoint.y}`;
   for (let i = 0; i < points.length - 1; i++) {
     const curr = points[i];
     const next = points[i+1];
+    if (!curr || !next) continue;
     const cp1x = curr.x + (next.x - curr.x) / 3;
     const cp1y = curr.y;
     const cp2x = next.x - (next.x - curr.x) / 3;
@@ -186,13 +265,69 @@ const computeSmoothPath = (points: {x: number, y: number}[]) => {
   return d;
 }
 
+const CustomDropdown = ({ value, options, onChange }: { value: string, options: {id: string, label: React.ReactNode}[], onChange: (val: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(o => o.id === value) || options[0];
+
+  return (
+    <div style={{ position: 'relative', minWidth: '220px' }}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 14px', background: 'var(--surface2)', border: '1px solid var(--border)',
+          borderRadius: '10px', color: 'var(--text)', fontSize: '13px', fontWeight: 500,
+          cursor: 'pointer', transition: 'all 0.2s',
+          boxShadow: isOpen ? '0 0 0 2px var(--accent-bg)' : 'none',
+          borderColor: isOpen ? 'var(--accent)' : 'var(--border)'
+        }}
+      >
+        <span>{selectedOption?.label}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px',
+          padding: '6px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', zIndex: 100,
+          display: 'flex', flexDirection: 'column', gap: '2px', animation: 'tab-fade-in 0.2s ease forwards'
+        }}>
+          {options.map(opt => (
+            <button
+              key={opt.id}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevents blur event on the parent button
+                onChange(opt.id);
+                setIsOpen(false);
+              }}
+              style={{
+                width: '100%', textAlign: 'left', padding: '8px 12px',
+                background: value === opt.id ? 'var(--accent-bg)' : 'transparent',
+                color: value === opt.id ? 'var(--accent)' : 'var(--text)',
+                border: 'none', borderRadius: '6px', fontSize: '13px',
+                fontWeight: value === opt.id ? 600 : 500, cursor: 'pointer', transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => { if (value !== opt.id) e.currentTarget.style.background = 'var(--surface2)'; }}
+              onMouseLeave={(e) => { if (value !== opt.id) e.currentTarget.style.background = 'transparent'; }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings">("analytics");
   const [range, setRange] = useState<RangeType>("7days");
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
-  const [iconStyle, setIconStyle] = useState<"minimal" | "playful">("minimal");
+  const [iconStyle, setIconStyle] = useState<IconStyleType>("minimal");
   const [blobStyle, setBlobStyle] = useState<"glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light">("glass-dark");
 
   // Load and apply theme on startup
@@ -224,13 +359,13 @@ export default function AnalyticsDashboard() {
     applyTheme(newTheme);
   };
 
-  const handleIconStyleChange = (newStyle: "minimal" | "playful") => {
-    setIconStyle(newStyle);
+  const handleIconStyleChange = (newStyle: string) => {
+    setIconStyle(newStyle as IconStyleType);
     chrome.storage.local.set({ iconStyle: newStyle });
   };
 
-  const handleBlobStyleChange = (newStyle: "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light") => {
-    setBlobStyle(newStyle);
+  const handleBlobStyleChange = (newStyle: string) => {
+    setBlobStyle(newStyle as "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light");
     chrome.storage.local.set({ blobStyle: newStyle });
   };
 
@@ -642,8 +777,8 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Header */}
-        <header className="dashboard-header" role="banner">
-          <div className="brand-section">
+        <header className="dashboard-header" role="banner" style={{ marginBottom: '28px' }}>
+          <div className="brand-section" style={{ flex: 1 }}>
             <h1>
               <img src={brandLogo} alt="Logo" width="28" height="28" style={{ borderRadius: 6 }} />
               Local Browse Insights
@@ -657,14 +792,65 @@ export default function AnalyticsDashboard() {
             <button className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Settings & Privacy</button>
           </nav>
 
-          {/* Filter group always mounted to avoid layout shift; hidden via opacity when not on analytics tab */}
-          <nav aria-label="Dashboard range selection" style={{ visibility: activeTab === "analytics" ? "visible" : "hidden", transition: "opacity 0.2s", opacity: activeTab === "analytics" ? 1 : 0 }}>
-            <div className="filter-group">
-              <button className={`filter-btn ${range === "today" ? "active" : ""}`} onClick={() => setRange("today")} aria-pressed={range === "today"} tabIndex={activeTab === "analytics" ? 0 : -1}>Today</button>
-              <button className={`filter-btn ${range === "7days" ? "active" : ""}`} onClick={() => setRange("7days")} aria-pressed={range === "7days"} tabIndex={activeTab === "analytics" ? 0 : -1}>Last 7 Days</button>
-              <button className={`filter-btn ${range === "30days" ? "active" : ""}`} onClick={() => setRange("30days")} aria-pressed={range === "30days"} tabIndex={activeTab === "analytics" ? 0 : -1}>Last 30 Days</button>
-            </div>
-          </nav>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            {/* Filter group hidden when not on analytics tab */}
+            <nav aria-label="Dashboard range selection" style={{ visibility: activeTab === "analytics" ? "visible" : "hidden", transition: "opacity 0.2s", opacity: activeTab === "analytics" ? 1 : 0 }}>
+              <div className="filter-group" style={{ whiteSpace: 'nowrap' }}>
+                <button className={`filter-btn ${range === "today" ? "active" : ""}`} onClick={() => setRange("today")} aria-pressed={range === "today"} tabIndex={activeTab === "analytics" ? 0 : -1} style={{ whiteSpace: 'nowrap' }}>Today</button>
+                <button className={`filter-btn ${range === "7days" ? "active" : ""}`} onClick={() => setRange("7days")} aria-pressed={range === "7days"} tabIndex={activeTab === "analytics" ? 0 : -1} style={{ whiteSpace: 'nowrap' }}>Last 7 Days</button>
+                <button className={`filter-btn ${range === "30days" ? "active" : ""}`} onClick={() => setRange("30days")} aria-pressed={range === "30days"} tabIndex={activeTab === "analytics" ? 0 : -1} style={{ whiteSpace: 'nowrap' }}>Last 30 Days</button>
+              </div>
+            </nav>
+            
+            {/* Theme toggler pushed to absolute right edge */}
+            <button
+              onClick={() => handleThemeChange(theme === 'dark' ? 'light' : 'dark')}
+              style={{
+                marginLeft: 'auto',
+                background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'var(--surface)',
+                border: theme === 'dark' ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border)',
+                borderRadius: '24px',
+                width: '64px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative',
+                cursor: 'pointer',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                padding: '0 4px',
+                overflow: 'hidden',
+                flexShrink: 0
+              }}
+              aria-label="Toggle Theme"
+              title="Toggle Theme"
+            >
+              <div style={{
+                position: 'absolute',
+                left: theme === 'dark' ? '32px' : '4px',
+                width: '24px',
+                height: '24px',
+                background: theme === 'dark' ? '#1e293b' : '#fff',
+                borderRadius: '50%',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2
+              }}>
+                {theme === 'dark' ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#60a5fa" stroke="#60a5fa" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                )}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 4px', zIndex: 1, color: 'var(--text-secondary)' }}>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              </div>
+            </button>
+          </div>
         </header>
 
       {/* Fresh install Onboarding preset displays */}
@@ -1464,37 +1650,35 @@ export default function AnalyticsDashboard() {
               <div className="settings-card-body">
                 <h3>Theme & Appearance</h3>
                 <p style={{ marginBottom: 12 }}>Select your preferred user interface appearance and iconography style.</p>
-                <div className="theme-selector-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <select
-                    value={theme}
-                    onChange={(e) => handleThemeChange(e.target.value as "dark" | "light" | "system")}
-                    className="theme-select-input"
-                    aria-label="Select color theme"
-                  >
-                    <option value="system">🖥️ System Default</option>
-                    <option value="dark">🌙 Dark Glass</option>
-                    <option value="light">☀️ Light Glass</option>
-                  </select>
-                  <select
-                    value={iconStyle}
-                    onChange={(e) => handleIconStyleChange(e.target.value as "minimal" | "playful")}
-                    className="theme-select-input"
-                    aria-label="Select icon style"
-                  >
-                    <option value="minimal">🖋️ Minimal (Enterprise)</option>
-                    <option value="playful">🌿 Playful (Emojis)</option>
-                  </select>
-                  <select
-                    value={blobStyle}
-                    onChange={(e) => handleBlobStyleChange(e.target.value as "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light")}
-                    className="theme-select-input"
-                    aria-label="Select widget style"
-                  >
-                    <option value="glass-dark">🔮 Glass (Dark)</option>
-                    <option value="glass-light">☁️ Glass (Light)</option>
-                    <option value="brutalist-dark">⬛ Brutalist (Dark)</option>
-                    <option value="brutalist-light">⬜ Brutalist (Light)</option>
-                  </select>
+                <div className="theme-selector-group" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '16px' }}>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Iconography Style</span>
+                    <CustomDropdown
+                      value={iconStyle}
+                      onChange={handleIconStyleChange}
+                      options={[
+                        { id: 'minimal', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Minimal</div> },
+                        { id: 'playful', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Playful</div> },
+                        { id: 'neon', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Neon</div> },
+                        { id: 'corporate', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Corporate</div> }
+                      ]}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Widget Appearance</span>
+                    <CustomDropdown
+                      value={blobStyle}
+                      onChange={handleBlobStyleChange}
+                      options={[
+                        { id: 'glass-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg> Glass Dark</div> },
+                        { id: 'glass-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Glass Light</div> },
+                        { id: 'brutalist-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Brutalist Dark</div> },
+                        { id: 'brutalist-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Brutalist Light</div> }
+                      ]}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="settings-card-illus" aria-hidden="true">
@@ -1621,27 +1805,25 @@ export default function AnalyticsDashboard() {
                 Your score is determined by the ratio of time spent on productive vs distracting domains. Here is how your focus levels break down.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                {(iconStyle === "minimal" ? [
-                  { score: "90 - 100", label: "Optimal Focus", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" },
-                  { score: "70 - 89", label: "Productive", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" },
-                  { score: "50 - 69", label: "Stable", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" },
-                  { score: "30 - 49", label: "Minor Distractions", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>, desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" },
-                  { score: "15 - 29", label: "Distracted", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" },
-                  { score: "0 - 14", label: "Critical Focus Loss", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "rgba(225, 29, 72, 0.1)", color: "#e11d48" }
-                ] : [
-                  { score: "90 - 100", label: "Highly Productive", icon: "🌳", desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" },
-                  { score: "70 - 89", label: "Focus Mode Stable", icon: "🌻", desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)", color: "#166534" },
-                  { score: "50 - 69", label: "Moderately Productive", icon: "🪴", desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e40af" },
-                  { score: "30 - 49", label: "Mildly Distracted", icon: "😨", desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)", color: "#854d0e" },
-                  { score: "15 - 29", label: "Highly Distracted", icon: "😵‍💫", desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" },
-                  { score: "0 - 14", label: "Critically Distracted", icon: "😱", desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)", color: "#9f1239" }
-                ]).map((item, i) => (
+                {getScoreCriteria(iconStyle).map((item, i) => (
                   <div key={i} style={{ display: 'flex', flexDirection: 'column', padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: iconStyle === "minimal" ? '12px' : '50%', background: item.bg, color: item.color, border: iconStyle === "minimal" ? `1px solid ${item.color}40` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: iconStyle === "playful" ? '24px' : undefined }}>
+                      <div style={{ 
+                        width: '48px', 
+                        height: '48px', 
+                        borderRadius: (iconStyle === "minimal" || iconStyle === "corporate" || iconStyle === "neon") ? '12px' : '50%', 
+                        background: item.bg, 
+                        color: item.color, 
+                        border: (iconStyle === "minimal" || iconStyle === "corporate") ? `1px solid ${item.color}40` : 'none', 
+                        boxShadow: iconStyle === "neon" ? `inset 0 0 10px ${item.color}40, 0 0 15px ${item.color}60` : 'none',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontSize: iconStyle === "playful" ? '24px' : undefined 
+                      }}>
                         {item.icon}
                       </div>
-                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: item.bg, padding: '6px 12px', borderRadius: '8px', border: iconStyle === "minimal" ? `1px solid ${item.color}30` : `1px solid ${item.color}20` }}>
+                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: item.bg, padding: '6px 12px', borderRadius: '8px', border: `1px solid ${item.color}30` }}>
                         {item.score}
                       </div>
                     </div>
