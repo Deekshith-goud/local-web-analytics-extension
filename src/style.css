@@ -5,15 +5,15 @@
 /* ── Widget Frame Base & Variables ── */
 .widget-frame {
   /* Default: Glass Dark */
-  --w-bg: rgba(6, 8, 18, 0.9);
-  --w-border: rgba(139, 92, 246, 0.18);
-  --w-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 6px rgba(99, 102, 241, 0.08);
+  --w-bg: rgba(3, 7, 18, 0.85);
+  --w-border: rgba(139, 92, 246, 0.15);
+  --w-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 6px rgba(99, 102, 241, 0.08);
   --w-hover-border: rgba(139, 92, 246, 0.35);
-  --w-hover-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(99, 102, 241, 0.14);
+  --w-hover-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 14px rgba(99, 102, 241, 0.14);
   --w-glow-color: rgba(139, 92, 246, 0.5);
   
-  --w-text-main: #e2d9f3;
-  --w-text-muted: #94a3b8;
+  --w-text-main: #f8fafc;
+  --w-text-muted: #cbd5e1;
   --w-text-accent: #c4b5fd;
   --w-text-accent-dim: rgba(167, 139, 250, 0.6);
   --w-text-subtle: rgba(148, 163, 184, 0.6);
@@ -22,7 +22,7 @@
   --w-card-border: rgba(255, 255, 255, 0.07);
   --w-header-bg: linear-gradient(180deg, rgba(109, 40, 217, 0.15) 0%, transparent 100%);
   --w-active-bg: linear-gradient(135deg, rgba(109, 40, 217, 0.18) 0%, rgba(79, 70, 229, 0.10) 100%);
-  --w-footer-bg: rgba(4, 5, 12, 0.8);
+  --w-footer-bg: rgba(3, 7, 18, 0.9);
   
   --w-radius-collapsed: 26px;
   --w-radius-expanded: 18px;
