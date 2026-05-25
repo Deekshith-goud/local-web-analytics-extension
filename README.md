@@ -29,12 +29,10 @@ Understand where your time goes, track your "Focus Hours," and view a beautiful 
 
 ## ✨ Key Features
 
-- **📊 High-Density Local Analytics**: Interactive dashboards populated by raw SVG charts detailing hostnames visited, Focus hours, and window focus durations. No external charting libraries that phone home.
-- **🎯 Productivity Classifier**: Label hostnames as Productive, Distracting, or Neutral. Tailor individual overrides with subdomain rules. The system intelligently compiles these rules to score your daily focus.
-- **💬 Floating Insights UI**: A safe, non-invasive overlay summarizing today's active domain focus duration, dynamically injected into your active tab.
-- **⚙️ Safe & Secure**: Multi-step irreversible database purge, ring-buffered observability, strict Content Security Policy (CSP), and capability-mapped messaging.
-- **🚀 Ultra-Lightweight**: Built with Plasmo, React, and Dexie (IndexedDB), highly optimized for performance. The total production bundle size stays comfortably under 2MB.
-- **💾 Export & Import**: Full data portability. Export your custom productivity rules to a JSON file and import them on another device.
+- **📊 100% Local Analytics Dashboard**: Interactive UI with custom, zero-dependency SVG charts tracking your browsing time and focus hours.
+- **🎯 Productivity Classifier**: Rule-based engine to label websites (Productive, Distracting, Neutral) and calculate your daily Productivity Score.
+- **💬 Floating Insights Widget**: A draggable, non-invasive overlay seamlessly injected into your active tab for real-time tracking.
+- **⚙️ Complete Privacy Control**: Absolute zero telemetry, no external server calls, and a built-in irreversible database purge for peace of mind.
 
 ---
 
@@ -71,33 +69,53 @@ This extension was engineered over 10 rigorous phases with a focus on defense-in
 ## 🚀 Getting Started
 
 ### Prerequisites
-Make sure you have [Bun](https://bun.sh/) installed on your machine.
+Before you begin, ensure you have the following installed on your machine:
+- **[Bun](https://bun.sh/)** (v1.0 or higher) - Required for ultra-fast dependency resolution and running scripts.
+- **[Node.js](https://nodejs.org/)** (v18 or higher) - Recommended as a fallback runtime for certain underlying build tools.
+- **Git** - For cloning the repository.
 
-### Installation & Development
+### Installation & Development Setup
 
 1. **Clone the repository**
+   Open your terminal (Command Prompt, PowerShell, or bash) and run:
    ```bash
    git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
    cd local-web-analytics-extension
    ```
 
 2. **Install dependencies**
+   It is critical to install dependencies before attempting to run any code. Execute:
    ```bash
    bun install
    ```
+   *(Note: If you encounter any installation errors, try running `bun pm cache rm` to clear the cache, then run `bun install` again).*
 
 3. **Start the development server**
+   Run the following command to start the Plasmo development server:
    ```bash
    bun run dev
    ```
-   *This will compile the extension and load it into a new Chrome instance automatically with hot-module reloading enabled.*
+   *This command compiles the extension and watches for file changes.*
+
+4. **Load the Extension in Chrome**
+   If the browser doesn't open the extension automatically, you must load it manually:
+   - Open Google Chrome and navigate to `chrome://extensions/`
+   - Toggle **"Developer mode"** on in the top-right corner.
+   - Click the **"Load unpacked"** button in the top-left.
+   - Navigate to the project folder and select the newly created `build/chrome-mv3-dev` directory.
+   
+   The extension is now installed locally and will hot-reload automatically as you make code changes!
 
 ### Production Build & Packaging
-To build a production-ready zip file with automated security audits:
+To build a production-ready, minified version of the extension:
+```bash
+bun run build
+```
+To run automated security audits and package it into a zip file for the Chrome Web Store:
 ```bash
 bun run package
 ```
-*This runs the `package-extension.js` script to verify permissions, CSP, bundle size, and generates a deterministic `release-manifest.json` before zipping.*
+*This verifies permissions, CSP, bundle size, and generates a deterministic `release-manifest.json` before zipping into `build/chrome-mv3-prod.zip`.*
 
 ### 🏷️ Release Management & Tagging
 
