@@ -1,6 +1,17 @@
 <div align="center">
   <img src="assets/logo-banner.png" alt="Local Browse Insights Logo" width="600" />
-  <p><strong>Private Time Analytics & Productivity Dashboard</strong></p>
+  
+  # Local Browse Insights
+  
+  **Privacy-First Browser Analytics Extension**
+  
+  Track your browsing habits, productivity score, focus hours, and time usage entirely on-device.
+  
+  No accounts. No cloud. No telemetry. No tracking.
+  
+  [Install](#-quick-install) • [Demo](#demo) • [Documentation](#%EF%B8%8F-developer-installation)
+  
+  <br />
   
   <p>
     <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml"><img src="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml/badge.svg" alt="CI Build Status" /></a>
@@ -11,32 +22,115 @@
     <img src="https://img.shields.io/badge/privacy-100%25_local-success.svg" alt="Privacy First" />
     <img src="https://img.shields.io/badge/telemetry-ZERO-critical.svg" alt="Zero Telemetry" />
   </p>
-  
-  <p><em>If you find this extension helpful, consider giving it a ⭐ on GitHub!</em></p>
 </div>
 
 ---
 
-## 📖 About the Project
+## Demo
 
-**Local Browse Insights** provides detailed, actionable insights into your daily browsing habits without compromising your privacy. 
-
-Unlike other productivity tools that send your history to remote servers, **100% of our tracking, analysis, and data storage occurs locally on your machine.**
-
-Understand where your time goes, track your "Focus Hours," and view a beautiful dashboard of your internet activity—all without a single byte of your data ever leaving your browser.
+<img src="assets/demo.gif" width="800" />
 
 ---
 
-## ✨ Key Features
+## Screenshots
 
-- **📊 100% Local Analytics Dashboard**: Interactive UI with custom, zero-dependency SVG charts tracking your browsing time and focus hours.
-- **🎯 Productivity Classifier**: Rule-based engine to label websites (Productive, Distracting, Neutral) and calculate your daily Productivity Score.
-- **💬 Floating Insights Widget**: A draggable, non-invasive overlay seamlessly injected into your active tab for real-time tracking.
-- **⚙️ Complete Privacy Control**: Absolute zero telemetry, no external server calls, and a built-in irreversible database purge for peace of mind.
+### Dashboard
+<img src="assets/dashboard.png" width="800" />
+
+### Analytics
+<img src="assets/analytics.png" width="800" />
+
+### Floating Widget
+<img src="assets/widget.png" width="800" />
+
+### Settings & Privacy
+<img src="assets/settings.png" width="800" />
 
 ---
 
-## 🛡️ Privacy Policy & Local-First Guarantee
+## Features
+
+**📊 Local Analytics Dashboard**  
+Visualize browsing behavior without external services.
+
+**🎯 Productivity Scoring**  
+Automatically classify productive and distracting websites.
+
+**⏱ Focus Hour Tracking**  
+Monitor deep work sessions.
+
+**🔒 Privacy First**  
+Zero telemetry and zero external requests.
+
+**🧹 One-Click Data Purge**  
+Delete all stored data instantly.
+
+---
+
+## ⚡ Quick Install
+
+1. Download the [latest release](https://github.com/Deekshith-goud/local-web-analytics-extension/releases).
+2. Open Google Chrome and navigate to `chrome://extensions/`.
+3. Enable **Developer mode** in the top-right corner.
+4. Click **Load unpacked**.
+5. Select the extracted extension folder.
+
+---
+
+## 🛠️ Developer Installation
+
+### Prerequisites
+- **[Bun](https://bun.sh/)** (v1.0+)
+- **[Node.js](https://nodejs.org/)** (v18+)
+- **Git**
+
+### Setup Steps
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
+   cd local-web-analytics-extension
+   ```
+
+2. **Install dependencies**
+   ```bash
+   bun install
+   ```
+
+3. **Start the development server**
+   ```bash
+   bun run dev
+   ```
+
+4. **Load the Extension in Chrome**
+   - Go to `chrome://extensions/`
+   - Enable **Developer mode**
+   - Click **Load unpacked**
+   - Select `build/chrome-mv3-dev`
+
+*(For production builds, run `bun run build`. To run security audits and package, use `bun run package`.)*
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+flowchart TD
+
+A[Browser Activity]
+B[Tracking Engine]
+C[Classification Engine]
+D[IndexedDB]
+E[Analytics Dashboard]
+
+A --> B
+B --> C
+C --> D
+D --> E
+```
+
+---
+
+## 🛡️ Privacy Guarantees
 
 We believe your browsing history is deeply personal. **Local Browse Insights** adheres to the following strict privacy guarantees:
 
@@ -56,125 +150,36 @@ This extension was engineered over 10 rigorous phases with a focus on defense-in
 
 ---
 
-## 🛠️ Tech Stack
+## 🗺 Roadmap
 
-- **Framework**: [Plasmo](https://docs.plasmo.com/) - The ultimate browser extension framework.
-- **UI/Components**: React 18, HTML5/CSS3 (Vanilla CSS for max control and zero bloat).
-- **Database**: Dexie.js (Robust IndexedDB wrapper for local storage).
-- **Language**: TypeScript (Strict mode enabled).
-- **Package Manager**: Bun (for blisteringly fast builds and dependency resolution).
+- [x] Productivity Tracking
+- [x] Analytics Dashboard
+- [x] Focus Hour Tracking
+- [x] Privacy Controls
 
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-Before you begin, ensure you have the following installed on your machine:
-- **[Bun](https://bun.sh/)** (v1.0 or higher) - Required for ultra-fast dependency resolution and running scripts.
-- **[Node.js](https://nodejs.org/)** (v18 or higher) - Recommended as a fallback runtime for certain underlying build tools.
-- **Git** - For cloning the repository.
-
-### Installation & Development Setup
-
-1. **Clone the repository**
-   Open your terminal (Command Prompt, PowerShell, or bash) and run:
-   ```bash
-   git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
-   cd local-web-analytics-extension
-   ```
-
-2. **Install dependencies**
-   It is critical to install dependencies before attempting to run any code. Execute:
-   ```bash
-   bun install
-   ```
-   *(Note: If you encounter any installation errors, try running `bun pm cache rm` to clear the cache, then run `bun install` again).*
-
-3. **Start the development server**
-   Run the following command to start the Plasmo development server:
-   ```bash
-   bun run dev
-   ```
-   *This command compiles the extension and watches for file changes.*
-
-4. **Load the Extension in Chrome**
-   If the browser doesn't open the extension automatically, you must load it manually:
-   - Open Google Chrome and navigate to `chrome://extensions/`
-   - Toggle **"Developer mode"** on in the top-right corner.
-   - Click the **"Load unpacked"** button in the top-left.
-   - Navigate to the project folder and select the newly created `build/chrome-mv3-dev` directory.
-   
-   The extension is now installed locally and will hot-reload automatically as you make code changes!
-
-### Production Build & Packaging
-To build a production-ready, minified version of the extension:
-```bash
-bun run build
-```
-To run automated security audits and package it into a zip file for the Chrome Web Store:
-```bash
-bun run package
-```
-*This verifies permissions, CSP, bundle size, and generates a deterministic `release-manifest.json` before zipping into `build/chrome-mv3-prod.zip`.*
-
-### 🏷️ Release Management & Tagging
-
-This project uses automated GitHub Actions workflows to publish releases and extension packages when new versions are tagged.
-
-#### How to publish a release:
-1. **Increment version**: Update the `version` field in `package.json` (e.g., `"1.0.0"` -> `"1.1.0"`).
-2. **Create and push a Git Tag**:
-   ```bash
-   git tag -a v1.1.0 -m "Release version 1.1.0"
-   git push origin v1.1.0
-   ```
-3. **Automated Workflow**:
-   - The `.github/workflows/release.yml` workflow triggers on the tag push.
-   - It performs strict security checks, permissions audits, and CSP scans.
-   - It generates `build/chrome-mv3-prod.zip` (extension package) and `build/chrome-mv3-prod/release-manifest.json` (build fingerprint).
-   - It automatically publishes a new GitHub Release with the build zip and manifest attached.
-
-#### 🛡️ Verifying Release Integrity:
-You can verify the authenticity of the release asset (`chrome-mv3-prod.zip`) against the fingerprint in `release-manifest.json`:
-1. Download both the zip and manifest from the GitHub Release.
-2. Run a SHA-256 checksum on the files:
-   ```bash
-   # Windows PowerShell
-   Get-FileHash chrome-mv3-prod.zip -Algorithm SHA256
-   
-   # Linux / macOS
-   shasum -a 256 chrome-mv3-prod.zip
-   ```
-3. Compare the checksum value with the hash of `chrome-mv3-prod.zip` inside `release-manifest.json`. They must match exactly.
+### Planned
+- [ ] Firefox Support
+- [ ] Weekly Reports
+- [ ] CSV Export
+- [ ] Custom Classification Rules
+- [ ] Trend Analytics
 
 ---
 
 ## 🤝 Contributing
 
-Open source contributions are warmly welcomed and greatly appreciated! Whether you are fixing bugs, improving the documentation, or proposing new features, here is how you can contribute:
+Open source contributions are warmly welcomed and greatly appreciated! 
 
 1. **Fork the Project**
 2. **Create your Feature Branch** (`git checkout -b feature/AmazingFeature`)
-3. **Commit your Changes** (`git commit -m 'feat: add some AmazingFeature'`)
+3. **Commit your Changes** (`git commit -m 'feat: add AmazingFeature'`)
 4. **Push to the Branch** (`git push origin feature/AmazingFeature`)
 5. **Open a Pull Request**
 
-Please ensure your code passes the linting (`bun run lint`) and typing checks (`bun x tsc --noEmit`) before submitting a pull request. As this is a privacy-first extension, **no PRs adding external tracking, telemetry, or remote API calls will be accepted.**
-
----
-
-## 🛑 Danger Zone: Purge Data
-
-Need to wipe your data or uninstall? Go to the **Settings & Privacy** tab in the Dashboard, click **Purge On-Device Database**, and type `PURGE` to permanently wipe all local indexed records, customized rules, and caches. Uninstalling the extension from your browser will also automatically clear all associated data.
+*Please ensure your code passes linting (`bun run lint`) and type checks (`bun x tsc --noEmit`). No PRs adding telemetry or remote API calls will be accepted.*
 
 ---
 
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-<div align="center">
-  <p>Built with 🩵 for privacy advocates.</p>
-</div>
