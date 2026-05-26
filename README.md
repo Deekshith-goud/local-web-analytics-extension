@@ -28,23 +28,17 @@
 
 ## Demo
 
-<img src="assets/demo.gif" width="800" />
+<img src="assets/demo.gif" width="500" />
 
 ---
 
 ## Screenshots
 
-### Dashboard
-<img src="assets/dashboard.png" width="800" />
-
-### Analytics
-<img src="assets/analytics.png" width="800" />
-
-### Floating Widget
-<img src="assets/widget.png" width="800" />
-
-### Settings & Privacy
-<img src="assets/settings.png" width="800" />
+| Dashboard | Analytics |
+|:---:|:---:|
+| <img src="assets/dashboard.png" width="100%" /> | <img src="assets/analytics.png" width="100%" /> |
+| **Floating Widget** | **Settings & Privacy** |
+| <img src="assets/widget.png" width="100%" /> | <img src="assets/settings.png" width="100%" /> |
 
 ---
 
@@ -158,11 +152,10 @@ This extension was engineered over 10 rigorous phases with a focus on defense-in
 - [x] Privacy Controls
 
 ### Planned
-- [ ] Firefox Support
-- [ ] Weekly Reports
-- [ ] CSV Export
-- [ ] Custom Classification Rules
-- [ ] Trend Analytics
+- [ ] Pomodoro Focus Timer
+- [ ] Soft-Block Time Limits 
+- [ ] Custom Time Reminders
+- [ ] CSV Data Export for Custom Analytics
 
 ---
 
