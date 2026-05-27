@@ -95,12 +95,12 @@ function getProductivityLabel(score: number, iconStyle: IconStyleType): string {
 function getScoreCriteria(iconStyle: IconStyleType) {
   if (iconStyle === "playful") {
     return [
-      { score: "90 - 100", label: "Highly Productive", icon: "🌳", desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", color: "#065f46" },
-      { score: "70 - 89", label: "Focus Mode Stable", icon: "🌻", desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)", color: "#166534" },
-      { score: "50 - 69", label: "Moderately Productive", icon: "🪴", desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", color: "#1e40af" },
-      { score: "30 - 49", label: "Mildly Distracted", icon: "😨", desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)", color: "#854d0e" },
-      { score: "15 - 29", label: "Highly Distracted", icon: "😵‍💫", desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)", color: "#991b1b" },
-      { score: "0 - 14", label: "Critically Distracted", icon: "😱", desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)", color: "#9f1239" }
+      { score: "90 - 100", label: "Highly Productive", icon: "🌳", desc: "Highly focused on useful stuff. Almost zero time wasted.", quote: "Deep work is the superpower of the 21st century.", bg: "var(--playful-bg-90)", color: "var(--playful-color-90)" },
+      { score: "70 - 89", label: "Focus Mode Stable", icon: "🌻", desc: "Solid work session with healthy context switching.", quote: "Productivity is being able to do things that you were never able to do before.", bg: "var(--playful-bg-70)", color: "var(--playful-color-70)" },
+      { score: "50 - 69", label: "Moderately Productive", icon: "🪴", desc: "Balanced activity. Equal amounts of work and casual browsing.", quote: "Balance is not something you find, it's something you create.", bg: "var(--playful-bg-50)", color: "var(--playful-color-50)" },
+      { score: "30 - 49", label: "Mildly Distracted", icon: "😨", desc: "Slight rest is munching on productivity kinda. Easy to get back on track.", quote: "Starve your distractions, feed your focus.", bg: "var(--playful-bg-30)", color: "var(--playful-color-30)" },
+      { score: "15 - 29", label: "Highly Distracted", icon: "😵‍💫", desc: "High distraction ratio. Most time spent on unproductive sites.", quote: "You can't do big things if you're distracted by small things.", bg: "var(--playful-bg-15)", color: "var(--playful-color-15)" },
+      { score: "0 - 14", label: "Critically Distracted", icon: "😱", desc: "Non-productive state. Complete loss of focus on core tasks.", quote: "Action without focus is just busywork.", bg: "var(--playful-bg-0)", color: "var(--playful-color-0)" }
     ];
   }
   if (iconStyle === "neon") {
@@ -150,7 +150,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Optimal";
     color = iconStyle === "neon" ? "#00ffcc" : "#10b981";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" : (iconStyle === "neon" ? "rgba(0, 255, 204, 0.1)" : "rgba(16, 185, 129, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-90)" : (iconStyle === "neon" ? "rgba(0, 255, 204, 0.1)" : "rgba(16, 185, 129, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(16,185,129,0.25)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 70) {
     if (iconStyle === "playful") icon = "🌻";
@@ -160,7 +160,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Productive";
     color = iconStyle === "neon" ? "#00aaff" : "#3b82f6";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)" : (iconStyle === "neon" ? "rgba(0, 170, 255, 0.1)" : "rgba(59, 130, 246, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-70)" : (iconStyle === "neon" ? "rgba(0, 170, 255, 0.1)" : "rgba(59, 130, 246, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(34,197,94,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 50) {
     if (iconStyle === "playful") icon = "🪴";
@@ -170,7 +170,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Stable";
     color = iconStyle === "neon" ? "#a855f7" : "#64748b";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)" : (iconStyle === "neon" ? "rgba(168, 85, 247, 0.1)" : "rgba(100, 116, 139, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-50)" : (iconStyle === "neon" ? "rgba(168, 85, 247, 0.1)" : "rgba(100, 116, 139, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(59,130,246,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 30) {
     if (iconStyle === "playful") icon = "😨";
@@ -180,7 +180,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Minor Issues";
     color = iconStyle === "neon" ? "#ffcc00" : "#f59e0b";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)" : (iconStyle === "neon" ? "rgba(255, 204, 0, 0.1)" : "rgba(245, 158, 11, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-30)" : (iconStyle === "neon" ? "rgba(255, 204, 0, 0.1)" : "rgba(245, 158, 11, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(245,158,11,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else if (score >= 15) {
     if (iconStyle === "playful") icon = "😵‍💫";
@@ -190,7 +190,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Distracted";
     color = iconStyle === "neon" ? "#ff3366" : "#ef4444";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)" : (iconStyle === "neon" ? "rgba(255, 51, 102, 0.1)" : "rgba(239, 68, 68, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-15)" : (iconStyle === "neon" ? "rgba(255, 51, 102, 0.1)" : "rgba(239, 68, 68, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(239,68,68,0.2)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   } else {
     if (iconStyle === "playful") icon = "😱";
@@ -200,7 +200,7 @@ function renderScoreIllustration(score: number, iconStyle: IconStyleType) {
     
     label = "Critical";
     color = iconStyle === "neon" ? "#ff0000" : "#e11d48";
-    bg = iconStyle === "playful" ? "linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)" : (iconStyle === "neon" ? "rgba(255, 0, 0, 0.1)" : "rgba(225, 29, 72, 0.1)");
+    bg = iconStyle === "playful" ? "var(--playful-bg-0)" : (iconStyle === "neon" ? "rgba(255, 0, 0, 0.1)" : "rgba(225, 29, 72, 0.1)");
     glow = iconStyle === "playful" ? "0 8px 24px rgba(220,38,38,0.3)" : (iconStyle === "neon" ? neonGlow(color) : "none");
   }
 
