@@ -294,9 +294,10 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
       {isOpen && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px',
-          padding: '6px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', zIndex: 100,
-          display: 'flex', flexDirection: 'column', gap: '2px', animation: 'tab-fade-in 0.2s ease forwards'
+          background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px',
+          padding: '6px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 100,
+          display: 'flex', flexDirection: 'column', gap: '2px', animation: 'tab-fade-in 0.2s ease forwards',
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)'
         }}>
           {options.map(opt => (
             <button
@@ -1672,49 +1673,6 @@ export default function AnalyticsDashboard() {
 
         {activeTab === "settings" && (
         <section className="settings-panel-layout tab-panel" aria-label="Settings and Data Control">
-            {/* Privacy card */}
-            <div className="settings-card">
-              <div className="settings-card-icon purple" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b57e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </div>
-              <div className="settings-card-body">
-                <h3>Privacy &amp; Local-First Policy</h3>
-                <p>Your browsing activity is processed and stored <strong>entirely on your local machine</strong>. No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.</p>
-              </div>
-              <div className="settings-card-illus" aria-hidden="true">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" fill="rgba(91,87,230,0.08)" />
-                  <rect x="22" y="34" width="36" height="26" rx="4" fill="rgba(91,87,230,0.15)" stroke="#5b57e6" strokeWidth="1.5"/>
-                  <path d="M30 34V28a10 10 0 0 1 20 0v6" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="40" cy="47" r="4" fill="#5b57e6"/>
-                  <line x1="40" y1="51" x2="40" y2="55" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="58" cy="24" r="3" fill="rgba(91,87,230,0.3)"/>
-                  <circle cx="20" cy="56" r="2" fill="rgba(91,87,230,0.2)"/>
-                </svg>
-              </div>
-            </div>
-
-            {/* Storage card */}
-            <div className="settings-card">
-              <div className="settings-card-icon green" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              </div>
-              <div className="settings-card-body">
-                <h3>Local Storage Behavior</h3>
-                <p>The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs. All tracking state runs asynchronously in service worker background threads with zero UI blocking. Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.</p>
-              </div>
-              <div className="settings-card-illus" aria-hidden="true">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" fill="rgba(16,185,129,0.08)" />
-                  <ellipse cx="40" cy="28" rx="18" ry="6" fill="rgba(16,185,129,0.2)" stroke="#10b981" strokeWidth="1.5"/>
-                  <path d="M22 28v10c0 3.31 8.06 6 18 6s18-2.69 18-6V28" stroke="#10b981" strokeWidth="1.5"/>
-                  <path d="M22 38v10c0 3.31 8.06 6 18 6s18-2.69 18-6V38" stroke="#10b981" strokeWidth="1.5"/>
-                  <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
-                  <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-
             {/* Theme card */}
             <div className="settings-card" style={{ flexWrap: "wrap" }}>
               <div className="settings-card-icon blue" aria-hidden="true">
@@ -1768,6 +1726,49 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
+            {/* Privacy card */}
+            <div className="settings-card">
+              <div className="settings-card-icon purple" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b57e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Privacy &amp; Local-First Policy</h3>
+                <p>Your browsing activity is processed and stored <strong>entirely on your local machine</strong>. No server connections are made, no telemetry is reported, and no analytical logs ever leave your device.</p>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(91,87,230,0.08)" />
+                  <rect x="22" y="34" width="36" height="26" rx="4" fill="rgba(91,87,230,0.15)" stroke="#5b57e6" strokeWidth="1.5"/>
+                  <path d="M30 34V28a10 10 0 0 1 20 0v6" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="40" cy="47" r="4" fill="#5b57e6"/>
+                  <line x1="40" y1="51" x2="40" y2="55" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="58" cy="24" r="3" fill="rgba(91,87,230,0.3)"/>
+                  <circle cx="20" cy="56" r="2" fill="rgba(91,87,230,0.2)"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Storage card */}
+            <div className="settings-card">
+              <div className="settings-card-icon green" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Local Storage Behavior</h3>
+                <p>The extension uses highly-efficient IndexedDB and Chrome Extension local storage APIs. All tracking state runs asynchronously in service worker background threads with zero UI blocking. Please note that uninstalling this extension via the browser will automatically delete all stored on-device analytics databases.</p>
+              </div>
+              <div className="settings-card-illus" aria-hidden="true">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(16,185,129,0.08)" />
+                  <ellipse cx="40" cy="28" rx="18" ry="6" fill="rgba(16,185,129,0.2)" stroke="#10b981" strokeWidth="1.5"/>
+                  <path d="M22 28v10c0 3.31 8.06 6 18 6s18-2.69 18-6V28" stroke="#10b981" strokeWidth="1.5"/>
+                  <path d="M22 38v10c0 3.31 8.06 6 18 6s18-2.69 18-6V38" stroke="#10b981" strokeWidth="1.5"/>
+                  <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
+                  <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
             {/* Danger Zone */}
             <div className="settings-card danger-zone">
               <div className="settings-card-icon red" aria-hidden="true">
@@ -1813,7 +1814,7 @@ export default function AnalyticsDashboard() {
         {showPurgeModal && (
           <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
             <div className="modal-content">
-              <h3 id="purge-modal-title" className="modal-title">
+              <h3 id="purge-modal-title" className="modal-title" style={{ color: 'var(--red)' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />

@@ -485,7 +485,7 @@ body {
   background: #0b101a;
   box-shadow: 0 24px 80px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05);
 }
-.modal-title { font-size: 17px; font-weight: 700; color: var(--red); display: flex; align-items: center; gap: 8px; }
+.modal-title { font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
 .modal-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
 .modal-input {
   background: var(--surface2); border: 1px solid var(--border);
