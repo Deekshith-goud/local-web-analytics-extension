@@ -1080,13 +1080,13 @@ export default function AnalyticsDashboard() {
           <div className="visualization-section">
             {/* Left Column: Visual SVG Chart */}
             <section className="vis-card" aria-label="Browsing history timeline chart">
-              <div className="vis-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div className="vis-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '74px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
                   {activeChart === "total" ? "Total Browsing Time" : "Productivity vs Distraction"}
                   <span style={{ margin: 0 }}>{range === "today" ? "Hourly intervals" : "Daily aggregates"}</span>
                 </div>
                 
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                <div style={{ flex: 1.5, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '64px' }}>
                   {hoveredTooltip ? (
                     <div style={{
                       backgroundColor: 'var(--bg-elevated)',
@@ -1116,18 +1116,19 @@ export default function AnalyticsDashboard() {
                     </div>
                   )}
                 </div>
-                <div className="chart-tabs" style={{ display: 'flex', gap: '4px', fontSize: '12px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
+                <div className="chart-tabs" style={{ display: 'flex', gap: '4px', fontSize: '12px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px', flex: 1, justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                    <button 
                      onClick={() => setActiveChart("total")} 
                      style={{ 
-                       padding: '6px 12px', 
+                       padding: '6px 10px', 
                        borderRadius: '6px', 
                        background: activeChart === "total" ? 'var(--bg-elevated)' : 'transparent', 
                        border: 'none', 
                        boxShadow: activeChart === "total" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                        color: activeChart === "total" ? 'var(--text-primary)' : 'var(--text-secondary)', 
                        cursor: 'pointer',
-                       fontWeight: activeChart === "total" ? 600 : 400
+                       fontWeight: activeChart === "total" ? 600 : 400,
+                       whiteSpace: 'nowrap'
                      }}
                    >
                      Total Time
@@ -1135,14 +1136,15 @@ export default function AnalyticsDashboard() {
                    <button 
                      onClick={() => setActiveChart("productivity")} 
                      style={{ 
-                       padding: '6px 12px', 
+                       padding: '6px 10px', 
                        borderRadius: '6px', 
                        background: activeChart === "productivity" ? 'var(--bg-elevated)' : 'transparent', 
                        border: 'none', 
                        boxShadow: activeChart === "productivity" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                        color: activeChart === "productivity" ? 'var(--text-primary)' : 'var(--text-secondary)', 
                        cursor: 'pointer',
-                       fontWeight: activeChart === "productivity" ? 600 : 400
+                       fontWeight: activeChart === "productivity" ? 600 : 400,
+                       whiteSpace: 'nowrap'
                      }}
                    >
                      Productivity

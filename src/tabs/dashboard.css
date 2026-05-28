@@ -78,6 +78,15 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
+/* Global Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
 /* ── Layout ── */
 .dashboard-wrapper { max-width: 1160px; margin: 0 auto; padding: 32px 24px; }
 
