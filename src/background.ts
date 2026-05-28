@@ -1003,7 +1003,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     getActivityRecordsInRange(msg.startMs, msg.endMs)
       .then((records) => {
-        let domainRecords = records.filter(r => r.domain === msg.domain);
+        const domainRecords = records.filter(r => r.domain === msg.domain);
         
         // Check if there's an active session for this domain that should be included
         const active = engine.getActiveSession();

@@ -441,7 +441,7 @@ export default function AnalyticsDashboard() {
     setIsLoadingIntervals(true);
     
     // Map "today" to "7days" to provide better visual context in the timeline
-    let mappedRange = specificRange === "today" ? "7days" : specificRange;
+    const mappedRange = specificRange === "today" ? "7days" : specificRange;
     const activeRange = mappedRange || modalRange;
     
     if (mappedRange && mappedRange !== modalRange) {
