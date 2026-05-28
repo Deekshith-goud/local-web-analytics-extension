@@ -58,7 +58,8 @@ export const MESSAGE_CAPABILITIES = Object.freeze({
   TOGGLE_TRACKING: Object.freeze(["popup", "dashboard"]),
   BROADCAST_RULES_UPDATED: Object.freeze(["background", "dashboard"]),
   GET_SECURITY_METRICS: Object.freeze(["dashboard"]),
-  PURGE_ALL_DATA: Object.freeze(["dashboard"])
+  PURGE_ALL_DATA: Object.freeze(["dashboard"]),
+  GET_DOMAIN_INTERVALS: Object.freeze(["dashboard"])
 });
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -349,6 +350,13 @@ export function isRuntimeMessage(payload: unknown): payload is RuntimeMessage {
   // Type-specific field validations
   if (msg.type === "GET_HISTORICAL_STATS") {
     if (typeof msg.startMs !== "number" || typeof msg.endMs !== "number") {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "GET_DOMAIN_INTERVALS") {
+    if (typeof msg.startMs !== "number" || typeof msg.endMs !== "number" || typeof msg.domain !== "string") {
       securityMetrics.malformedPayloads++;
       return false;
     }

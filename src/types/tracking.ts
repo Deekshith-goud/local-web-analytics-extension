@@ -96,7 +96,8 @@ export type RuntimeMessage =
   | { type: "BROADCAST_RULES_UPDATED"; version: 1 }
   | { type: "GET_CACHE_METRICS"; version: 1 }
   | { type: "GET_SECURITY_METRICS"; version: 1 }
-  | { type: "PURGE_ALL_DATA"; version: 1 };
+  | { type: "PURGE_ALL_DATA"; version: 1 }
+  | { type: "GET_DOMAIN_INTERVALS"; version: 1; domain: string; startMs: number; endMs: number };
 
 export interface ActiveSessionResponse {
   activeSession: {
@@ -172,6 +173,11 @@ export interface HistoricalStatsResponse {
     visitCount: number;
   }>;
   snapshotGeneratedAt: number;
+}
+
+export interface DomainIntervalsResponse {
+  domain: string;
+  intervals: ActivityRecord[];
 }
 
 // ─── Floating Blob UI State ──────────────────────────────────────────────────

@@ -33,7 +33,8 @@ import type {
   ActiveSessionResponse,
   TodayStatsResponse,
   PopupSnapshotResponse,
-  HistoricalStatsResponse
+  HistoricalStatsResponse,
+  DomainIntervalsResponse
 } from "./types/tracking";
 import { logger } from "./utils/logger";
 import {
@@ -990,6 +991,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           topDomains: [],
           snapshotGeneratedAt: Date.now()
         } as HistoricalStatsResponse);
+      });
+    return true; // Asynchronous reply
+  }
+
+  if (msg.type === "GET_DOMAIN_INTERVALS") {
+    if (typeof msg.startMs !== "number" || typeof msg.endMs !== "number" || typeof msg.domain !== "string") {
+      sendResponse({ domain: msg.domain || "", intervals: [] } as DomainIntervalsResponse);
+      return false;
+    }
+
+    getActivityRecordsInRange(msg.startMs, msg.endMs)
+      .then((records) => {
+        let domainRecords = records.filter(r => r.domain === msg.domain);
+        
+        // Check if there's an active session for this domain that should be included
+        const active = engine.getActiveSession();
+        if (active && active.domain === msg.domain && active.startTime <= msg.endMs && active.startTime >= msg.startMs) {
+           domainRecords.push({
+             sessionId: active.sessionId,
+             domain: active.domain,
+             startTime: active.startTime,
+             endTime: Date.now(),
+             durationMs: Date.now() - active.startTime,
+             terminationReason: "idle", // Placeholder for ongoing session
+             createdAt: Date.now(),
+             updatedAt: Date.now(),
+             schemaVersion: 1
+           });
+        }
+        
+        sendResponse({
+          domain: msg.domain,
+          intervals: domainRecords
+        } as DomainIntervalsResponse);
+      })
+      .catch((err) => {
+        logger.error("[Background] Failed to get domain intervals", err);
+        sendResponse({ domain: msg.domain, intervals: [] } as DomainIntervalsResponse);
       });
     return true; // Asynchronous reply
   }
