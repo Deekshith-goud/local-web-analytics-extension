@@ -59,7 +59,15 @@ export const MESSAGE_CAPABILITIES = Object.freeze({
   BROADCAST_RULES_UPDATED: Object.freeze(["background", "dashboard"]),
   GET_SECURITY_METRICS: Object.freeze(["dashboard"]),
   PURGE_ALL_DATA: Object.freeze(["dashboard"]),
-  GET_DOMAIN_INTERVALS: Object.freeze(["dashboard"])
+  GET_DOMAIN_INTERVALS: Object.freeze(["dashboard"]),
+  GET_POMODORO_STATE: Object.freeze(["popup", "dashboard"]),
+  START_POMODORO: Object.freeze(["popup", "dashboard"]),
+  PAUSE_POMODORO: Object.freeze(["popup", "dashboard"]),
+  RESUME_POMODORO: Object.freeze(["popup", "dashboard"]),
+  STOP_POMODORO: Object.freeze(["popup", "dashboard"]),
+  GET_POMODORO_SETTINGS: Object.freeze(["popup", "dashboard"]),
+  SAVE_POMODORO_SETTINGS: Object.freeze(["dashboard"]),
+  SHOW_POMODORO_NOTIFICATION: Object.freeze(["background"])
 });
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -371,6 +379,27 @@ export function isRuntimeMessage(payload: unknown): payload is RuntimeMessage {
 
   if (msg.type === "SAVE_PRODUCTIVITY_RULES") {
     if (!Array.isArray(msg.rules)) {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "START_POMODORO") {
+    if (msg.phase !== "focus" && msg.phase !== "break") {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "SAVE_POMODORO_SETTINGS") {
+    if (typeof msg.settings !== "object" || msg.settings === null) {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "SHOW_POMODORO_NOTIFICATION") {
+    if (typeof msg.phase !== "string" || typeof msg.title !== "string" || typeof msg.message !== "string") {
       securityMetrics.malformedPayloads++;
       return false;
     }

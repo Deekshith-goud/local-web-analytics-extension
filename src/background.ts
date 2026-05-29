@@ -22,6 +22,7 @@ import {
 } from "./utils/date-utils";
 import { aggregateHistoricalStats } from "./analytics/selectors/transforms";
 import { ProductivityClassifier } from "./analytics/productivity-classifier";
+import { pomodoroEngine } from "./analytics/pomodoro-engine";
 import { 
   DEFAULT_RULES, 
   getCustomRules, 
@@ -51,6 +52,17 @@ export {};
 
 const engine = new TrackingEngine();
 const classifier = new ProductivityClassifier([]);
+
+// Bootstrap asynchronous engines on service worker startup
+(async () => {
+  try {
+    await engine.initialize();
+    await pomodoroEngine.initialize();
+    logger.info("[Background] All async engines initialized successfully.");
+  } catch (err) {
+    logger.error("[Background] Failed to initialize engines:", err);
+  }
+})();
 
 // ─── Isolated, Ring-Buffered Cache Layer & Metrics ─────────────────────────────
 
@@ -351,6 +363,8 @@ async function initializeAndDrain(): Promise<void> {
   } catch (err) {
     logger.error("Failed to load custom rules on initialization:", err);
   }
+  // Initialize Pomodoro Timer
+  await pomodoroEngine.initialize();
   // Immediate drain on wakeup catches records staged before last suspension
   await drainStaging();
   // Pre-warm caches immediately after drain completion
@@ -1146,6 +1160,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: String(err) });
       });
     return true; // Asynchronous reply
+  }
+
+  // Pomodoro Handlers
+  if (msg.type === "GET_POMODORO_STATE") {
+    pomodoroEngine.getState().then((state) => {
+      sendResponse(state);
+    });
+    return true;
+  }
+
+  if (msg.type === "START_POMODORO") {
+    pomodoroEngine.startTimer(msg.phase).then((state) => {
+      sendResponse(state);
+    });
+    return true;
+  }
+
+  if (msg.type === "PAUSE_POMODORO") {
+    pomodoroEngine.pauseTimer().then((state) => {
+      sendResponse(state);
+    });
+    return true;
+  }
+
+  if (msg.type === "RESUME_POMODORO") {
+    pomodoroEngine.resumeTimer().then((state) => {
+      sendResponse(state);
+    });
+    return true;
+  }
+
+  if (msg.type === "STOP_POMODORO") {
+    pomodoroEngine.stopTimer().then((state) => {
+      sendResponse(state);
+    });
+    return true;
+  }
+
+  if (msg.type === "GET_POMODORO_SETTINGS") {
+    pomodoroEngine.getSettings().then((settings) => {
+      sendResponse(settings);
+    });
+    return true;
+  }
+
+  if (msg.type === "SAVE_POMODORO_SETTINGS") {
+    pomodoroEngine.saveSettings(msg.settings).then(() => {
+      sendResponse({ success: true });
+    }).catch((err) => {
+      sendResponse({ success: false, error: String(err) });
+    });
+    return true;
   }
 
   return false;
