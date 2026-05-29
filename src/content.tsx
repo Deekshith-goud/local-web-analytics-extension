@@ -70,6 +70,9 @@ export default function BlobContent() {
   const targetOffsetYRef = useRef<number>(24);
   const animationFrameIdRef = useRef<number | null>(null);
 
+  // Pomodoro sliding notification state
+  const [pomodoroAlert, setPomodoroAlert] = useState<{ title: string; message: string; phase: string } | null>(null);
+
   // ─── Component Helpers (Declared first to avoid Block TDZ checks) ─────────────────
 
   // Collision clamping logic to prevent offscreen coordinates
@@ -147,6 +150,17 @@ export default function BlobContent() {
 
     // Load base today stats from background
     fetchFreshStats();
+
+    // Listen for Pomodoro notifications
+    const handleMessage = (msg: Record<string, unknown>) => {
+      if (msg.type === "SHOW_POMODORO_NOTIFICATION" && msg.version === 1) {
+        setPomodoroAlert({ title: msg.title as string, message: msg.message as string, phase: msg.phase as string });
+        // The CSS animation handles hiding after 6s. We just clean up state slightly after to allow animation to complete.
+        setTimeout(() => setPomodoroAlert(null), 6500);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
   }, [clampPosition, fetchFreshStats]);
 
   // Listen for blob style changes dynamically
@@ -408,6 +422,22 @@ export default function BlobContent() {
         }}
         className="flex items-center justify-center"
       >
+        {pomodoroAlert && (
+          <div className="pomodoro-toast-slide-out" onClick={() => setPomodoroAlert(null)}>
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "50%", background: pomodoroAlert.phase === "break" ? "rgba(16, 185, 129, 0.15)" : "rgba(59, 130, 246, 0.15)", color: pomodoroAlert.phase === "break" ? "#10b981" : "#3b82f6" }}>
+              {pomodoroAlert.phase === "break" ? (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+              ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 700 }}>{pomodoroAlert.title}</span>
+              <span style={{ fontSize: "11px", color: "var(--w-text-subtle)", whiteSpace: "normal", lineHeight: 1.2 }}>{pomodoroAlert.message}</span>
+            </div>
+          </div>
+        )}
+
         <div
           ref={blobRef}
           className={`widget-frame widget-${blobStyle}`}

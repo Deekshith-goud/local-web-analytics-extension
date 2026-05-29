@@ -193,6 +193,37 @@
   transform: scale(0.92);
 }
 
+/* ── Pomodoro Notification Toast ── */
+@keyframes toastPopSlide {
+  0% { transform: translateY(30px) scale(0.85); opacity: 0; }
+  8% { transform: translateY(0) scale(1); opacity: 1; }
+  92% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(30px) scale(0.85); opacity: 0; pointer-events: none; }
+}
+
+.pomodoro-toast-slide-out {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  left: 50%;
+  margin-left: -120px;
+  width: 240px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--w-bg);
+  border: 1px solid var(--w-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color: var(--w-text-main);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: toastPopSlide 6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 /* ── Scrollbar ── */
 .widget-frame *::-webkit-scrollbar { width: 3px; }
 .widget-frame *::-webkit-scrollbar-track { background: transparent; }

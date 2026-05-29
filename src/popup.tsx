@@ -13,7 +13,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { openDashboard } from "./utils/navigation";
-import type { PopupSnapshotResponse, RuntimeMessage } from "./types/tracking";
+import type { PopupSnapshotResponse, RuntimeMessage, PomodoroState } from "./types/tracking";
 import brandLogo from "url:~assets/icon.png";
 import "./popup.css";
 
@@ -58,6 +58,7 @@ const TimerDisplay: React.FC<{ startTime: number }> = ({ startTime }) => {
 // ─── Component: Main Popup ─────────────────────────────────────────────────────
 export default function Popup() {
   const [snapshot, setSnapshot] = useState<PopupSnapshotResponse | null>(null);
+  const [pomodoro, setPomodoro] = useState<PomodoroState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -101,6 +102,9 @@ export default function Popup() {
           setSnapshot(res);
         }
         setLoading(false);
+      });
+      chrome.runtime.sendMessage({ type: "GET_POMODORO_STATE", version: 1 } satisfies RuntimeMessage, (res: PomodoroState) => {
+        if (res) setPomodoro(res);
       });
     } catch (e) {
       setError("Failed to fetch state from runtime.");
@@ -154,6 +158,12 @@ export default function Popup() {
   // Triggers Plasmo centralized tab routing to the premium analytics dashboard
   const handleOpenDashboard = () => {
     openDashboard();
+  };
+
+  const handlePomodoroAction = (action: "START_POMODORO" | "PAUSE_POMODORO" | "RESUME_POMODORO" | "STOP_POMODORO", phase?: "focus" | "break") => {
+    chrome.runtime.sendMessage({ type: action, version: 1, phase }, (res) => {
+      setPomodoro(res);
+    });
   };
 
   if (loading) {
@@ -279,6 +289,62 @@ export default function Popup() {
           )}
         </div>
       </section>
+
+      {/* Pomodoro Timer Compact View */}
+      {pomodoro && (
+        <section className="totals-grid" aria-label="Pomodoro Timer" style={{ padding: '16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Pomodoro Timer</span>
+              {(() => {
+                const isRunning = pomodoro.status !== "idle";
+                const isPaused = pomodoro.pausedTimeRemaining !== undefined;
+                let remainingMs = pomodoro.durationMs;
+                if (isRunning) {
+                  if (isPaused) {
+                    remainingMs = pomodoro.pausedTimeRemaining!;
+                  } else {
+                    const elapsed = Date.now() - pomodoro.startTime;
+                    remainingMs = Math.max(0, pomodoro.durationMs - elapsed);
+                  }
+                }
+                const minutes = Math.floor((remainingMs || 0) / 60000);
+                const seconds = Math.floor(((remainingMs || 0) % 60000) / 1000);
+                
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '20px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                      {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
+                    </span>
+                    {pomodoro.status !== "idle" && (
+                      <span className={`badge-category ${pomodoro.status === 'focus' ? 'productive' : 'neutral'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
+                        {pomodoro.status}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {pomodoro.status === "idle" ? (
+                <>
+                  <button onClick={() => handlePomodoroAction("START_POMODORO", "focus")} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Focus</button>
+                  <button onClick={() => handlePomodoroAction("START_POMODORO", "break")} style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Break</button>
+                </>
+              ) : (
+                <>
+                  {pomodoro.pausedTimeRemaining !== undefined ? (
+                    <button onClick={() => handlePomodoroAction("RESUME_POMODORO")} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Resume</button>
+                  ) : (
+                    <button onClick={() => handlePomodoroAction("PAUSE_POMODORO")} style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Pause</button>
+                  )}
+                  <button onClick={() => handlePomodoroAction("STOP_POMODORO")} style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Stop</button>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Grid of daily metrics */}
       <section className="totals-grid" aria-label="Daily browsing aggregates summary">

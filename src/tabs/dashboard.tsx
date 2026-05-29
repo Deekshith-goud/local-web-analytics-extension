@@ -14,7 +14,7 @@ import brandLogo from "url:~assets/icon.png";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
-import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse } from "../types/tracking";
+import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroState, PomodoroSettings } from "../types/tracking";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -327,7 +327,7 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
 };
 
 export default function AnalyticsDashboard() {
-  const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings" | "pomodoro">("analytics");
   const [range, setRange] = useState<RangeType>("7days");
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -419,6 +419,51 @@ export default function AnalyticsDashboard() {
 
 
   const [modalRange, setModalRange] = useState<"7days" | "30days">("7days");
+
+  // Pomodoro States
+  const [pomodoroState, setPomodoroState] = useState<PomodoroState | null>(null);
+  const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings | null>(null);
+  const [, setPomodoroTick] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTab === "rules") {
+      const fetchPomodoro = () => {
+        chrome.runtime.sendMessage({ type: "GET_POMODORO_STATE", version: 1 }, (res) => {
+          setPomodoroState(res);
+        });
+        chrome.runtime.sendMessage({ type: "GET_POMODORO_SETTINGS", version: 1 }, (res) => {
+          setPomodoroSettings(res);
+        });
+      };
+      fetchPomodoro();
+      interval = setInterval(() => {
+        fetchPomodoro();
+        setPomodoroTick(t => t + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
+  const handlePomodoroAction = (action: "START_POMODORO" | "PAUSE_POMODORO" | "RESUME_POMODORO" | "STOP_POMODORO", phase?: "focus" | "break") => {
+    chrome.runtime.sendMessage({ type: action, version: 1, phase }, (res) => {
+      setPomodoroState(res);
+    });
+  };
+
+  const handlePomodoroSettingToggle = (key: keyof PomodoroSettings) => {
+    if (!pomodoroSettings) return;
+    const newSettings = { ...pomodoroSettings, [key]: !pomodoroSettings[key] };
+    setPomodoroSettings(newSettings);
+    chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+  };
+
+  const handlePomodoroDurationChange = (key: 'focusDurationMs' | 'breakDurationMs', minutes: number) => {
+    if (!pomodoroSettings || isNaN(minutes) || minutes < 1) return;
+    const newSettings = { ...pomodoroSettings, [key]: minutes * 60 * 1000 };
+    setPomodoroSettings(newSettings);
+    chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+  };
 
   // 1. Core range calculation
   const rangeTimestamps = useMemo(() => {
@@ -519,10 +564,10 @@ export default function AnalyticsDashboard() {
   const fetchRules = React.useCallback(() => {
     chrome.runtime.sendMessage(
       { type: "GET_PRODUCTIVITY_RULES", version: 1 } satisfies RuntimeMessage,
-      (response: { success: boolean; customRules: ProductivityRule[]; defaultRules: ProductivityRule[]; error?: string }) => {
+      (response: { success: boolean; customRules?: ProductivityRule[]; defaultRules?: ProductivityRule[]; error?: string }) => {
         if (response && response.success) {
-          setCustomRules(response.customRules);
-          setDefaultRules(response.defaultRules);
+          setCustomRules(response.customRules ?? []);
+          setDefaultRules(response.defaultRules ?? []);
         }
       }
     );
@@ -1471,6 +1516,121 @@ export default function AnalyticsDashboard() {
           /* PRODUCTIVITY RULES TAB PANEL */
           <section className="rules-manager-layout tab-panel" aria-label="Productivity classification preferences">
             <div className="rules-sidebar">
+              <div className="rules-card" style={{ textAlign: 'center', padding: '24px 16px' }}>
+                <h3 style={{ fontSize: '18px', marginBottom: '4px' }}>Pomodoro Timer</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>Timeboxed work sessions.</p>
+                
+                {pomodoroState && pomodoroSettings ? (() => {
+                  const isRunning = pomodoroState.status !== "idle";
+                  const isPaused = pomodoroState.pausedTimeRemaining !== undefined;
+                  
+                  let remainingMs = pomodoroState.durationMs || 0;
+                  if (isRunning) {
+                    if (isPaused) {
+                      remainingMs = pomodoroState.pausedTimeRemaining || 0;
+                    } else {
+                      const elapsed = Date.now() - pomodoroState.startTime;
+                      remainingMs = Math.max(0, (pomodoroState.durationMs || 0) - elapsed);
+                    }
+                  }
+                  
+                  const minutes = Math.floor((remainingMs || 0) / 60000);
+                  const seconds = Math.floor(((remainingMs || 0) % 60000) / 1000);
+                  const progressPct = (isRunning && pomodoroState.durationMs > 0) ? (((pomodoroState.durationMs - remainingMs) / pomodoroState.durationMs) * 100) : 0;
+                  
+                  const radius = 80;
+                  const circumference = 2 * Math.PI * radius;
+                  const offset = circumference - (progressPct / 100) * circumference;
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '24px' }}>
+                        <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }}>
+                          <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
+                          <circle 
+                            cx="100" cy="100" r={radius} 
+                            fill="none" 
+                            stroke={pomodoroState.status === 'break' ? '#10b981' : '#3b82f6'} 
+                            strokeWidth="10" 
+                            strokeLinecap="round"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={Number.isNaN(offset) ? 0 : offset}
+                            style={{ transition: 'stroke-dashoffset 1s linear' }}
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                            {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
+                          </div>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: pomodoroState.status === 'break' ? '#10b981' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>
+                            {pomodoroState.status === "idle" ? "Ready" : pomodoroState.status === "focus" ? "Focusing" : "Break Time"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                        {pomodoroState.status === "idle" ? (
+                          <>
+                            <button className="btn-primary" onClick={() => handlePomodoroAction("START_POMODORO", "focus")} style={{ padding: '8px 16px', fontSize: '13px' }}>Focus</button>
+                            <button className="btn-secondary" onClick={() => handlePomodoroAction("START_POMODORO", "break")} style={{ padding: '8px 16px', fontSize: '13px' }}>Break</button>
+                          </>
+                        ) : (
+                          <>
+                            {isPaused ? (
+                              <button className="btn-primary" onClick={() => handlePomodoroAction("RESUME_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Resume</button>
+                            ) : (
+                              <button className="btn-secondary" onClick={() => handlePomodoroAction("PAUSE_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Pause</button>
+                            )}
+                            <button className="btn-danger-outline" onClick={() => handlePomodoroAction("STOP_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Stop</button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div style={{ width: '100%', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            <input type="checkbox" checked={pomodoroSettings.soundEnabled} onChange={() => handlePomodoroSettingToggle('soundEnabled')} />
+                            Play Sound on Completion
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            <input type="checkbox" checked={pomodoroSettings.notificationEnabled} onChange={() => handlePomodoroSettingToggle('notificationEnabled')} />
+                            Show Notification
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Focus (m)</label>
+                              <input 
+                                type="number" 
+                                className="form-input" 
+                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
+                                value={Math.floor(pomodoroSettings.focusDurationMs / 60000)}
+                                onChange={(e) => handlePomodoroDurationChange('focusDurationMs', parseInt(e.target.value, 10))}
+                                min="1"
+                                disabled={pomodoroState.status !== "idle"}
+                              />
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Break (m)</label>
+                              <input 
+                                type="number" 
+                                className="form-input" 
+                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
+                                value={Math.floor(pomodoroSettings.breakDurationMs / 60000)}
+                                onChange={(e) => handlePomodoroDurationChange('breakDurationMs', parseInt(e.target.value, 10))}
+                                min="1"
+                                disabled={pomodoroState.status !== "idle"}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div style={{ padding: '20px', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+                )}
+              </div>
+
               <div className="rules-card">
                 <h3>Add Custom Rule</h3>
                 <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
