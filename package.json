@@ -45,7 +45,10 @@
       "idle",
       "windows",
       "webNavigation",
-      "favicon"
+      "favicon",
+      "alarms",
+      "notifications",
+      "offscreen"
     ],
     "content_security_policy": {
       "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
