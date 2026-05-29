@@ -97,7 +97,15 @@ export type RuntimeMessage =
   | { type: "GET_CACHE_METRICS"; version: 1 }
   | { type: "GET_SECURITY_METRICS"; version: 1 }
   | { type: "PURGE_ALL_DATA"; version: 1 }
-  | { type: "GET_DOMAIN_INTERVALS"; version: 1; domain: string; startMs: number; endMs: number };
+  | { type: "GET_DOMAIN_INTERVALS"; version: 1; domain: string; startMs: number; endMs: number }
+  | { type: "GET_POMODORO_STATE"; version: 1 }
+  | { type: "START_POMODORO"; version: 1; phase: "focus" | "break" }
+  | { type: "PAUSE_POMODORO"; version: 1 }
+  | { type: "RESUME_POMODORO"; version: 1 }
+  | { type: "STOP_POMODORO"; version: 1 }
+  | { type: "GET_POMODORO_SETTINGS"; version: 1 }
+  | { type: "SAVE_POMODORO_SETTINGS"; version: 1; settings: PomodoroSettings }
+  | { type: "SHOW_POMODORO_NOTIFICATION"; version: 1; phase: string; title: string; message: string };
 
 export interface ActiveSessionResponse {
   activeSession: {
@@ -189,5 +197,23 @@ export interface BlobUIState {
   offsetX: number; // Offset from horizontal anchor edge
   offsetY: number; // Offset from vertical anchor edge
   isCollapsed: boolean;
+}
+
+// ─── Pomodoro Timer State ────────────────────────────────────────────────────
+
+export type PomodoroStatus = "idle" | "focus" | "break";
+
+export interface PomodoroState {
+  status: PomodoroStatus;
+  startTime: number;
+  durationMs: number;
+  pausedTimeRemaining?: number;
+}
+
+export interface PomodoroSettings {
+  focusDurationMs: number;
+  breakDurationMs: number;
+  soundEnabled: boolean;
+  notificationEnabled: boolean;
 }
 
