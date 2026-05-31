@@ -137,21 +137,45 @@ export class PomodoroEngine {
     const completedPhase = this.currentState.status;
     logger.info(`[Pomodoro] Timer complete for phase: ${completedPhase}`);
     
+    // Auto-advance logic
+    const nextPhase = completedPhase === "focus" ? "break" : "focus";
+    const nextDuration = nextPhase === "focus" ? this.currentSettings.focusDurationMs : this.currentSettings.breakDurationMs;
+    
     this.currentState = {
-      status: "idle",
-      startTime: 0,
-      durationMs: 0
+      status: nextPhase,
+      startTime: Date.now(),
+      durationMs: nextDuration
     };
     await this.persistState();
+    
+    await chrome.alarms.create(ALARM_NAME, { when: Date.now() + nextDuration });
+    logger.info(`[Pomodoro] Auto-started next phase: ${nextPhase} for ${nextDuration}ms`);
     
     await this.triggerNotification(completedPhase);
   }
 
   private async triggerNotification(phase: string): Promise<void> {
-    const title = phase === "focus" ? "Focus Session Complete!" : "Break Time Over!";
-    const message = phase === "focus" ? "Great job! Time for a short break." : "Time to get back to focus.";
+    const defaultFocusMessage = "Great job! Time for a short break.";
+    const defaultBreakMessage = "Time to get back to focus.";
     
-    if (this.currentSettings.notificationEnabled) {
+    // Forcefully sync from storage right before firing to absolutely guarantee no memory desync
+    const data = await chrome.storage.local.get(POMODORO_SETTINGS_KEY);
+    const freshSettings = data[POMODORO_SETTINGS_KEY] 
+      ? { ...this.currentSettings, ...data[POMODORO_SETTINGS_KEY] }
+      : this.currentSettings;
+      
+    this.currentSettings = freshSettings;
+    
+    logger.info(`[Pomodoro] triggerNotification called for phase: ${phase}. currentSettings =`, JSON.stringify(this.currentSettings));
+    
+    const title = phase === "focus" ? "Focus Session Complete!" : "Break Time Over!";
+    const message = phase === "focus" 
+      ? (freshSettings.customFocusMessage || defaultFocusMessage)
+      : (freshSettings.customBreakMessage || defaultBreakMessage);
+      
+    logger.info(`[Pomodoro] Final notification message resolved to: ${message}`);
+    
+    if (freshSettings.notificationEnabled) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         for (const tab of tabs) {
           if (tab.id) {
@@ -169,15 +193,14 @@ export class PomodoroEngine {
       });
     }
 
-    if (this.currentSettings.soundEnabled) {
+    if (freshSettings.soundEnabled) {
       try {
         // In MV3 service workers, we cannot play audio directly using HTMLAudioElement.
         // We must use offscreen document.
-        const offscreenUrl = "offscreen.html"; // We will create this
-        const exists = await chrome.offscreen.hasDocument();
-        if (!exists) {
+        const hasOffscreen = await chrome.offscreen.hasDocument();
+        if (!hasOffscreen) {
           await chrome.offscreen.createDocument({
-            url: offscreenUrl,
+            url: "tabs/offscreen.html",
             reasons: [chrome.offscreen.Reason.AUDIO_PLAYBACK],
             justification: "Play Pomodoro timer completion sound"
           });
@@ -185,7 +208,9 @@ export class PomodoroEngine {
         
         chrome.runtime.sendMessage({
           type: "PLAY_SOUND",
-          target: "offscreen"
+          version: 1,
+          target: "offscreen",
+          soundId: phase === "focus" ? "focus-complete" : "break-complete"
         }).catch(err => {
             logger.error("[Pomodoro] Could not send PLAY_SOUND to offscreen", err);
         });

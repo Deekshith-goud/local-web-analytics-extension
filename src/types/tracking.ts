@@ -215,5 +215,7 @@ export interface PomodoroSettings {
   breakDurationMs: number;
   soundEnabled: boolean;
   notificationEnabled: boolean;
+  customFocusMessage?: string;
+  customBreakMessage?: string;
 }
 

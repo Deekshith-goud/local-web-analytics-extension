@@ -420,10 +420,18 @@ export default function AnalyticsDashboard() {
 
   const [modalRange, setModalRange] = useState<"7days" | "30days">("7days");
 
-  // Pomodoro States
   const [pomodoroState, setPomodoroState] = useState<PomodoroState | null>(null);
   const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings | null>(null);
+  const [focusInput, setFocusInput] = useState<string>("");
+  const [breakInput, setBreakInput] = useState<string>("");
   const [, setPomodoroTick] = useState(0);
+
+  useEffect(() => {
+    if (pomodoroSettings) {
+      setFocusInput(String(Math.floor(pomodoroSettings.focusDurationMs / 60000)));
+      setBreakInput(String(Math.floor(pomodoroSettings.breakDurationMs / 60000)));
+    }
+  }, [pomodoroSettings?.focusDurationMs, pomodoroSettings?.breakDurationMs]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -461,6 +469,13 @@ export default function AnalyticsDashboard() {
   const handlePomodoroDurationChange = (key: 'focusDurationMs' | 'breakDurationMs', minutes: number) => {
     if (!pomodoroSettings || isNaN(minutes) || minutes < 1) return;
     const newSettings = { ...pomodoroSettings, [key]: minutes * 60 * 1000 };
+    setPomodoroSettings(newSettings);
+    chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+  };
+
+  const handlePomodoroMessageChange = (key: 'customFocusMessage' | 'customBreakMessage', message: string) => {
+    if (!pomodoroSettings) return;
+    const newSettings = { ...pomodoroSettings, [key]: message };
     setPomodoroSettings(newSettings);
     chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
   };
@@ -1600,25 +1615,67 @@ export default function AnalyticsDashboard() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Focus (m)</label>
                               <input 
-                                type="number" 
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 className="form-input" 
                                 style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={Math.floor(pomodoroSettings.focusDurationMs / 60000)}
-                                onChange={(e) => handlePomodoroDurationChange('focusDurationMs', parseInt(e.target.value, 10))}
-                                min="1"
+                                value={focusInput}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  setFocusInput(val);
+                                  const parsed = parseInt(val, 10);
+                                  if (!isNaN(parsed) && parsed >= 1) {
+                                    handlePomodoroDurationChange('focusDurationMs', parsed);
+                                  }
+                                }}
                                 disabled={pomodoroState.status !== "idle"}
+                                placeholder="1"
                               />
                             </div>
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Break (m)</label>
                               <input 
-                                type="number" 
+                                type="text" 
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 className="form-input" 
                                 style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={Math.floor(pomodoroSettings.breakDurationMs / 60000)}
-                                onChange={(e) => handlePomodoroDurationChange('breakDurationMs', parseInt(e.target.value, 10))}
-                                min="1"
+                                value={breakInput}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  setBreakInput(val);
+                                  const parsed = parseInt(val, 10);
+                                  if (!isNaN(parsed) && parsed >= 1) {
+                                    handlePomodoroDurationChange('breakDurationMs', parsed);
+                                  }
+                                }}
                                 disabled={pomodoroState.status !== "idle"}
+                                placeholder="1"
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Focus Message (Optional)</label>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
+                                value={pomodoroSettings.customFocusMessage || ""}
+                                onChange={(e) => handlePomodoroMessageChange('customFocusMessage', e.target.value)}
+                                placeholder="Great job! Time for a short break."
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Break Message (Optional)</label>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
+                                value={pomodoroSettings.customBreakMessage || ""}
+                                onChange={(e) => handlePomodoroMessageChange('customBreakMessage', e.target.value)}
+                                placeholder="Time to get back to focus."
                               />
                             </div>
                           </div>
