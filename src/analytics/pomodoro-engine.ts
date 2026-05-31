@@ -68,7 +68,9 @@ export class PomodoroEngine {
   }
 
   public async startTimer(phase: "focus" | "break"): Promise<PomodoroState> {
-    const duration = phase === "focus" ? this.currentSettings.focusDurationMs : this.currentSettings.breakDurationMs;
+    let duration = phase === "focus" ? this.currentSettings.focusDurationMs : this.currentSettings.breakDurationMs;
+    duration = Math.max(1000, duration || 60000);
+    
     this.currentState = {
       status: phase,
       startTime: Date.now(),
@@ -76,9 +78,8 @@ export class PomodoroEngine {
     };
     await this.persistState();
     
-    // Set alarm
-    await chrome.alarms.create(ALARM_NAME, { when: this.currentState.startTime + duration });
-    logger.info(`[Pomodoro] Started ${phase} timer for ${duration}ms`);
+    await chrome.alarms.create(ALARM_NAME, { when: Date.now() + duration });
+    logger.info(`[Pomodoro] Started timer for phase: ${phase} with duration: ${duration}ms`);
     return this.currentState;
   }
 
@@ -134,10 +135,10 @@ export class PomodoroEngine {
   private async handleTimerComplete(): Promise<void> {
     if (this.currentState.status === "idle") return;
     
-    // SAFEGUARD: Prevent double-execution race conditions when Chrome wakes the service worker.
-    // Both initialize() and onAlarm can fire back-to-back. We ignore the second one.
+    // SAFEGUARD: Prevent double-execution race conditions.
+    // If handleTimerComplete is called within 2 seconds of the phase starting, it's a ghost-fire.
     const elapsed = Date.now() - this.currentState.startTime;
-    if (elapsed < this.currentState.durationMs - 2000) { // 2 second grace period
+    if (elapsed < 2000) { 
       logger.info(`[Pomodoro] Safely ignored duplicate timer completion event. (elapsed: ${elapsed}ms)`);
       return;
     }
@@ -147,7 +148,10 @@ export class PomodoroEngine {
     
     // Auto-advance logic
     const nextPhase = completedPhase === "focus" ? "break" : "focus";
-    const nextDuration = nextPhase === "focus" ? this.currentSettings.focusDurationMs : this.currentSettings.breakDurationMs;
+    let nextDuration = nextPhase === "focus" ? this.currentSettings.focusDurationMs : this.currentSettings.breakDurationMs;
+    
+    // Fallback safeguard if user somehow saved a 0 duration previously
+    nextDuration = Math.max(1000, nextDuration || 60000);
     
     this.currentState = {
       status: nextPhase,
