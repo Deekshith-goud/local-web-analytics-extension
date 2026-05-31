@@ -1603,10 +1603,28 @@ export default function AnalyticsDashboard() {
                       
                       <div style={{ width: '100%', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', textAlign: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            <input type="checkbox" checked={pomodoroSettings.soundEnabled} onChange={() => handlePomodoroSettingToggle('soundEnabled')} />
-                            Play Sound on Completion
-                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              <input type="checkbox" checked={pomodoroSettings.soundEnabled} onChange={() => handlePomodoroSettingToggle('soundEnabled')} />
+                              Play Sound
+                            </label>
+                            {pomodoroSettings.soundEnabled && (
+                              <select 
+                                value={pomodoroSettings.soundId || 'beep'}
+                                onChange={(e) => {
+                                  const newSettings = { ...pomodoroSettings, soundId: e.target.value };
+                                  setPomodoroSettings(newSettings);
+                                  chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+                                }}
+                                className="form-input"
+                                style={{ padding: '2px 8px', fontSize: '11px', backgroundColor: 'var(--bg-elevated)' }}
+                              >
+                                <option value="beep">Beep</option>
+                                <option value="chime">Chime</option>
+                                <option value="digital">Digital</option>
+                              </select>
+                            )}
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
                             <input type="checkbox" checked={pomodoroSettings.notificationEnabled} onChange={() => handlePomodoroSettingToggle('notificationEnabled')} />
                             Show Notification

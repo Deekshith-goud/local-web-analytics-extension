@@ -213,9 +213,11 @@ export interface PomodoroState {
 export interface PomodoroSettings {
   focusDurationMs: number;
   breakDurationMs: number;
+  longBreakDurationMs: number;
+  sessionsBeforeLongBreak: number;
   soundEnabled: boolean;
+  soundId?: string; // e.g., 'beep', 'chime', 'digital'
   notificationEnabled: boolean;
   customFocusMessage?: string;
   customBreakMessage?: string;
 }
-

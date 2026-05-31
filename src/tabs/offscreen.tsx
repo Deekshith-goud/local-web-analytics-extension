@@ -1,9 +1,10 @@
 import { useEffect } from "react"
-import { BEEP_BASE64 } from "./beepBase64"
+import { SOUNDS } from "./sounds"
 
-function playBeep() {
+function playBeep(soundId: string = 'beep') {
   try {
-    const audio = new Audio(BEEP_BASE64);
+    const base64Sound = SOUNDS[soundId] || SOUNDS['beep'];
+    const audio = new Audio(base64Sound);
     audio.play().catch(e => console.error("Offscreen audio playback failed:", e));
   } catch (err) {
     console.error("Offscreen audio creation failed:", err);
@@ -12,9 +13,9 @@ function playBeep() {
 
 export default function OffscreenDocument() {
   useEffect(() => {
-    const handleMessage = (message: { type?: string; target?: string }) => {
+    const handleMessage = (message: { type?: string; target?: string; soundId?: string }) => {
       if (message.type === "PLAY_SOUND" && message.target === "offscreen") {
-        playBeep();
+        playBeep(message.soundId);
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);

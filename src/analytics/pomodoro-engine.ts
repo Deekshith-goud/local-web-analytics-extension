@@ -8,8 +8,13 @@ const ALARM_NAME = "pomodoro_alarm";
 export const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusDurationMs: 25 * 60 * 1000,
   breakDurationMs: 5 * 60 * 1000,
+  longBreakDurationMs: 15 * 60 * 1000,
+  sessionsBeforeLongBreak: 4,
   soundEnabled: true,
-  notificationEnabled: true
+  soundId: 'beep',
+  notificationEnabled: true,
+  customFocusMessage: "",
+  customBreakMessage: ""
 };
 
 export class PomodoroEngine {
@@ -222,7 +227,7 @@ export class PomodoroEngine {
           type: "PLAY_SOUND",
           version: 1,
           target: "offscreen",
-          soundId: phase === "focus" ? "focus-complete" : "break-complete"
+          soundId: freshSettings.soundId || 'beep'
         }).catch(err => {
             logger.error("[Pomodoro] Could not send PLAY_SOUND to offscreen", err);
         });
