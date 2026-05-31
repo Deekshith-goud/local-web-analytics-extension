@@ -12,7 +12,7 @@ function playBeep() {
 
 export default function OffscreenDocument() {
   useEffect(() => {
-    const handleMessage = (message: any) => {
+    const handleMessage = (message: { type?: string; target?: string }) => {
       if (message.type === "PLAY_SOUND" && message.target === "offscreen") {
         playBeep();
       }

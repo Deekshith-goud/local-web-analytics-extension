@@ -134,6 +134,14 @@ export class PomodoroEngine {
   private async handleTimerComplete(): Promise<void> {
     if (this.currentState.status === "idle") return;
     
+    // SAFEGUARD: Prevent double-execution race conditions when Chrome wakes the service worker.
+    // Both initialize() and onAlarm can fire back-to-back. We ignore the second one.
+    const elapsed = Date.now() - this.currentState.startTime;
+    if (elapsed < this.currentState.durationMs - 2000) { // 2 second grace period
+      logger.info(`[Pomodoro] Safely ignored duplicate timer completion event. (elapsed: ${elapsed}ms)`);
+      return;
+    }
+    
     const completedPhase = this.currentState.status;
     logger.info(`[Pomodoro] Timer complete for phase: ${completedPhase}`);
     

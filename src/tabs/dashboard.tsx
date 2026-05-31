@@ -431,7 +431,7 @@ export default function AnalyticsDashboard() {
       setFocusInput(String(Math.floor(pomodoroSettings.focusDurationMs / 60000)));
       setBreakInput(String(Math.floor(pomodoroSettings.breakDurationMs / 60000)));
     }
-  }, [pomodoroSettings?.focusDurationMs, pomodoroSettings?.breakDurationMs]);
+  }, [pomodoroSettings]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
