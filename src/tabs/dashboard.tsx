@@ -1557,46 +1557,96 @@ export default function AnalyticsDashboard() {
                   const circumference = 2 * Math.PI * radius;
                   const offset = circumference - (progressPct / 100) * circumference;
 
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '24px' }}>
-                        <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }}>
-                          <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
-                          <circle 
-                            cx="100" cy="100" r={radius} 
-                            fill="none" 
-                            stroke={pomodoroState.status === 'break' ? '#10b981' : '#3b82f6'} 
-                            strokeWidth="10" 
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={Number.isNaN(offset) ? 0 : offset}
-                            style={{ transition: 'stroke-dashoffset 1s linear' }}
-                          />
-                        </svg>
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                            {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
-                          </div>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: pomodoroState.status === 'break' ? '#10b981' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>
-                            {pomodoroState.status === "idle" ? "Ready" : pomodoroState.status === "focus" ? "Focusing" : "Break Time"}
+                  const renderTimer = () => {
+                    const style = pomodoroSettings.timerStyle || 'typographic';
+                    const color = pomodoroState.status === 'break' ? '#10b981' : 'var(--accent)';
+                    
+                    if (style === 'neumorphic') {
+                      return (
+                        <div style={{ position: 'relative', width: '220px', height: '220px', marginBottom: '32px', marginTop: '16px', borderRadius: '50%', background: 'var(--surface)', boxShadow: 'inset 8px 8px 16px rgba(0,0,0,0.2), inset -8px -8px 16px rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ position: 'absolute', inset: '15px', borderRadius: '50%', background: 'var(--surface2)', boxShadow: '8px 8px 16px rgba(0,0,0,0.2), -8px -8px 16px rgba(255,255,255,0.05)' }}></div>
+                          <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: 'rotate(-90deg)', position: 'absolute' }}>
+                            <circle cx="110" cy="110" r={radius} fill="none" stroke="transparent" strokeWidth="12" />
+                            <circle cx="110" cy="110" r={radius} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={Number.isNaN(offset) ? 0 : offset} style={{ transition: 'stroke-dashoffset 1s linear', filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.3))' }} />
+                          </svg>
+                          <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ fontSize: '48px', fontWeight: 400, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
+                              {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
+                            </div>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: color, textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: '6px', opacity: 0.9 }}>
+                              {pomodoroState.status === "idle" ? "Ready" : pomodoroState.status === "focus" ? "Focusing" : "Break Time"}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      );
+                    }
 
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                    if (style === 'horizontal') {
+                      return (
+                        <div style={{ width: '100%', maxWidth: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '40px', marginTop: '24px' }}>
+                          <div style={{ fontSize: '72px', fontWeight: 300, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                            {String(minutes || 0).padStart(2, '0')}<span style={{ opacity: 0.3, fontWeight: 200 }}>:</span>{String(seconds || 0).padStart(2, '0')}
+                          </div>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: color, textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: '12px', marginBottom: '24px', opacity: 0.9 }}>
+                            {pomodoroState.status === "idle" ? "Ready" : pomodoroState.status === "focus" ? "Focusing" : "Break Time"}
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: 'var(--track-bg)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${100 - progressPct}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 1s linear', boxShadow: `0 0 10px ${color}60` }}></div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    if (style === 'glass' || style === 'breathing') {
+                      // Removed styles
+                    }
+
+                    // typographic (default)
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', marginBottom: '32px', marginTop: '16px' }}>
+                        <div style={{ fontSize: '84px', fontWeight: 300, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.05em', lineHeight: 1 }}>
+                          {String(minutes || 0).padStart(2, '0')}<span style={{ opacity: 0.2, fontWeight: 200 }}>:</span>{String(seconds || 0).padStart(2, '0')}
+                        </div>
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: color, textTransform: 'uppercase', letterSpacing: '0.25em', marginTop: '12px', opacity: 0.8 }}>
+                          {pomodoroState.status === "idle" ? "Ready" : pomodoroState.status === "focus" ? "Focusing" : "Break Time"}
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      {renderTimer()}
+
+                      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
                         {pomodoroState.status === "idle" ? (
                           <>
-                            <button className="btn-primary" onClick={() => handlePomodoroAction("START_POMODORO", "focus")} style={{ padding: '8px 16px', fontSize: '13px' }}>Focus</button>
-                            <button className="btn-secondary" onClick={() => handlePomodoroAction("START_POMODORO", "break")} style={{ padding: '8px 16px', fontSize: '13px' }}>Break</button>
+                            <button className="btn-primary" onClick={() => handlePomodoroAction("START_POMODORO", "focus")} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: 500, borderRadius: '100px', background: 'linear-gradient(135deg, #a78bfa, #6366f1)', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', border: 'none' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                              Focus
+                            </button>
+                            <button className="btn-secondary" onClick={() => handlePomodoroAction("START_POMODORO", "break")} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: 500, borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text)', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                              Break
+                            </button>
                           </>
                         ) : (
                           <>
                             {isPaused ? (
-                              <button className="btn-primary" onClick={() => handlePomodoroAction("RESUME_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Resume</button>
+                              <button className="btn-primary" onClick={() => handlePomodoroAction("RESUME_POMODORO")} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: 500, borderRadius: '100px', background: 'linear-gradient(135deg, #a78bfa, #6366f1)', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', border: 'none' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                Resume
+                              </button>
                             ) : (
-                              <button className="btn-secondary" onClick={() => handlePomodoroAction("PAUSE_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Pause</button>
+                              <button className="btn-secondary" onClick={() => handlePomodoroAction("PAUSE_POMODORO")} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: 500, borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text)', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                Pause
+                              </button>
                             )}
-                            <button className="btn-danger-outline" onClick={() => handlePomodoroAction("STOP_POMODORO")} style={{ padding: '8px 16px', fontSize: '13px' }}>Stop</button>
+                            <button className="btn-danger-outline" onClick={() => handlePomodoroAction("STOP_POMODORO")} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: 500, borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.5)', color: '#ef4444', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                              Stop
+                            </button>
                           </>
                         )}
                       </div>
@@ -1604,6 +1654,28 @@ export default function AnalyticsDashboard() {
                       <div style={{ width: '100%', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', textAlign: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div>
+                                  <div className="settings-row-title">Timer Style</div>
+                                  <div className="settings-row-desc">Customize timer appearance</div>
+                                </div>
+                              </div>
+                              <CustomDropdown
+                                value={pomodoroSettings.timerStyle === 'minimal' ? 'typographic' : (pomodoroSettings.timerStyle || 'typographic')}
+                                options={[
+                                  { id: 'typographic', label: 'Typographic' },
+                                  { id: 'neumorphic', label: 'Neumorphic' },
+                                  { id: 'horizontal', label: 'Horizontal Dash' }
+                                ]}
+                                onChange={(val) => {
+                                  const newSettings = { ...pomodoroSettings, timerStyle: val as PomodoroSettings['timerStyle'] };
+                                  setPomodoroSettings(newSettings);
+                                  chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+                                }}
+                                width="140px"
+                              />
+                            </div>
                             <div className="settings-row">
                               <div className="settings-row-left">
                                 <label className="toggle-switch">

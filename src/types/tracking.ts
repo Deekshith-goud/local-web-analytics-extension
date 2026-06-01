@@ -220,4 +220,5 @@ export interface PomodoroSettings {
   notificationEnabled: boolean;
   customFocusMessage?: string;
   customBreakMessage?: string;
+  timerStyle?: 'minimal' | 'typographic' | 'neumorphic' | 'glass' | 'horizontal' | 'breathing';
 }
