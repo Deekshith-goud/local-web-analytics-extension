@@ -269,12 +269,12 @@ const computeSmoothPath = (points: {x: number, y: number}[]) => {
   return d;
 }
 
-const CustomDropdown = ({ value, options, onChange }: { value: string, options: {id: string, label: React.ReactNode}[], onChange: (val: string) => void }) => {
+const CustomDropdown = ({ value, options, onChange, width }: { value: string, options: {id: string, label: React.ReactNode}[], onChange: (val: string) => void, width?: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find(o => o.id === value) || options[0];
 
   return (
-    <div style={{ position: 'relative', minWidth: '220px' }}>
+    <div style={{ position: 'relative', width: width || '100%', minWidth: width ? 'auto' : '220px' }}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
@@ -1603,98 +1603,131 @@ export default function AnalyticsDashboard() {
                       
                       <div style={{ width: '100%', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', textAlign: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                              <input type="checkbox" checked={pomodoroSettings.soundEnabled} onChange={() => handlePomodoroSettingToggle('soundEnabled')} />
-                              Play Sound
-                            </label>
-                            {pomodoroSettings.soundEnabled && (
-                              <select 
-                                value={pomodoroSettings.soundId || 'beep'}
-                                onChange={(e) => {
-                                  const newSettings = { ...pomodoroSettings, soundId: e.target.value };
-                                  setPomodoroSettings(newSettings);
-                                  chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
-                                }}
-                                className="form-input"
-                                style={{ padding: '2px 8px', fontSize: '11px', backgroundColor: 'var(--bg-elevated)' }}
-                              >
-                                <option value="beep">Beep</option>
-                                <option value="chime">Chime</option>
-                                <option value="digital">Digital</option>
-                              </select>
-                            )}
-                          </div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            <input type="checkbox" checked={pomodoroSettings.notificationEnabled} onChange={() => handlePomodoroSettingToggle('notificationEnabled')} />
-                            Show Notification
-                          </label>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Focus (m)</label>
-                              <input 
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                className="form-input" 
-                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={focusInput}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/[^0-9]/g, '');
-                                  setFocusInput(val);
-                                  const parsed = parseInt(val, 10);
-                                  if (!isNaN(parsed) && parsed >= 1) {
-                                    handlePomodoroDurationChange('focusDurationMs', parsed);
-                                  }
-                                }}
-                                disabled={pomodoroState.status !== "idle"}
-                                placeholder="1"
-                              />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <label className="toggle-switch">
+                                  <input type="checkbox" checked={pomodoroSettings.soundEnabled} onChange={() => handlePomodoroSettingToggle('soundEnabled')} />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                                <div>
+                                  <div className="settings-row-title">Play Sound</div>
+                                  <div className="settings-row-desc">Audio alert on completion</div>
+                                </div>
+                              </div>
+                              {pomodoroSettings.soundEnabled && (
+                                <CustomDropdown
+                                  value={pomodoroSettings.soundId || 'beep'}
+                                  options={[
+                                    { id: 'beep', label: 'Beep' },
+                                    { id: 'chime', label: 'Chime' },
+                                    { id: 'digital', label: 'Digital' },
+                                  ]}
+                                  onChange={(val) => {
+                                    const newSettings = { ...pomodoroSettings, soundId: val };
+                                    setPomodoroSettings(newSettings);
+                                    chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+                                  }}
+                                  width="120px"
+                                />
+                              )}
                             </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Break (m)</label>
-                              <input 
-                                type="text" 
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                className="form-input" 
-                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={breakInput}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/[^0-9]/g, '');
-                                  setBreakInput(val);
-                                  const parsed = parseInt(val, 10);
-                                  if (!isNaN(parsed) && parsed >= 1) {
-                                    handlePomodoroDurationChange('breakDurationMs', parsed);
-                                  }
-                                }}
-                                disabled={pomodoroState.status !== "idle"}
-                                placeholder="1"
-                              />
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <label className="toggle-switch">
+                                  <input type="checkbox" checked={pomodoroSettings.notificationEnabled} onChange={() => handlePomodoroSettingToggle('notificationEnabled')} />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                                <div>
+                                  <div className="settings-row-title">Show Notification</div>
+                                  <div className="settings-row-desc">Desktop alert on completion</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Focus Message (Optional)</label>
-                              <input 
-                                type="text" 
-                                className="form-input" 
-                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={pomodoroSettings.customFocusMessage || ""}
-                                onChange={(e) => handlePomodoroMessageChange('customFocusMessage', e.target.value)}
-                                placeholder="Great job! Time for a short break."
-                              />
+                          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px' }}>
+                            <div className="premium-input-group" style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Focus (M)</label>
+                              <div className="premium-input-wrapper">
+                                <div className="premium-input-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </div>
+                                <input 
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="premium-input"
+                                  value={focusInput}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    setFocusInput(val);
+                                    const parsed = parseInt(val, 10);
+                                    if (!isNaN(parsed) && parsed >= 1) {
+                                      handlePomodoroDurationChange('focusDurationMs', parsed);
+                                    }
+                                  }}
+                                  disabled={pomodoroState.status !== "idle"}
+                                  placeholder="25"
+                                />
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Break Message (Optional)</label>
-                              <input 
-                                type="text" 
-                                className="form-input" 
-                                style={{ padding: '6px', fontSize: '12px', width: '100%' }} 
-                                value={pomodoroSettings.customBreakMessage || ""}
-                                onChange={(e) => handlePomodoroMessageChange('customBreakMessage', e.target.value)}
-                                placeholder="Time to get back to focus."
-                              />
+                            <div className="premium-input-group" style={{ flex: 1 }}>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Break (M)</label>
+                              <div className="premium-input-wrapper">
+                                <div className="premium-input-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                                </div>
+                                <input 
+                                  type="text" 
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="premium-input"
+                                  value={breakInput}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    setBreakInput(val);
+                                    const parsed = parseInt(val, 10);
+                                    if (!isNaN(parsed) && parsed >= 1) {
+                                      handlePomodoroDurationChange('breakDurationMs', parsed);
+                                    }
+                                  }}
+                                  disabled={pomodoroState.status !== "idle"}
+                                  placeholder="5"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                            <div className="premium-input-group">
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Custom Focus Message (Optional)</label>
+                              <div className="premium-input-wrapper">
+                                <div className="premium-input-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+                                </div>
+                                <input 
+                                  type="text" 
+                                  className="premium-input" 
+                                  value={pomodoroSettings.customFocusMessage || ""}
+                                  onChange={(e) => handlePomodoroMessageChange('customFocusMessage', e.target.value)}
+                                  placeholder="Great job! Time for a short break."
+                                />
+                              </div>
+                            </div>
+                            <div className="premium-input-group">
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Custom Break Message (Optional)</label>
+                              <div className="premium-input-wrapper">
+                                <div className="premium-input-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+                                </div>
+                                <input 
+                                  type="text" 
+                                  className="premium-input" 
+                                  value={pomodoroSettings.customBreakMessage || ""}
+                                  onChange={(e) => handlePomodoroMessageChange('customBreakMessage', e.target.value)}
+                                  placeholder="Time to get back to focus."
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
