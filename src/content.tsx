@@ -8,7 +8,8 @@ import type {
   AnchorCorner,
   BlobUIState,
   TodayStatsResponse,
-  RuntimeMessage
+  RuntimeMessage,
+  TimeLimitState
 } from "./types/tracking";
 
 // Encapsulate and export Shadow DOM CSS injector
@@ -72,6 +73,9 @@ export default function BlobContent() {
 
   // Pomodoro sliding notification state
   const [pomodoroAlert, setPomodoroAlert] = useState<{ title: string; message: string; phase: string } | null>(null);
+
+  // Time Limit Block State
+  const [timeLimitState, setTimeLimitState] = useState<TimeLimitState | null>(null);
 
   // ─── Component Helpers (Declared first to avoid Block TDZ checks) ─────────────────
 
@@ -184,6 +188,27 @@ export default function BlobContent() {
 
     return () => clearInterval(interval);
   }, [uiState, fetchFreshStats]);
+
+  // 2b. Poll Time Limit State
+  useEffect(() => {
+    if (isSensitive) return;
+    const domain = window.location.hostname.replace(/^www\./, "");
+    
+    const checkTimeLimit = () => {
+      chrome.runtime.sendMessage(
+        { type: "GET_TIME_LIMIT_STATE", version: 1, domain } as RuntimeMessage,
+        (response: TimeLimitState) => {
+          if (!chrome.runtime.lastError && response) {
+            setTimeLimitState(response);
+          }
+        }
+      );
+    };
+
+    checkTimeLimit();
+    const limitInterval = setInterval(checkTimeLimit, 5000);
+    return () => clearInterval(limitInterval);
+  }, [isSensitive]);
 
   // 3. Local Timer Ticker - derived entirely in-memory at 1s resolution
   useEffect(() => {
@@ -410,6 +435,20 @@ export default function BlobContent() {
 
   const isCollapsed = uiState === "collapsed" || (uiState === "dragging" && position.isCollapsed);
 
+  // Handle Bypass Action
+  const handleBypass = (durationMs: number) => {
+    const domain = window.location.hostname.replace(/^www\./, "");
+    chrome.runtime.sendMessage(
+      { type: "BYPASS_TIME_LIMIT", version: 1, domain, durationMs } as RuntimeMessage,
+      () => {
+        // Optimistically update local state to hide overlay immediately
+        if (timeLimitState) {
+          setTimeLimitState({ ...timeLimitState, isBlocked: false, bypassedUntil: Date.now() + durationMs });
+        }
+      }
+    );
+  };
+
   return (
     <div
       style={{
@@ -418,11 +457,84 @@ export default function BlobContent() {
         height: "100vh",
         top: 0,
         left: 0,
-        pointerEvents: "none",
+        pointerEvents: timeLimitState?.isBlocked ? "auto" : "none",
         zIndex: 2147483647
       }}
       className="select-none font-sans"
     >
+      {/* Soft-Block Overlay */}
+      {timeLimitState?.isBlocked && (
+        <div style={{
+          position: "absolute", inset: 0, 
+          backdropFilter: "blur(12px) saturate(180%)",
+          WebkitBackdropFilter: "blur(12px) saturate(180%)",
+          backgroundColor: "rgba(10, 10, 10, 0.65)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 10
+        }}>
+          <div style={{
+            background: "var(--w-card-bg)",
+            border: "1px solid var(--w-border)",
+            borderRadius: "20px",
+            padding: "40px",
+            maxWidth: "420px",
+            textAlign: "center",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.15)",
+            pointerEvents: "auto",
+            animation: "fadeIn 0.3s ease-out forwards"
+          }}>
+            <div style={{ display: "inline-flex", padding: "12px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", marginBottom: "20px" }}>
+              <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--w-text-main)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Time Limit Reached</h2>
+            <p style={{ fontSize: "14px", color: "var(--w-text-subtle)", marginBottom: "30px", lineHeight: 1.6 }}>
+              You have spent <strong style={{ color: "var(--w-text-main)" }}>{formatDuration(timeLimitState.currentDurationMs || 0)}</strong> on <strong style={{ color: "var(--w-text-main)" }}>{timeLimitState.domain}</strong> today. 
+              This exceeds your limit of {formatDuration(timeLimitState.maxDurationMs || 0)}.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button 
+                onClick={() => { window.location.href = "about:blank"; }}
+                style={{
+                  background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
+                  color: "#fff", border: "none", borderRadius: "10px", padding: "12px",
+                  fontSize: "14px", fontWeight: 700, cursor: "pointer", transition: "opacity 0.2s"
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+              >
+                Leave Site
+              </button>
+              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                <button 
+                  onClick={() => handleBypass(15 * 60 * 1000)}
+                  style={{
+                    flex: 1, background: "transparent", color: "var(--w-text-subtle)",
+                    border: "1px solid var(--w-border)", borderRadius: "10px", padding: "10px",
+                    fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = "var(--w-text-main)"; e.currentTarget.style.borderColor = "var(--w-text-muted)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = "var(--w-text-subtle)"; e.currentTarget.style.borderColor = "var(--w-border)"; }}
+                >
+                  Bypass 15m
+                </button>
+                <button 
+                  onClick={() => handleBypass(24 * 60 * 60 * 1000)}
+                  style={{
+                    flex: 1, background: "transparent", color: "var(--w-text-subtle)",
+                    border: "1px solid var(--w-border)", borderRadius: "10px", padding: "10px",
+                    fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = "var(--w-text-main)"; e.currentTarget.style.borderColor = "var(--w-text-muted)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = "var(--w-text-subtle)"; e.currentTarget.style.borderColor = "var(--w-border)"; }}
+                >
+                  Bypass Today
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         ref={containerRef}
         style={{
