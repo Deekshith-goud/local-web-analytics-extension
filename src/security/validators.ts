@@ -67,7 +67,11 @@ export const MESSAGE_CAPABILITIES = Object.freeze({
   STOP_POMODORO: Object.freeze(["popup", "dashboard"]),
   GET_POMODORO_SETTINGS: Object.freeze(["popup", "dashboard"]),
   SAVE_POMODORO_SETTINGS: Object.freeze(["dashboard"]),
-  SHOW_POMODORO_NOTIFICATION: Object.freeze(["background"])
+  SHOW_POMODORO_NOTIFICATION: Object.freeze(["background"]),
+  GET_TIME_LIMIT_RULES: Object.freeze(["content", "popup", "dashboard"]),
+  SAVE_TIME_LIMIT_RULES: Object.freeze(["dashboard"]),
+  GET_TIME_LIMIT_STATE: Object.freeze(["content", "popup", "dashboard"]),
+  BYPASS_TIME_LIMIT: Object.freeze(["content", "popup", "dashboard"])
 });
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -400,6 +404,27 @@ export function isRuntimeMessage(payload: unknown): payload is RuntimeMessage {
 
   if (msg.type === "SHOW_POMODORO_NOTIFICATION") {
     if (typeof msg.phase !== "string" || typeof msg.title !== "string" || typeof msg.message !== "string") {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "SAVE_TIME_LIMIT_RULES") {
+    if (!Array.isArray(msg.rules)) {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "GET_TIME_LIMIT_STATE") {
+    if (typeof msg.domain !== "string") {
+      securityMetrics.malformedPayloads++;
+      return false;
+    }
+  }
+
+  if (msg.type === "BYPASS_TIME_LIMIT") {
+    if (typeof msg.domain !== "string" || typeof msg.durationMs !== "number") {
       securityMetrics.malformedPayloads++;
       return false;
     }

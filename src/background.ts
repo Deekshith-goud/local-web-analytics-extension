@@ -29,6 +29,12 @@ import {
   saveCustomRules, 
   type ProductivityCategory 
 } from "./analytics/productivity-rules";
+import {
+  getTimeLimitRules,
+  saveTimeLimitRules,
+  getTimeLimitBypasses,
+  setTimeLimitBypass
+} from "./analytics/time-limits";
 import type {
   RuntimeMessage,
   ActiveSessionResponse,
@@ -1211,6 +1217,74 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }).catch((err) => {
       sendResponse({ success: false, error: String(err) });
     });
+    return true;
+  }
+
+  if (msg.type === "GET_TIME_LIMIT_RULES") {
+    getTimeLimitRules().then((rules) => {
+      sendResponse({ success: true, rules });
+    }).catch(err => {
+      sendResponse({ success: false, error: String(err) });
+    });
+    return true;
+  }
+
+  if (msg.type === "SAVE_TIME_LIMIT_RULES") {
+    saveTimeLimitRules(msg.rules).then((res) => {
+      sendResponse(res);
+    }).catch(err => {
+      sendResponse({ success: false, error: String(err) });
+    });
+    return true;
+  }
+
+  if (msg.type === "BYPASS_TIME_LIMIT") {
+    setTimeLimitBypass(msg.domain, msg.durationMs).then(() => {
+      sendResponse({ success: true });
+    }).catch(err => {
+      sendResponse({ success: false, error: String(err) });
+    });
+    return true;
+  }
+
+  if (msg.type === "GET_TIME_LIMIT_STATE") {
+    (async () => {
+      try {
+        const rules = await getTimeLimitRules();
+        const rule = rules.find(r => r.domain === msg.domain);
+        
+        if (!rule) {
+          sendResponse({ domain: msg.domain, isBlocked: false });
+          return;
+        }
+
+        const bypasses = await getTimeLimitBypasses();
+        const bypass = bypasses.find(b => b.domain === msg.domain);
+        const bypassedUntil = bypass ? bypass.bypassedUntil : undefined;
+
+        // Calculate time spent today on this domain
+        const active = engine.getActiveSession();
+        const paused = engine.getPaused();
+        const activePayload = active ? { domain: active.domain, startTime: active.startTime } : null;
+        
+        const snapshot = await getLivePopupSnapshot(activePayload, paused);
+        const domainStat = snapshot.topDomains.find(d => d.domain === msg.domain);
+        const currentDurationMs = domainStat ? domainStat.durationMs : 0;
+
+        const isBlocked = currentDurationMs >= rule.maxDurationMs && (!bypassedUntil || Date.now() > bypassedUntil);
+
+        sendResponse({
+          domain: msg.domain,
+          isBlocked,
+          bypassedUntil,
+          maxDurationMs: rule.maxDurationMs,
+          currentDurationMs
+        });
+      } catch (err) {
+        logger.error("[Background] Failed to get time limit state", err);
+        sendResponse({ domain: msg.domain, isBlocked: false });
+      }
+    })();
     return true;
   }
 

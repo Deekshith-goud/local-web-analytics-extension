@@ -14,7 +14,7 @@ import brandLogo from "url:~assets/icon.png";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
-import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroState, PomodoroSettings } from "../types/tracking";
+import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroState, PomodoroSettings, TimeLimitRule } from "../types/tracking";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -426,6 +426,11 @@ export default function AnalyticsDashboard() {
   const [breakInput, setBreakInput] = useState<string>("");
   const [, setPomodoroTick] = useState(0);
 
+  const [timeLimitRules, setTimeLimitRules] = useState<TimeLimitRule[]>([]);
+  const [newTimeLimitDomain, setNewTimeLimitDomain] = useState("");
+  const [newTimeLimitDurationStr, setNewTimeLimitDurationStr] = useState("30");
+  const [timeLimitError, setTimeLimitError] = useState<string | null>(null);
+
   useEffect(() => {
     if (pomodoroSettings) {
       setFocusInput(String(Math.floor(pomodoroSettings.focusDurationMs / 60000)));
@@ -449,6 +454,14 @@ export default function AnalyticsDashboard() {
         fetchPomodoro();
         setPomodoroTick(t => t + 1);
       }, 1000);
+    }
+    
+    if (activeTab === "rules") {
+      chrome.runtime.sendMessage({ type: "GET_TIME_LIMIT_RULES", version: 1 }, (res) => {
+        if (res && res.success) {
+          setTimeLimitRules(res.rules);
+        }
+      });
     }
     return () => clearInterval(interval);
   }, [activeTab]);
@@ -890,6 +903,42 @@ export default function AnalyticsDashboard() {
     };
     reader.readAsText(file);
     e.target.value = ""; // Reset file input
+  };
+
+  const handleAddTimeLimit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTimeLimitError(null);
+    const domain = newTimeLimitDomain.trim().toLowerCase();
+    const durationMins = parseInt(newTimeLimitDurationStr, 10);
+    if (!domain || isNaN(durationMins) || durationMins < 1) {
+      setTimeLimitError("Valid domain and duration > 0 required.");
+      return;
+    }
+    const maxDurationMs = durationMins * 60 * 1000;
+    const newRule: TimeLimitRule = { domain, maxDurationMs, createdAt: Date.now() };
+    const updated = [...timeLimitRules.filter(r => r.domain !== domain), newRule];
+    chrome.runtime.sendMessage({ type: "SAVE_TIME_LIMIT_RULES", version: 1, rules: updated }, (res) => {
+      if (chrome.runtime.lastError) {
+        setTimeLimitError("Connection error: " + chrome.runtime.lastError.message);
+        return;
+      }
+      if (res && res.success) {
+        setTimeLimitRules(updated);
+        setNewTimeLimitDomain("");
+        setNewTimeLimitDurationStr("30");
+      } else {
+        setTimeLimitError(res?.error || "Failed to save time limit rule.");
+      }
+    });
+  };
+
+  const handleDeleteTimeLimit = (domain: string) => {
+    const updated = timeLimitRules.filter(r => r.domain !== domain);
+    chrome.runtime.sendMessage({ type: "SAVE_TIME_LIMIT_RULES", version: 1, rules: updated }, (res) => {
+      if (res && res.success) {
+        setTimeLimitRules(updated);
+      }
+    });
   };
 
   return (
@@ -1919,6 +1968,49 @@ export default function AnalyticsDashboard() {
                   </label>
                 </div>
               </div>
+
+              <div className="rules-card">
+                <h3>Add Soft-Block Limit</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+                  Set daily duration limits for distracting websites. Once reached, a soft-block overlay appears.
+                </p>
+
+                {timeLimitError && (
+                  <div className="rules-form-alert error" role="alert" style={{ marginBottom: '16px' }}>
+                    {timeLimitError}
+                  </div>
+                )}
+
+                <form className="rules-form" onSubmit={handleAddTimeLimit}>
+                  <div className="form-group">
+                    <label>Domain (e.g. reddit.com)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter hostname..."
+                      value={newTimeLimitDomain}
+                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Daily Limit (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      min="1"
+                      value={newTimeLimitDurationStr}
+                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+                    Save Time Limit
+                  </button>
+                </form>
+              </div>
             </div>
 
             <div className="rules-main">
@@ -1954,7 +2046,7 @@ export default function AnalyticsDashboard() {
                   </div>
                 </div>
 
-                <div className="rules-table-container">
+                <div className="rules-table-container" style={{ maxHeight: "350px", overflowY: "auto" }}>
                   <table className="rules-table">
                     <thead>
                       <tr>
@@ -2007,9 +2099,93 @@ export default function AnalyticsDashboard() {
                   </div>
                 )}
               </div>
+
+              <div className="rules-card" style={{ flex: 1, display: "flex", flexDirection: "column", marginTop: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                  <div>
+                    <h3>Active Time Limits</h3>
+                    <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                      Set daily duration limits for distracting websites. These limits reset automatically at midnight.
+                    </p>
+                  </div>
+                </div>
+
+                {timeLimitError && (
+                  <div className="rules-form-alert error" role="alert" style={{ marginBottom: '16px' }}>
+                    {timeLimitError}
+                  </div>
+                )}
+
+                <form className="rules-form" onSubmit={handleAddTimeLimit} style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "24px" }}>
+                  <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                    <label style={{ fontSize: "12px", marginBottom: "6px" }}>Domain Match</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. reddit.com"
+                      value={newTimeLimitDomain}
+                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ width: "120px", marginBottom: 0 }}>
+                    <label style={{ fontSize: "12px", marginBottom: "6px" }}>Limit (mins)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      min="1"
+                      value={newTimeLimitDurationStr}
+                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn-primary" style={{ height: "36px", padding: "0 24px" }}>
+                    Add Limit
+                  </button>
+                </form>
+
+                <div className="rules-table-container" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  <table className="rules-table">
+                    <thead>
+                      <tr>
+                        <th>Domain Match</th>
+                        <th>Daily Limit</th>
+                        <th style={{ width: "80px", textAlign: "right" }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timeLimitRules.length === 0 ? (
+                        <tr>
+                          <td colSpan={3}>
+                            <div className="vis-empty" style={{ minHeight: "150px" }}>
+                              <p className="vis-empty-title">No Limits Set</p>
+                              <p className="vis-empty-desc">Add a time limit rule to restrict time spent on specific domains.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        timeLimitRules.map((rule) => (
+                          <tr key={rule.domain}>
+                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>{rule.domain}</td>
+                            <td>{formatDuration(rule.maxDurationMs)}</td>
+                            <td style={{ textAlign: "right" }}>
+                              <button type="button" className="btn-icon danger" onClick={() => handleDeleteTimeLimit(rule.domain)} title={`Delete limit for ${rule.domain}`}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
         )}
+
 
         {activeTab === "settings" && (
         <section className="settings-panel-layout tab-panel" aria-label="Settings and Data Control">

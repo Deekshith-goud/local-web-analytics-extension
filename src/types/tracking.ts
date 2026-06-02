@@ -105,7 +105,11 @@ export type RuntimeMessage =
   | { type: "STOP_POMODORO"; version: 1 }
   | { type: "GET_POMODORO_SETTINGS"; version: 1 }
   | { type: "SAVE_POMODORO_SETTINGS"; version: 1; settings: PomodoroSettings }
-  | { type: "SHOW_POMODORO_NOTIFICATION"; version: 1; phase: string; title: string; message: string };
+  | { type: "SHOW_POMODORO_NOTIFICATION"; version: 1; phase: string; title: string; message: string }
+  | { type: "GET_TIME_LIMIT_RULES"; version: 1 }
+  | { type: "SAVE_TIME_LIMIT_RULES"; version: 1; rules: TimeLimitRule[] }
+  | { type: "GET_TIME_LIMIT_STATE"; version: 1; domain: string }
+  | { type: "BYPASS_TIME_LIMIT"; version: 1; domain: string; durationMs: number };
 
 export interface ActiveSessionResponse {
   activeSession: {
@@ -221,4 +225,25 @@ export interface PomodoroSettings {
   customFocusMessage?: string;
   customBreakMessage?: string;
   timerStyle?: 'minimal' | 'typographic' | 'neumorphic' | 'glass' | 'horizontal' | 'breathing';
+}
+
+// ─── Soft-Block Time Limits ──────────────────────────────────────────────────
+
+export interface TimeLimitRule {
+  domain: string;
+  maxDurationMs: number;
+  createdAt: number;
+}
+
+export interface TimeLimitBypass {
+  domain: string;
+  bypassedUntil: number; // timestamp
+}
+
+export interface TimeLimitState {
+  domain: string;
+  isBlocked: boolean;
+  bypassedUntil?: number;
+  maxDurationMs?: number;
+  currentDurationMs?: number;
 }
