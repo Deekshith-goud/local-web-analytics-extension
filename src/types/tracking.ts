@@ -233,6 +233,7 @@ export interface TimeLimitRule {
   domain: string;
   maxDurationMs: number;
   createdAt: number;
+  enabled?: boolean;
 }
 
 export interface TimeLimitBypass {

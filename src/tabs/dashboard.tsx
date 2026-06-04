@@ -941,6 +941,17 @@ export default function AnalyticsDashboard() {
     });
   };
 
+  const handleToggleTimeLimit = (domain: string) => {
+    const updated = timeLimitRules.map(r => 
+      r.domain === domain ? { ...r, enabled: r.enabled === false ? true : false } : r
+    );
+    chrome.runtime.sendMessage({ type: "SAVE_TIME_LIMIT_RULES", version: 1, rules: updated }, (res) => {
+      if (res && res.success) {
+        setTimeLimitRules(updated);
+      }
+    });
+  };
+
   return (
     <DashboardErrorBoundary>
       <div className="dashboard-wrapper">
@@ -2170,7 +2181,20 @@ export default function AnalyticsDashboard() {
                           <tr key={rule.domain}>
                             <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>{rule.domain}</td>
                             <td>{formatDuration(rule.maxDurationMs)}</td>
-                            <td style={{ textAlign: "right" }}>
+                            <td style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                              <button 
+                                type="button" 
+                                className={`btn-icon ${rule.enabled !== false ? 'success' : 'danger'}`} 
+                                onClick={() => handleToggleTimeLimit(rule.domain)} 
+                                title={rule.enabled !== false ? `Disable limit for ${rule.domain}` : `Enable limit for ${rule.domain}`}
+                                style={{ opacity: rule.enabled !== false ? 1 : 0.6 }}
+                              >
+                                {rule.enabled !== false ? (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                ) : (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                )}
+                              </button>
                               <button type="button" className="btn-icon danger" onClick={() => handleDeleteTimeLimit(rule.domain)} title={`Delete limit for ${rule.domain}`}>
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                               </button>

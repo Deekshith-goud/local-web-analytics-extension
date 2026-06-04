@@ -76,6 +76,7 @@ export default function BlobContent() {
 
   // Time Limit Block State
   const [timeLimitState, setTimeLimitState] = useState<TimeLimitState | null>(null);
+  const [bypassRemainingStr, setBypassRemainingStr] = useState<string | null>(null);
 
   // ─── Component Helpers (Declared first to avoid Block TDZ checks) ─────────────────
 
@@ -217,6 +218,35 @@ export default function BlobContent() {
     const limitInterval = setInterval(checkTimeLimit, 5000);
     return () => clearInterval(limitInterval);
   }, [isSensitive]);
+
+  // 2c. Bypass Timer Badge Ticker
+  useEffect(() => {
+    if (!timeLimitState?.bypassedUntil) {
+      setBypassRemainingStr(null);
+      return;
+    }
+    
+    const tickBypass = () => {
+      const now = Date.now();
+      const until = timeLimitState.bypassedUntil;
+      if (until && until > now) {
+        const diffMs = until - now;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffSecs = Math.floor((diffMs % 60000) / 1000);
+        if (diffMins > 60) {
+          setBypassRemainingStr("Bypassed for today");
+        } else {
+          setBypassRemainingStr(`Bypassed: ${diffMins}:${diffSecs.toString().padStart(2, '0')}`);
+        }
+      } else {
+        setBypassRemainingStr(null);
+      }
+    };
+
+    tickBypass();
+    const interval = setInterval(tickBypass, 1000);
+    return () => clearInterval(interval);
+  }, [timeLimitState?.bypassedUntil]);
 
   // 3. Local Timer Ticker - derived entirely in-memory at 1s resolution
   useEffect(() => {
@@ -567,6 +597,31 @@ export default function BlobContent() {
         }}
         className="flex items-center justify-center"
       >
+        {bypassRemainingStr && !timeLimitState?.isBlocked && (
+          <div style={{
+            position: "absolute",
+            bottom: "calc(100% + 12px)",
+            right: 0,
+            background: "rgba(14, 14, 15, 0.95)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "12px",
+            padding: "6px 12px",
+            color: "#ffffff",
+            fontSize: "12px",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+            zIndex: 10,
+            whiteSpace: "nowrap"
+          }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px rgba(16, 185, 129, 0.5)" }} />
+            {bypassRemainingStr}
+          </div>
+        )}
+
         {pomodoroAlert && (
           <div 
             className={`pomodoro-toast-slide-out widget-frame widget-${blobStyle}`} 
