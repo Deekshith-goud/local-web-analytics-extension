@@ -199,7 +199,15 @@ export default function BlobContent() {
         { type: "GET_TIME_LIMIT_STATE", version: 1, domain } as RuntimeMessage,
         (response: TimeLimitState) => {
           if (!chrome.runtime.lastError && response) {
-            setTimeLimitState(response);
+            setTimeLimitState((prev) => {
+              if (prev?.isBlocked && response.isBlocked) {
+                return {
+                  ...response,
+                  currentDurationMs: prev.currentDurationMs
+                };
+              }
+              return response;
+            });
           }
         }
       );
@@ -466,66 +474,76 @@ export default function BlobContent() {
       {timeLimitState?.isBlocked && (
         <div style={{
           position: "absolute", inset: 0, 
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
-          backgroundColor: "rgba(10, 10, 10, 0.65)",
+          backdropFilter: "blur(16px) saturate(150%)",
+          WebkitBackdropFilter: "blur(16px) saturate(150%)",
+          backgroundColor: "rgba(0, 0, 0, 0.75)",
           display: "flex", alignItems: "center", justifyContent: "center",
           zIndex: 10
         }}>
           <div style={{
-            background: "var(--w-card-bg)",
-            border: "1px solid var(--w-border)",
-            borderRadius: "20px",
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+            background: "rgba(14, 14, 15, 0.95)",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "24px",
             padding: "40px",
-            maxWidth: "420px",
+            maxWidth: "380px",
             textAlign: "center",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.15)",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
             pointerEvents: "auto",
-            animation: "fadeIn 0.3s ease-out forwards"
+            animation: "fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards"
           }}>
-            <div style={{ display: "inline-flex", padding: "12px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", marginBottom: "20px" }}>
-              <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div style={{ 
+              display: "inline-flex", padding: "14px", borderRadius: "50%", 
+              background: "linear-gradient(180deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)", 
+              border: "1px solid rgba(239, 68, 68, 0.1)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+              color: "#ef4444", marginBottom: "20px" 
+            }}>
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
-            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--w-text-main)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Time Limit Reached</h2>
-            <p style={{ fontSize: "14px", color: "var(--w-text-subtle)", marginBottom: "30px", lineHeight: 1.6 }}>
-              You have spent <strong style={{ color: "var(--w-text-main)" }}>{formatDuration(timeLimitState.currentDurationMs || 0)}</strong> on <strong style={{ color: "var(--w-text-main)" }}>{timeLimitState.domain}</strong> today. 
+            <h2 style={{ fontSize: "20px", fontWeight: 600, color: "#ffffff", marginBottom: "10px", letterSpacing: "-0.01em" }}>Time Limit Reached</h2>
+            <p style={{ fontSize: "14px", color: "#8b8b93", marginBottom: "32px", lineHeight: 1.5, fontWeight: 400 }}>
+              You have spent <strong style={{ color: "#ffffff", fontWeight: 500 }}>{formatDuration(timeLimitState.currentDurationMs || 0)}</strong> on <strong style={{ color: "#ffffff", fontWeight: 500 }}>{timeLimitState.domain}</strong> today. 
               This exceeds your limit of {formatDuration(timeLimitState.maxDurationMs || 0)}.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <button 
                 onClick={() => { window.location.href = "about:blank"; }}
                 style={{
-                  background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
-                  color: "#fff", border: "none", borderRadius: "10px", padding: "12px",
-                  fontSize: "14px", fontWeight: 700, cursor: "pointer", transition: "opacity 0.2s"
+                  background: "#ffffff",
+                  color: "#000000", border: "none", borderRadius: "12px", padding: "12px",
+                  fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all 0.15s ease",
+                  boxShadow: "0 4px 12px rgba(255, 255, 255, 0.15)"
                 }}
-                onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-                onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseOver={(e) => { e.currentTarget.style.transform = "scale(0.98)"; e.currentTarget.style.opacity = "0.9"; }}
+                onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.opacity = "1"; }}
               >
                 Leave Site
               </button>
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
                 <button 
                   onClick={() => handleBypass(15 * 60 * 1000)}
                   style={{
-                    flex: 1, background: "transparent", color: "var(--w-text-subtle)",
-                    border: "1px solid var(--w-border)", borderRadius: "10px", padding: "10px",
-                    fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                    flex: 1, background: "rgba(255, 255, 255, 0.04)", color: "#a1a1aa",
+                    border: "none", borderRadius: "10px", padding: "10px",
+                    fontSize: "13px", fontWeight: 500, cursor: "pointer", transition: "all 0.15s ease"
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.color = "var(--w-text-main)"; e.currentTarget.style.borderColor = "var(--w-text-muted)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.color = "var(--w-text-subtle)"; e.currentTarget.style.borderColor = "var(--w-border)"; }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"; e.currentTarget.style.color = "#ffffff"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)"; e.currentTarget.style.color = "#a1a1aa"; }}
                 >
                   Bypass 15m
                 </button>
                 <button 
                   onClick={() => handleBypass(24 * 60 * 60 * 1000)}
                   style={{
-                    flex: 1, background: "transparent", color: "var(--w-text-subtle)",
-                    border: "1px solid var(--w-border)", borderRadius: "10px", padding: "10px",
-                    fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                    flex: 1, background: "rgba(255, 255, 255, 0.04)", color: "#a1a1aa",
+                    border: "none", borderRadius: "10px", padding: "10px",
+                    fontSize: "13px", fontWeight: 500, cursor: "pointer", transition: "all 0.15s ease"
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.color = "var(--w-text-main)"; e.currentTarget.style.borderColor = "var(--w-text-muted)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.color = "var(--w-text-subtle)"; e.currentTarget.style.borderColor = "var(--w-border)"; }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"; e.currentTarget.style.color = "#ffffff"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)"; e.currentTarget.style.color = "#a1a1aa"; }}
                 >
                   Bypass Today
                 </button>
@@ -544,14 +562,15 @@ export default function BlobContent() {
           left: inlinePos.left,
           right: inlinePos.right,
           pointerEvents: "auto",
-          transition: uiState === "dragging" ? "none" : "all 300ms cubic-bezier(0.4, 0, 0.2, 1)"
+          transition: uiState === "dragging" ? "none" : "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          isolation: "isolate"
         }}
         className="flex items-center justify-center"
       >
         {pomodoroAlert && (
           <div 
-            className="pomodoro-toast-slide-out" 
-            style={getToastStyles()} 
+            className={`pomodoro-toast-slide-out widget-frame widget-${blobStyle}`} 
+            style={{ ...getToastStyles(), zIndex: 10 }} 
             onClick={() => setPomodoroAlert(null)}
           >
             <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "50%", background: pomodoroAlert.phase === "break" ? "rgba(16, 185, 129, 0.15)" : "rgba(59, 130, 246, 0.15)", color: pomodoroAlert.phase === "break" ? "#10b981" : "#3b82f6" }}>
@@ -580,7 +599,8 @@ export default function BlobContent() {
             justifyContent: "center",
             overflow: "hidden",
             flexShrink: 0,
-            flexGrow: 0
+            flexGrow: 0,
+            zIndex: 20
           }}
         >
           {/* 1. Collapsed View */}
