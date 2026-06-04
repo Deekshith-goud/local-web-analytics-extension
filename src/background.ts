@@ -1251,7 +1251,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       try {
         const rules = await getTimeLimitRules();
-        const rule = rules.find(r => r.domain === msg.domain);
+        const normalizedMsgDomain = msg.domain.replace(/^www\./, "");
+        const rule = rules.find(r => r.domain.replace(/^www\./, "") === normalizedMsgDomain && r.enabled !== false);
         
         if (!rule) {
           sendResponse({ domain: msg.domain, isBlocked: false });
@@ -1259,19 +1260,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         const bypasses = await getTimeLimitBypasses();
-        const bypass = bypasses.find(b => b.domain === msg.domain);
+        const bypass = bypasses.find(b => b.domain.replace(/^www\./, "") === normalizedMsgDomain);
         const bypassedUntil = bypass ? bypass.bypassedUntil : undefined;
 
         // Calculate time spent today on this domain
         const active = engine.getActiveSession();
-        const paused = engine.getPaused();
-        const activePayload = active ? { domain: active.domain, startTime: active.startTime } : null;
+        const now = Date.now();
+        const startOfDayMs = getStartOfDayTimestamp(getLocalTodayDateString(new Date(now)));
+        const records = await getActivityRecordsInRange(startOfDayMs, now);
         
-        const snapshot = await getLivePopupSnapshot(activePayload, paused);
-        const domainStat = snapshot.topDomains.find(d => d.domain === msg.domain);
-        const currentDurationMs = domainStat ? domainStat.durationMs : 0;
+        let currentDurationMs = 0;
+        for (const r of records) {
+          if (r.domain.replace(/^www\./, "") === normalizedMsgDomain) {
+            currentDurationMs += r.durationMs;
+          }
+        }
+        
+        if (active && !engine.getPaused()) {
+          if (active.domain.replace(/^www\./, "") === normalizedMsgDomain) {
+            currentDurationMs += Math.max(0, now - active.startTime);
+          }
+        }
 
-        const isBlocked = currentDurationMs >= rule.maxDurationMs && (!bypassedUntil || Date.now() > bypassedUntil);
+        const isBlocked = currentDurationMs >= rule.maxDurationMs && (!bypassedUntil || now > bypassedUntil);
 
         sendResponse({
           domain: msg.domain,
