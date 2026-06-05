@@ -204,7 +204,7 @@ export default function BlobContent() {
               if (prev?.isBlocked && response.isBlocked) {
                 return {
                   ...response,
-                  currentDurationMs: prev.currentDurationMs
+                  currentDurationMs: prev.currentDurationMs || 0
                 };
               }
               return response;

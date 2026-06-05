@@ -392,6 +392,8 @@ export default function AnalyticsDashboard() {
   const [isPurging, setIsPurging] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [showAllDomainsModal, setShowAllDomainsModal] = useState(false);
+  const [showAddRuleModal, setShowAddRuleModal] = useState(false);
+  const [showAddLimitModal, setShowAddLimitModal] = useState(false);
   const [allDomainsSort, setAllDomainsSort] = useState<"duration" | "visits">("duration");
   const [allDomainsSearch, setAllDomainsSearch] = useState("");
 
@@ -399,7 +401,7 @@ export default function AnalyticsDashboard() {
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
   const [defaultRules, setDefaultRules] = useState<ProductivityRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [ruleTypeFilter, setRuleTypeFilter] = useState<"all" | "default" | "custom">("all");
+  const [ruleTypeFilter, setRuleTypeFilter] = useState<"all" | "productive" | "distracting" | "neutral" | "unknown">("all");
 
   // Form States for custom rules creation
   const [newDomain, setNewDomain] = useState("");
@@ -557,8 +559,8 @@ export default function AnalyticsDashboard() {
       if (!groups[dateStr]) {
          groups[dateStr] = { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), sessions: [], totalMs: 0 };
       }
-      groups[dateStr].sessions.push(interval);
-      groups[dateStr].totalMs += interval.durationMs;
+      groups[dateStr]!.sessions.push(interval);
+      groups[dateStr]!.totalMs += interval.durationMs;
     });
     return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [domainIntervals]);
@@ -712,8 +714,7 @@ export default function AnalyticsDashboard() {
       const matchesSearch = rule.domain.includes(searchQuery.toLowerCase());
       const matchesFilter = 
         ruleTypeFilter === "all" ||
-        (ruleTypeFilter === "custom" && rule.isCustom) ||
-        (ruleTypeFilter === "default" && !rule.isCustom);
+        rule.category === ruleTypeFilter;
       return matchesSearch && matchesFilter;
     });
   }, [allDisplayRules, searchQuery, ruleTypeFilter]);
@@ -763,6 +764,7 @@ export default function AnalyticsDashboard() {
           setFormSuccess(`Rule for '${candidateRule.domain}' added successfully.`);
           setNewDomain("");
           setNewPriority("10");
+          setShowAddRuleModal(false);
           fetchStats(); // Update live statistics metrics on rule change
         } else {
           setFormError(res?.error ?? "Failed to save rule in storage.");
@@ -926,6 +928,7 @@ export default function AnalyticsDashboard() {
         setTimeLimitRules(updated);
         setNewTimeLimitDomain("");
         setNewTimeLimitDurationStr("30");
+        setShowAddLimitModal(false);
       } else {
         setTimeLimitError(res?.error || "Failed to save time limit rule.");
       }
@@ -1729,7 +1732,7 @@ export default function AnalyticsDashboard() {
                                   { id: 'horizontal', label: 'Horizontal Dash' }
                                 ]}
                                 onChange={(val) => {
-                                  const newSettings = { ...pomodoroSettings, timerStyle: val as PomodoroSettings['timerStyle'] };
+                                  const newSettings = { ...pomodoroSettings, timerStyle: val as PomodoroSettings['timerStyle'] } as PomodoroSettings;
                                   setPomodoroSettings(newSettings);
                                   chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
                                 }}
@@ -1870,162 +1873,10 @@ export default function AnalyticsDashboard() {
                   <div style={{ padding: '20px', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
                 )}
               </div>
-
-              <div className="rules-card">
-                <h3>Add Custom Rule</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
-                  Override the semantic analysis engine with your own domain classification.
-                </p>
-
-                {formError && (
-                  <div className="rules-form-alert error" role="alert">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    {formError}
-                  </div>
-                )}
-                {formSuccess && (
-                  <div className="rules-form-alert success" role="status">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                    {formSuccess}
-                  </div>
-                )}
-
-                <form className="rules-form" onSubmit={handleAddRule}>
-                  <div className="form-group">
-                    <label htmlFor="domain-input">Domain (e.g. youtube.com)</label>
-                    <input
-                      id="domain-input"
-                      type="text"
-                      className="form-input"
-                      placeholder="Enter hostname..."
-                      value={newDomain}
-                      onChange={(e) => setNewDomain(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="category-select">Classification Category</label>
-                    <select
-                      id="category-select"
-                      className="form-input"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
-                      required
-                    >
-                      <option value="productive">Productive (Deep Work)</option>
-                      <option value="distracting">Distracting (Entertainment)</option>
-                      <option value="neutral">Neutral (Utilities)</option>
-                      <option value="unknown">Unknown (Unclassified)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="priority-input">Evaluation Priority</label>
-                    <input
-                      id="priority-input"
-                      type="number"
-                      className="form-input"
-                      min="1"
-                      max="100"
-                      value={newPriority}
-                      onChange={(e) => setNewPriority(e.target.value)}
-                      required
-                    />
-                    <small style={{ display: "block", marginTop: "4px", fontSize: "11px", color: "var(--text-secondary)" }}>
-                      Higher numbers override lower priority rules (Defaults run at Priority 1)
-                    </small>
-                  </div>
-
-                  <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Save Custom Rule
-                  </button>
-                </form>
-              </div>
-
-              <div className="rules-card">
-                <h3>Portability</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
-                  Export your meticulously crafted custom ruleset to a JSON file for backup or import to another device.
-                </p>
-                <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
-                  <button type="button" className="btn-secondary" onClick={handleExportRules} style={{ justifyContent: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Export Ruleset (.json)
-                  </button>
-                  <label className="btn-secondary" style={{ display: "flex", justifyContent: "center", cursor: "pointer", margin: 0 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    Import Ruleset
-                    <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportRules} />
-                  </label>
-                </div>
-              </div>
-
-              <div className="rules-card">
-                <h3>Add Soft-Block Limit</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
-                  Set daily duration limits for distracting websites. Once reached, a soft-block overlay appears.
-                </p>
-
-                {timeLimitError && (
-                  <div className="rules-form-alert error" role="alert" style={{ marginBottom: '16px' }}>
-                    {timeLimitError}
-                  </div>
-                )}
-
-                <form className="rules-form" onSubmit={handleAddTimeLimit}>
-                  <div className="form-group">
-                    <label>Domain (e.g. reddit.com)</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Enter hostname..."
-                      value={newTimeLimitDomain}
-                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Daily Limit (minutes)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      min="1"
-                      value={newTimeLimitDurationStr}
-                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
-                    Save Time Limit
-                  </button>
-                </form>
-              </div>
             </div>
 
-            <div className="rules-main">
-              <div className="rules-card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <div className="rules-main" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="rules-card" style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                   <div>
                     <h3>Active Classifications</h3>
@@ -2033,85 +1884,124 @@ export default function AnalyticsDashboard() {
                       Showing both custom overrides and default baseline engine rules.
                     </p>
                   </div>
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div>
+                    <button type="button" className="btn-primary-elegant" style={{ boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }} onClick={() => setShowAddRuleModal(true)}>
+                      <span style={{ fontSize: '18px', fontWeight: 300, marginRight: '6px', lineHeight: 1 }}>+</span> Add Custom Rule
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "12px", marginBottom: "16px", alignItems: "center" }}>
+                  <div style={{ flex: 1, position: "relative" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     <input
                       type="text"
-                      className="form-input"
+                      className="modal-input-elegant"
                       placeholder="Search domains..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      style={{ width: "200px" }}
+                      style={{ width: "100%", paddingLeft: "36px" }}
                       aria-label="Search rules by domain"
                     />
-                    <select
-                      className="form-input"
-                      value={ruleTypeFilter}
-                      onChange={(e) => setRuleTypeFilter(e.target.value as "all" | "default" | "custom")}
-                      aria-label="Filter rules by type"
-                      style={{ width: "130px" }}
-                    >
-                      <option value="all">All Types</option>
-                      <option value="custom">Custom Only</option>
-                      <option value="default">Default Only</option>
-                    </select>
                   </div>
+                  <select
+                    className="modal-input-elegant"
+                    value={ruleTypeFilter}
+                    onChange={(e) => setRuleTypeFilter(e.target.value as 'all' | 'productive' | 'distracting' | 'neutral' | 'unknown')}
+                    aria-label="Filter rules by type"
+                    style={{ width: "150px" }}
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="productive">Productive</option>
+                    <option value="distracting">Distracting</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
                 </div>
 
-                <div className="rules-table-container" style={{ maxHeight: "350px", overflowY: "auto" }}>
-                  <table className="rules-table">
-                    <thead>
-                      <tr>
-                        <th>Domain Match</th>
-                        <th>Classification</th>
-                        <th>Priority</th>
-                        <th>Source</th>
-                        <th style={{ width: "80px", textAlign: "right" }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {searchedRules.length === 0 ? (
-                        <tr>
-                          <td colSpan={5}>
-                            <div className="vis-empty" style={{ minHeight: "150px" }}>
-                              <p className="vis-empty-title">No Rules Found</p>
-                              <p className="vis-empty-desc">Adjust your search or filter settings.</p>
+                <div className="elegant-list-container" style={{ maxHeight: "280px", overflowY: "auto", paddingRight: searchedRules.length > 5 ? "8px" : "0" }}>
+                  {searchedRules.length === 0 ? (
+                    <div className="vis-empty" style={{ minHeight: "150px" }}>
+                      <p className="vis-empty-title">No Rules Found</p>
+                      <p className="vis-empty-desc">Adjust your search or filter settings.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="elegant-list-header" style={{ display: "flex", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                        <div className="elegant-row-col domain-col" style={{ flex: 2 }}>DOMAIN</div>
+                        <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>CLASSIFICATION</div>
+                        <div className="elegant-row-col priority-col" style={{ flex: 0.5 }}>PRIORITY</div>
+                        <div className="elegant-row-col actions-col" style={{ flex: 1 }}>ACTIONS</div>
+                      </div>
+                      {searchedRules.map((rule) => (
+                        <div className="elegant-list-row" key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
+                          <div className="elegant-row-col domain-col" style={{ flex: 2, display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", color: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                             </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        searchedRules.map((rule) => (
-                          <tr key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
-                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>{rule.domain}</td>
-                            <td><span className={`badge-category ${rule.category}`}>{rule.category.charAt(0).toUpperCase() + rule.category.slice(1)}</span></td>
-                            <td>{rule.priority}</td>
-                            <td>{rule.isCustom ? <span className="source-badge">Custom</span> : <span className="source-badge">System</span>}</td>
-                            <td style={{ textAlign: "right" }}>
-                              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                                <button type="button" className="btn-icon" onClick={() => handleEditRule(rule)} title={`Edit rule for ${rule.domain}`} aria-label={`Edit rule for ${rule.domain}`}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </button>
-                                <button type="button" className="btn-icon danger" onClick={() => rule.isCustom && handleDeleteRule(rule.domain)} title={`Delete rule for ${rule.domain}`} aria-label={`Delete rule for ${rule.domain}`} style={{ opacity: rule.isCustom ? 1 : 0.35 }}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rule.domain}</span>
+                          </div>
+                          <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>
+                            <span className={`badge-category ${rule.category}`}>{rule.category.toUpperCase()}</span>
+                          </div>
+                          <div className="elegant-row-col priority-col" style={{ flex: 0.5 }}>
+                            <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: `2px solid ${rule.priority <= 3 ? '#10b981' : rule.priority <= 6 ? '#f59e0b' : '#ef4444'}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, color: "var(--text)", fontSize: "12px" }}>
+                              {rule.priority}
+                            </div>
+                          </div>
+                          <div className="elegant-row-col actions-col" style={{ flex: 1 }}>
+                            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", width: "100%" }}>
+                              <button type="button" className="btn-icon-elegant" onClick={() => handleEditRule(rule)} title={`Edit rule for ${rule.domain}`} aria-label={`Edit rule for ${rule.domain}`}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              </button>
+                              <button type="button" className="btn-icon-elegant" onClick={() => handleDeleteRule(rule.domain)} title={`Delete rule for ${rule.domain}`} aria-label={`Delete rule for ${rule.domain}`}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
 
-                {customRules.length > 0 && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
-                    <button type="button" className="btn-danger-outline" onClick={handleResetRules}>
-                      Reset All Custom Rules
-                    </button>
+                <div className="rules-summary-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", marginTop: "16px", background: "var(--surface)", borderRadius: "8px", border: "1px solid var(--border)", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", paddingRight: "24px", borderRight: "1px solid var(--border)" }}>
+                      <div style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1", padding: "6px", borderRadius: "6px", display: "flex" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontSize: "10px", color: "var(--text-secondary)", fontWeight: 700, letterSpacing: "0.05em" }}>SUMMARY</span>
+                        <span style={{ fontSize: "14px", fontWeight: 700 }}>Total: {allDisplayRules.length}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                         <svg width="14" height="14" stroke="#10b981" fill="none" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                         <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>Productive</span>
+                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{allDisplayRules.filter(r => r.category === 'productive').length}</span>
+                       </div>
+                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                         <svg width="14" height="14" stroke="#f59e0b" fill="none" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                         <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>Distracting</span>
+                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{allDisplayRules.filter(r => r.category === 'distracting').length}</span>
+                       </div>
+                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                         <svg width="14" height="14" stroke="#6b7280" fill="none" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                         <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>Neutral</span>
+                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{allDisplayRules.filter(r => r.category === 'neutral').length}</span>
+                       </div>
+                    </div>
                   </div>
-                )}
+                  <button type="button" className="btn-danger-outline" style={{ margin: 0, padding: "8px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }} onClick={handleResetRules}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Reset All Rules
+                  </button>
+                </div>
               </div>
 
-              <div className="rules-card" style={{ flex: 1, display: "flex", flexDirection: "column", marginTop: "16px" }}>
+              <div className="rules-card" style={{ display: "flex", flexDirection: "column", marginTop: "16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                   <div>
                     <h3>Active Time Limits</h3>
@@ -2119,91 +2009,47 @@ export default function AnalyticsDashboard() {
                       Set daily duration limits for distracting websites. These limits reset automatically at midnight.
                     </p>
                   </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button type="button" className="btn-primary-elegant" style={{ boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }} onClick={() => setShowAddLimitModal(true)}>
+                      <span style={{ fontSize: '18px', fontWeight: 300, marginRight: '6px', lineHeight: 1 }}>+</span> Add Soft-Block Limit
+                    </button>
+                  </div>
                 </div>
 
-                {timeLimitError && (
-                  <div className="rules-form-alert error" role="alert" style={{ marginBottom: '16px' }}>
-                    {timeLimitError}
-                  </div>
-                )}
-
-                <form className="rules-form" onSubmit={handleAddTimeLimit} style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "24px" }}>
-                  <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                    <label style={{ fontSize: "12px", marginBottom: "6px" }}>Domain Match</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g. reddit.com"
-                      value={newTimeLimitDomain}
-                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ width: "120px", marginBottom: 0 }}>
-                    <label style={{ fontSize: "12px", marginBottom: "6px" }}>Limit (mins)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      min="1"
-                      value={newTimeLimitDurationStr}
-                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button type="submit" className="btn-primary" style={{ height: "36px", padding: "0 24px" }}>
-                    Add Limit
-                  </button>
-                </form>
-
-                <div className="rules-table-container" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                  <table className="rules-table">
-                    <thead>
-                      <tr>
-                        <th>Domain Match</th>
-                        <th>Daily Limit</th>
-                        <th style={{ width: "80px", textAlign: "right" }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {timeLimitRules.length === 0 ? (
-                        <tr>
-                          <td colSpan={3}>
-                            <div className="vis-empty" style={{ minHeight: "150px" }}>
-                              <p className="vis-empty-title">No Limits Set</p>
-                              <p className="vis-empty-desc">Add a time limit rule to restrict time spent on specific domains.</p>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        timeLimitRules.map((rule) => (
-                          <tr key={rule.domain}>
-                            <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "13px" }}>{rule.domain}</td>
-                            <td>{formatDuration(rule.maxDurationMs)}</td>
-                            <td style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                              <button 
-                                type="button" 
-                                className={`btn-icon ${rule.enabled !== false ? 'success' : 'danger'}`} 
-                                onClick={() => handleToggleTimeLimit(rule.domain)} 
-                                title={rule.enabled !== false ? `Disable limit for ${rule.domain}` : `Enable limit for ${rule.domain}`}
-                                style={{ opacity: rule.enabled !== false ? 1 : 0.6 }}
-                              >
-                                {rule.enabled !== false ? (
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                                ) : (
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                )}
-                              </button>
-                              <button type="button" className="btn-icon danger" onClick={() => handleDeleteTimeLimit(rule.domain)} title={`Delete limit for ${rule.domain}`}>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                <div className="elegant-list-container" style={{ maxHeight: "150px", overflowY: "auto", paddingRight: timeLimitRules.length > 5 ? "8px" : "0" }}>
+                  {timeLimitRules.length === 0 ? (
+                    <div className="vis-empty" style={{ minHeight: "150px" }}>
+                      <p className="vis-empty-title">No Limits Set</p>
+                      <p className="vis-empty-desc">Add a time limit rule to restrict time spent on specific domains.</p>
+                    </div>
+                  ) : (
+                    timeLimitRules.map((rule) => (
+                      <div className="elegant-list-row" key={rule.domain} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                        <div className="elegant-row-col domain-col" style={{ flex: 2, fontFamily: "monospace", fontSize: "13px" }}>
+                          {rule.domain}
+                        </div>
+                        <div className="elegant-row-col limit-col" style={{ flex: 1, fontFamily: "monospace", fontSize: "13px", color: "var(--text-secondary)" }}>
+                          {formatDuration(rule.maxDurationMs).replace(" minutes", "m").replace(" minute", "m")}
+                        </div>
+                        <div className="elegant-row-col actions-col" style={{ width: "auto" }}>
+                          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                            <button 
+                              type="button" 
+                              className={`btn-icon-elegant ${rule.enabled !== false ? 'success' : ''}`} 
+                              onClick={() => handleToggleTimeLimit(rule.domain)} 
+                              title={rule.enabled !== false ? `Disable limit for ${rule.domain}` : `Enable limit for ${rule.domain}`}
+                              style={{ opacity: rule.enabled !== false ? 1 : 0.4 }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            </button>
+                            <button type="button" className="btn-icon-elegant danger" onClick={() => handleDeleteTimeLimit(rule.domain)} title={`Delete limit for ${rule.domain}`}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -2306,6 +2152,36 @@ export default function AnalyticsDashboard() {
                   <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
                   <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
+              </div>
+            </div>
+
+            {/* Portability */}
+            <div className="settings-card">
+              <div className="settings-card-icon blue" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Portability</h3>
+                <p style={{ marginBottom: 16 }}>Export your meticulously crafted custom ruleset to a JSON file for backup or import to another device.</p>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <button type="button" className="btn-secondary" onClick={handleExportRules}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export Ruleset (.json)
+                  </button>
+                  <label className="btn-secondary" style={{ cursor: "pointer", margin: 0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Import Ruleset
+                    <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportRules} />
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -2664,6 +2540,145 @@ export default function AnalyticsDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Custom Rule Modal */}
+        {showAddRuleModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-rule-modal-title" onClick={() => setShowAddRuleModal(false)}>
+            <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 id="add-rule-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 300, marginRight: '10px' }}>+</span>
+                  Add Custom Rule
+                </h3>
+                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddRuleModal(false)} aria-label="Close modal">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <p className="modal-desc" style={{ fontSize: '14px' }}>
+                Override the semantic analysis engine with your own domain classification.
+              </p>
+
+              {formError && (
+                <div className="rules-form-alert error" role="alert">
+                  {formError}
+                </div>
+              )}
+              {formSuccess && (
+                <div className="rules-form-alert success" role="status">
+                  {formSuccess}
+                </div>
+              )}
+
+              <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddRule}>
+                <div>
+                  <label htmlFor="domain-input" className="modal-label-elegant">Domain (e.g. youtube.com)</label>
+                  <input
+                    id="domain-input"
+                    type="text"
+                    className="modal-input-elegant"
+                    placeholder="Enter hostname..."
+                    value={newDomain}
+                    onChange={(e) => setNewDomain(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="category-select" className="modal-label-elegant">Classification Category</label>
+                  <select
+                    id="category-select"
+                    className="modal-input-elegant"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
+                    required
+                  >
+                    <option value="productive">Productive (Deep Work)</option>
+                    <option value="distracting">Distracting (Entertainment)</option>
+                    <option value="neutral">Neutral (Utilities)</option>
+                    <option value="unknown">Unknown (Unclassified)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="priority-input" className="modal-label-elegant">Evaluation Priority</label>
+                  <input
+                    id="priority-input"
+                    type="number"
+                    className="modal-input-elegant"
+                    min="1"
+                    max="100"
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value)}
+                    required
+                  />
+                  <small style={{ display: "block", marginTop: "6px", fontSize: "11px", color: "var(--text-secondary)" }}>
+                    Higher numbers override lower priority rules (Defaults run at Priority 1)
+                  </small>
+                </div>
+
+                <button type="submit" className="btn-primary-elegant" style={{ width: "100%", justifyContent: "center", marginTop: "8px", padding: "12px" }}>
+                  Save Custom Rule
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add Soft-Block Limit Modal */}
+        {showAddLimitModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-limit-modal-title" onClick={() => setShowAddLimitModal(false)}>
+            <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 id="add-limit-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 300, marginRight: '10px' }}>+</span>
+                  Add Soft-Block Limit
+                </h3>
+                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddLimitModal(false)} aria-label="Close modal">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <p className="modal-desc" style={{ fontSize: '14px' }}>
+                Set daily duration limits for distracting websites. Once reached, a soft-block overlay appears.
+              </p>
+
+              {timeLimitError && (
+                <div className="rules-form-alert error" role="alert">
+                  {timeLimitError}
+                </div>
+              )}
+
+              <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddTimeLimit}>
+                <div>
+                  <label className="modal-label-elegant">Domain (e.g. reddit.com)</label>
+                  <input
+                    type="text"
+                    className="modal-input-elegant"
+                    placeholder="Enter hostname..."
+                    value={newTimeLimitDomain}
+                    onChange={(e) => setNewTimeLimitDomain(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="modal-label-elegant">Daily Limit (minutes)</label>
+                  <input
+                    type="number"
+                    className="modal-input-elegant"
+                    min="1"
+                    value={newTimeLimitDurationStr}
+                    onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="btn-primary-elegant" style={{ width: "100%", justifyContent: "center", marginTop: "8px", padding: "12px" }}>
+                  Save Time Limit
+                </button>
+              </form>
             </div>
           </div>
         )}
