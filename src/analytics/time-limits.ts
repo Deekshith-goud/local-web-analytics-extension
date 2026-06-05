@@ -72,8 +72,8 @@ export async function saveTimeLimitRules(rules: TimeLimitRule[]): Promise<{ succ
 /** Retrieves all active bypasses from storage. Cleans up expired ones. */
 export async function getTimeLimitBypasses(): Promise<TimeLimitBypass[]> {
   try {
-    const data = await chrome.storage.local.get("timeLimitBypasses");
-    const bypasses = Array.isArray(data.timeLimitBypasses) ? data.timeLimitBypasses as TimeLimitBypass[] : [];
+    const data = await chrome.storage.local.get("timeLimitBypasses_v2");
+    const bypasses = Array.isArray(data.timeLimitBypasses_v2) ? data.timeLimitBypasses_v2 as TimeLimitBypass[] : [];
     
     // Clean up expired bypasses lazily
     const now = Date.now();
@@ -81,7 +81,7 @@ export async function getTimeLimitBypasses(): Promise<TimeLimitBypass[]> {
     
     if (active.length !== bypasses.length) {
       // Async write-back to clean up storage
-      chrome.storage.local.set({ timeLimitBypasses: active }).catch(() => {});
+      chrome.storage.local.set({ timeLimitBypasses_v2: active }).catch(() => {});
     }
     
     return active;
@@ -105,7 +105,7 @@ export async function setTimeLimitBypass(domain: string, durationMs: number): Pr
       active.push({ domain, bypassedUntil });
     }
     
-    await chrome.storage.local.set({ timeLimitBypasses: active });
+    await chrome.storage.local.set({ timeLimitBypasses_v2: active });
   } catch (err) {
     console.error("[TimeLimits] Failed to set bypass", err);
   }

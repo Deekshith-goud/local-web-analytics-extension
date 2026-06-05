@@ -566,7 +566,11 @@ export default function BlobContent() {
                   Bypass 15m
                 </button>
                 <button 
-                  onClick={() => handleBypass(24 * 60 * 60 * 1000)}
+                  onClick={() => {
+                    const now = new Date();
+                    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                    handleBypass(endOfDay.getTime() - now.getTime());
+                  }}
                   style={{
                     flex: 1, background: "rgba(255, 255, 255, 0.04)", color: "#a1a1aa",
                     border: "none", borderRadius: "10px", padding: "10px",
