@@ -1927,19 +1927,19 @@ export default function AnalyticsDashboard() {
                     </div>
                   ) : (
                     <>
-                      <div className="elegant-list-header" style={{ display: "flex", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                      <div className="elegant-list-header" style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: "-1px 0 0 0" }}>
                         <div className="elegant-row-col domain-col" style={{ flex: 2 }}>DOMAIN</div>
-                        <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>CLASSIFICATION</div>
+                        <div className="elegant-row-col category-col" style={{ flex: 1.5, paddingLeft: "8px" }}>CLASSIFICATION</div>
                         <div className="elegant-row-col priority-col" style={{ flex: 0.5 }}>PRIORITY</div>
                         <div className="elegant-row-col actions-col" style={{ flex: 1 }}>ACTIONS</div>
                       </div>
                       {searchedRules.map((rule) => (
                         <div className="elegant-list-row" key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
-                          <div className="elegant-row-col domain-col" style={{ flex: 2, display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div className="elegant-row-col domain-col" style={{ flex: 2, display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", color: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                             </div>
-                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rule.domain}</span>
+                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{rule.domain}</span>
                           </div>
                           <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>
                             <span className={`badge-category ${rule.category}`}>{rule.category.toUpperCase()}</span>
