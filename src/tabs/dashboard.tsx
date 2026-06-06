@@ -2456,18 +2456,18 @@ export default function AnalyticsDashboard() {
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px', letterSpacing: '-0.01em' }}>{item.domain}</span>
                                 {isQuickClassifyMode ? (
-                                  <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                                  <div style={{ display: 'flex', border: '1px solid var(--border-subtle)', borderRadius: '6px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
                                     <button 
                                       onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'productive' }))}
-                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'productive' ? 'none' : '1px solid #10b981', background: quickClassifications[item.domain] === 'productive' ? '#10b981' : 'transparent', color: quickClassifications[item.domain] === 'productive' ? '#fff' : '#10b981', cursor: 'pointer' }}
+                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', borderRight: '1px solid var(--border-subtle)', background: quickClassifications[item.domain] === 'productive' ? '#10b981' : 'transparent', color: quickClassifications[item.domain] === 'productive' ? '#fff' : '#10b981', cursor: 'pointer', transition: 'all 0.15s' }}
                                     >PROD</button>
                                     <button 
                                       onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'distracting' }))}
-                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'distracting' ? 'none' : '1px solid #ef4444', background: quickClassifications[item.domain] === 'distracting' ? '#ef4444' : 'transparent', color: quickClassifications[item.domain] === 'distracting' ? '#fff' : '#ef4444', cursor: 'pointer' }}
+                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', borderRight: '1px solid var(--border-subtle)', background: quickClassifications[item.domain] === 'distracting' ? '#ef4444' : 'transparent', color: quickClassifications[item.domain] === 'distracting' ? '#fff' : '#ef4444', cursor: 'pointer', transition: 'all 0.15s' }}
                                     >DIST</button>
                                     <button 
                                       onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'neutral' }))}
-                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'neutral' ? 'none' : '1px solid #6b7280', background: quickClassifications[item.domain] === 'neutral' ? '#6b7280' : 'transparent', color: quickClassifications[item.domain] === 'neutral' ? '#fff' : '#6b7280', cursor: 'pointer' }}
+                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', background: quickClassifications[item.domain] === 'neutral' ? '#6b7280' : 'transparent', color: quickClassifications[item.domain] === 'neutral' ? '#fff' : '#6b7280', cursor: 'pointer', transition: 'all 0.15s' }}
                                     >NEUT</button>
                                   </div>
                                 ) : (
