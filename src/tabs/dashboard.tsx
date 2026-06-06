@@ -11,6 +11,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import "./dashboard.css";
 import brandLogo from "url:~assets/icon.png";
+import timerDemoImg from "url:~assets/timer-demo.png";
+import classifyDemoImg from "url:~assets/classify-demo.png";
+import blockerDemoImg from "url:~assets/blocker-demo.png";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
@@ -398,6 +401,7 @@ export default function AnalyticsDashboard() {
   const [allDomainsSearch, setAllDomainsSearch] = useState("");
   const [isQuickClassifyMode, setIsQuickClassifyMode] = useState(false);
   const [quickClassifications, setQuickClassifications] = useState<Record<string, ProductivityCategory>>({});
+  const [infoModal, setInfoModal] = useState<"timer" | "classification" | "blocker" | null>(null);
 
   // Productivity Rules Tab States
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
@@ -1636,8 +1640,12 @@ export default function AnalyticsDashboard() {
           <section className="rules-manager-layout tab-panel" aria-label="Productivity classification preferences">
             <div className="rules-sidebar">
               <div className="rules-card" style={{ textAlign: 'center', padding: '24px 16px' }}>
-                <h3 style={{ fontSize: '18px', marginBottom: '4px' }}>Pomodoro Timer</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>Timeboxed work sessions.</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', margin: 0 }}>Pomodoro Timer</h3>
+                  <button type="button" className="btn-icon" onClick={() => setInfoModal("timer")} aria-label="About Timer" style={{ padding: '4px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </button>
+                </div>
                 
                 {pomodoroState && pomodoroSettings ? (() => {
                   const isRunning = pomodoroState.status !== "idle";
@@ -1919,11 +1927,11 @@ export default function AnalyticsDashboard() {
             <div className="rules-main" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="rules-card" style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                  <div>
-                    <h3>Active Classifications</h3>
-                    <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
-                      Showing both custom overrides and default baseline engine rules.
-                    </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h3 style={{ margin: 0 }}>Active Classifications</h3>
+                    <button type="button" className="btn-icon" onClick={() => setInfoModal("classification")} aria-label="About Classifications" style={{ padding: '4px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </button>
                   </div>
                   <div>
                     <button type="button" className="btn-primary-elegant" style={{ boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }} onClick={() => setShowAddRuleModal(true)}>
@@ -2046,11 +2054,11 @@ export default function AnalyticsDashboard() {
 
               <div className="rules-card" style={{ display: "flex", flexDirection: "column", marginTop: "16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                  <div>
-                    <h3>Active Time Limits</h3>
-                    <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
-                      Set daily duration limits for distracting websites. These limits reset automatically at midnight.
-                    </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h3 style={{ margin: 0 }}>Active Time Limits</h3>
+                    <button type="button" className="btn-icon" onClick={() => setInfoModal("blocker")} aria-label="About Time Limits" style={{ padding: '4px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </button>
                   </div>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <button type="button" className="btn-primary-elegant" style={{ boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }} onClick={() => setShowAddLimitModal(true)}>
@@ -2742,6 +2750,67 @@ export default function AnalyticsDashboard() {
                   Save Time Limit
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Info Modal */}
+        {infoModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" onClick={() => setInfoModal(null)}>
+            <div className="modal-content-elegant" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 id="info-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {infoModal === "timer" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-purple, #8b5cf6)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> About Timer</>}
+                  {infoModal === "classification" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue, #3b82f6)" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> About Productivity Engine</>}
+                  {infoModal === "blocker" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-orange, #f59e0b)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> About Soft-Blocker</>}
+                </h3>
+                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setInfoModal(null)} aria-label="Close modal">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                <div className="modal-desc" style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)', flex: 1 }}>
+                  {infoModal === "timer" && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                      <p style={{ margin: 0 }}>The Pomodoro Timer helps you maintain focus using timeboxed work sessions.</p>
+                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <li><strong>Cycles:</strong> The timer naturally reciprocates. When a Focus session ends, it automatically prompts you to start a Break, and vice versa.</li>
+                        <li><strong>Customization:</strong> You can adjust the exact minutes for Focus and Break periods below.</li>
+                        <li><strong>Notifications:</strong> Toggle desktop notifications or choose from several notification sounds (Beep, Chime, Digital) to alert you when a cycle ends.</li>
+                        <li><strong>Custom Messages:</strong> Set custom motivational messages that will appear in your notifications when it's time to focus or take a break.</li>
+                      </ul>
+                    </div>
+                  )}
+                  {infoModal === "classification" && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                      <p style={{ margin: 0 }}>Categorize domains to let the analytics engine calculate your exact productivity score.</p>
+                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <li><strong><span style={{ color: '#10b981' }}>Productive:</span></strong> Sites essential for work (e.g. github.com, docs.google.com).</li>
+                        <li><strong><span style={{ color: '#ef4444' }}>Distracting:</span></strong> Sites that break your workflow (e.g. reddit.com, youtube.com).</li>
+                        <li><strong>How to Add:</strong> Click <em>"+ Add Custom Rule"</em> to manually assign a category to a domain.</li>
+                        <li><strong>Quick Classify:</strong> Go to the Dashboard tab, click <em>"View All Domains"</em>, and use the inline PROD/DIST/NEUT buttons to rapidly categorize your most visited sites in bulk.</li>
+                      </ul>
+                    </div>
+                  )}
+                  {infoModal === "blocker" && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                      <p style={{ margin: 0 }}>The Soft-Blocker prevents you from doomscrolling by enforcing daily allowances.</p>
+                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <li><strong>Setting Limits:</strong> Assign a maximum daily allowance (in minutes) for specific distracting domains.</li>
+                        <li><strong>Gentle Interventions:</strong> Once the limit is reached, a full-page overlay is injected over the site to block access and remind you to refocus.</li>
+                        <li><strong>Daily Resets:</strong> All accumulated time resets automatically at midnight, giving you a fresh allowance the next day.</li>
+                        <li><strong>Toggles:</strong> You can temporarily disable a limit using the toggle button without deleting the rule entirely.</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {infoModal === "timer" && <img src={timerDemoImg} alt="Timer Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
+                  {infoModal === "classification" && <img src={classifyDemoImg} alt="Classification Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
+                  {infoModal === "blocker" && <img src={blockerDemoImg} alt="Blocker Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
+                </div>
+              </div>
             </div>
           </div>
         )}
