@@ -2778,7 +2778,7 @@ export default function AnalyticsDashboard() {
                         <li><strong>Cycles:</strong> The timer naturally reciprocates. When a Focus session ends, it automatically prompts you to start a Break, and vice versa.</li>
                         <li><strong>Customization:</strong> You can adjust the exact minutes for Focus and Break periods below.</li>
                         <li><strong>Notifications:</strong> Toggle desktop notifications or choose from several notification sounds (Beep, Chime, Digital) to alert you when a cycle ends.</li>
-                        <li><strong>Custom Messages:</strong> Set custom motivational messages that will appear in your notifications when it's time to focus or take a break.</li>
+                        <li><strong>Custom Messages:</strong> Set custom motivational messages that will appear in your notifications when it&apos;s time to focus or take a break.</li>
                       </ul>
                     </div>
                   )}
@@ -2788,8 +2788,8 @@ export default function AnalyticsDashboard() {
                       <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <li><strong><span style={{ color: '#10b981' }}>Productive:</span></strong> Sites essential for work (e.g. github.com, docs.google.com).</li>
                         <li><strong><span style={{ color: '#ef4444' }}>Distracting:</span></strong> Sites that break your workflow (e.g. reddit.com, youtube.com).</li>
-                        <li><strong>How to Add:</strong> Click <em>"+ Add Custom Rule"</em> to manually assign a category to a domain.</li>
-                        <li><strong>Quick Classify:</strong> Go to the Dashboard tab, click <em>"View All Domains"</em>, and use the inline PROD/DIST/NEUT buttons to rapidly categorize your most visited sites in bulk.</li>
+                        <li><strong>How to Add:</strong> Click <em>&quot;+ Add Custom Rule&quot;</em> to manually assign a category to a domain.</li>
+                        <li><strong>Quick Classify:</strong> Go to the Dashboard tab, click <em>&quot;View All Domains&quot;</em>, and use the inline PROD/DIST/NEUT buttons to rapidly categorize your most visited sites in bulk.</li>
                       </ul>
                     </div>
                   )}
