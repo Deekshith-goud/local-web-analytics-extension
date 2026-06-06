@@ -396,6 +396,8 @@ export default function AnalyticsDashboard() {
   const [showAddLimitModal, setShowAddLimitModal] = useState(false);
   const [allDomainsSort, setAllDomainsSort] = useState<"duration" | "visits">("duration");
   const [allDomainsSearch, setAllDomainsSearch] = useState("");
+  const [isQuickClassifyMode, setIsQuickClassifyMode] = useState(false);
+  const [quickClassifications, setQuickClassifications] = useState<Record<string, ProductivityCategory>>({});
 
   // Productivity Rules Tab States
   const [customRules, setCustomRules] = useState<ProductivityRule[]>([]);
@@ -406,7 +408,7 @@ export default function AnalyticsDashboard() {
   // Form States for custom rules creation
   const [newDomain, setNewDomain] = useState("");
   const [newCategory, setNewCategory] = useState<ProductivityCategory>("productive");
-  const [newPriority, setNewPriority] = useState("10");
+  const [newPriority, setNewPriority] = useState("1");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
@@ -726,6 +728,7 @@ export default function AnalyticsDashboard() {
     setFormError(null);
     setFormSuccess(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowAddRuleModal(true);
   };
 
   const handleAddRule = (e: React.FormEvent) => {
@@ -768,6 +771,44 @@ export default function AnalyticsDashboard() {
           fetchStats(); // Update live statistics metrics on rule change
         } else {
           setFormError(res?.error ?? "Failed to save rule in storage.");
+        }
+      }
+    );
+  };
+
+  const handleSaveQuickClassifications = () => {
+    const domains = Object.keys(quickClassifications);
+    if (domains.length === 0) {
+      setIsQuickClassifyMode(false);
+      return;
+    }
+
+    let updatedRules = [...customRules];
+    domains.forEach(domain => {
+      const category = quickClassifications[domain];
+      updatedRules = updatedRules.filter(r => r.domain !== domain);
+      updatedRules.push({
+        domain,
+        category,
+        priority: 1,
+        createdAt: Date.now()
+      });
+    });
+
+    chrome.runtime.sendMessage(
+      {
+        type: "SAVE_PRODUCTIVITY_RULES",
+        version: 1,
+        rules: updatedRules
+      } satisfies RuntimeMessage,
+      (res: { success: boolean; error?: string }) => {
+        if (res && res.success) {
+          setCustomRules(updatedRules);
+          setQuickClassifications({});
+          setIsQuickClassifyMode(false);
+          fetchStats(); // Update live stats
+        } else {
+          alert(res?.error ?? "Failed to save quick classifications.");
         }
       }
     );
@@ -1928,26 +1969,28 @@ export default function AnalyticsDashboard() {
                   ) : (
                     <>
                       <div className="elegant-list-header" style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: "-1px 0 0 0" }}>
-                        <div className="elegant-row-col domain-col" style={{ flex: 2 }}>DOMAIN</div>
+                        <div className="elegant-row-col domain-col" style={{ flex: 2.5 }}>DOMAIN</div>
                         <div className="elegant-row-col category-col" style={{ flex: 1.5, paddingLeft: "8px" }}>CLASSIFICATION</div>
-                        <div className="elegant-row-col priority-col" style={{ flex: 0.5 }}>PRIORITY</div>
                         <div className="elegant-row-col actions-col" style={{ flex: 1 }}>ACTIONS</div>
                       </div>
                       {searchedRules.map((rule) => (
                         <div className="elegant-list-row" key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
-                          <div className="elegant-row-col domain-col" style={{ flex: 2, display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", color: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                          <div className="elegant-row-col domain-col" style={{ flex: 2.5, display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <img 
+                                src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + rule.domain)}&size=32` : ""} 
+                                alt="" 
+                                style={{ width: "16px", height: "16px", borderRadius: "2px" }} 
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text3)"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+                                }}
+                              />
                             </div>
                             <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{rule.domain}</span>
                           </div>
                           <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>
                             <span className={`badge-category ${rule.category}`}>{rule.category.toUpperCase()}</span>
-                          </div>
-                          <div className="elegant-row-col priority-col" style={{ flex: 0.5 }}>
-                            <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: `2px solid ${rule.priority <= 3 ? '#10b981' : rule.priority <= 6 ? '#f59e0b' : '#ef4444'}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, color: "var(--text)", fontSize: "12px" }}>
-                              {rule.priority}
-                            </div>
                           </div>
                           <div className="elegant-row-col actions-col" style={{ flex: 1 }}>
                             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", width: "100%" }}>
@@ -2357,6 +2400,22 @@ export default function AnalyticsDashboard() {
                   <button onClick={() => setAllDomainsSort("duration")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "duration" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "duration" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "duration" ? 600 : 400 }}>Duration</button>
                   <button onClick={() => setAllDomainsSort("visits")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "visits" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "visits" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "visits" ? 600 : 400 }}>Sessions</button>
                 </div>
+                {isQuickClassifyMode ? (
+                  <button 
+                    onClick={handleSaveQuickClassifications}
+                    className="btn-primary-elegant" 
+                    style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '13px', margin: 0, height: 'auto', display: 'flex', alignItems: 'center' }}
+                  >
+                    Save Changes
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setIsQuickClassifyMode(true)}
+                    style={{ padding: '6px 14px', borderRadius: '8px', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center' }}
+                  >
+                    Quick Classify
+                  </button>
+                )}
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
@@ -2378,10 +2437,10 @@ export default function AnalyticsDashboard() {
                         return (
                           <div 
                             key={item.domain} 
-                            style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s', background: 'var(--bg-secondary)', cursor: 'pointer' }} 
+                            style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s', background: 'var(--bg-secondary)', cursor: isQuickClassifyMode ? 'default' : 'pointer' }} 
                             className="hover-bg-elevated"
-                            onClick={() => fetchDomainIntervals(item.domain, range)}
-                            title="Click to view full session timeline"
+                            onClick={() => { if (!isQuickClassifyMode) fetchDomainIntervals(item.domain, range); }}
+                            title={isQuickClassifyMode ? "Quick classify" : "Click to view full session timeline"}
                           >
                             <div style={{ width: '24px', color: 'var(--text-subtle)', fontSize: '12px', fontWeight: 500, marginRight: '12px', textAlign: 'right', flexShrink: 0 }}>
                               {idx + 1}
@@ -2396,19 +2455,38 @@ export default function AnalyticsDashboard() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px', letterSpacing: '-0.01em' }}>{item.domain}</span>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                    {formatDuration(item.durationMs)}
-                                  </span>
-                                  <span style={{ color: 'var(--border-subtle)' }}>•</span>
-                                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                    {item.visitCount} visits
-                                  </span>
+                                {isQuickClassifyMode ? (
+                                  <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                                    <button 
+                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'productive' }))}
+                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'productive' ? 'none' : '1px solid #10b981', background: quickClassifications[item.domain] === 'productive' ? '#10b981' : 'transparent', color: quickClassifications[item.domain] === 'productive' ? '#fff' : '#10b981', cursor: 'pointer' }}
+                                    >PROD</button>
+                                    <button 
+                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'distracting' }))}
+                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'distracting' ? 'none' : '1px solid #ef4444', background: quickClassifications[item.domain] === 'distracting' ? '#ef4444' : 'transparent', color: quickClassifications[item.domain] === 'distracting' ? '#fff' : '#ef4444', cursor: 'pointer' }}
+                                    >DIST</button>
+                                    <button 
+                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'neutral' }))}
+                                      style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, border: quickClassifications[item.domain] === 'neutral' ? 'none' : '1px solid #6b7280', background: quickClassifications[item.domain] === 'neutral' ? '#6b7280' : 'transparent', color: quickClassifications[item.domain] === 'neutral' ? '#fff' : '#6b7280', cursor: 'pointer' }}
+                                    >NEUT</button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
+                                      {formatDuration(item.durationMs)}
+                                    </span>
+                                    <span style={{ color: 'var(--border-subtle)' }}>•</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                      {item.visitCount} visits
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {!isQuickClassifyMode && (
+                                <div style={{ height: '3px', background: 'var(--bg-elevated)', borderRadius: '1.5px', overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${fillWidth}%`, background: 'var(--brand-purple, #8b5cf6)', borderRadius: '1.5px', opacity: 0.85 }} />
                                 </div>
-                              </div>
-                              <div style={{ height: '3px', background: 'var(--bg-elevated)', borderRadius: '1.5px', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: `${fillWidth}%`, background: 'var(--brand-purple, #8b5cf6)', borderRadius: '1.5px', opacity: 0.85 }} />
-                              </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -2602,22 +2680,7 @@ export default function AnalyticsDashboard() {
                   </select>
                 </div>
 
-                <div>
-                  <label htmlFor="priority-input" className="modal-label-elegant">Evaluation Priority</label>
-                  <input
-                    id="priority-input"
-                    type="number"
-                    className="modal-input-elegant"
-                    min="1"
-                    max="100"
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value)}
-                    required
-                  />
-                  <small style={{ display: "block", marginTop: "6px", fontSize: "11px", color: "var(--text-secondary)" }}>
-                    Higher numbers override lower priority rules (Defaults run at Priority 1)
-                  </small>
-                </div>
+
 
                 <button type="submit" className="btn-primary-elegant" style={{ width: "100%", justifyContent: "center", marginTop: "8px", padding: "12px" }}>
                   Save Custom Rule

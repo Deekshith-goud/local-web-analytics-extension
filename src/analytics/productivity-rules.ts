@@ -35,21 +35,7 @@ const DANGEROUS_TWO_SEGMENT_SUFFIXES = new Set([
  * Static Default Ruleset
  * Curated, non-judgmental starting category bounds.
  */
-export const DEFAULT_RULES: ProductivityRule[] = [
-  { domain: "github.com", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "stackoverflow.com", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "docs.google.com", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "notion.so", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "figma.com", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "localhost", category: "productive", priority: 1, createdAt: 1715900000000 },
-  { domain: "youtube.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "facebook.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "twitter.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "x.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "reddit.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "instagram.com", category: "distracting", priority: 1, createdAt: 1715900000000 },
-  { domain: "netflix.com", category: "distracting", priority: 1, createdAt: 1715900000000 }
-];
+export const DEFAULT_RULES: ProductivityRule[] = [];
 
 /**
  * Performs strict validation over a rule payload before persistence.
