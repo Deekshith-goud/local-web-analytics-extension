@@ -138,9 +138,9 @@ export default function ReportPage() {
   // Line Chart Computations
   const chartWidth = 800;
   const chartHeight = 200;
-  const paddingX = 40;
-  const paddingTop = 20;
-  const paddingBottom = 30;
+  const paddingX = 60;
+  const paddingTop = 30;
+  const paddingBottom = 40;
 
   const validTimeline = timeline || [];
   const maxVal = Math.max(
@@ -345,7 +345,7 @@ export default function ReportPage() {
           <div className="breakdown-row">
             <div style={{ width: '220px', height: '220px', position: 'relative', flexShrink: 0 }}>
               {hasData ? (
-                <svg viewBox="-1.2 -1.2 2.4 2.4" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
+                <svg viewBox="-1.5 -1.5 3 3" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.05))' }}>
                   {createPieSlice(metrics.productiveDurationMs, '#10b981')}
                   {createPieSlice(metrics.distractingDurationMs, '#ef4444')}
                   {createPieSlice(metrics.neutralDurationMs, '#3b82f6')}
@@ -410,7 +410,7 @@ export default function ReportPage() {
               </div>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', height: '220px', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '100%', height: '240px' }}>
               <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ width: '100%', height: '100%', overflow: 'visible' }}>
                 {/* Y Axis Grid Lines */}
                 {[0, 0.5, 1].map((pct, i) => {
