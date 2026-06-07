@@ -12,7 +12,7 @@ function getRangeStartTimestamp(range: ExportDateRange): number {
     return now.getTime();
   }
   if (range === "this_month") {
-    now.setDate(1);
+    now.setDate(now.getDate() - 30);
     now.setHours(0, 0, 0, 0);
     return now.getTime();
   }

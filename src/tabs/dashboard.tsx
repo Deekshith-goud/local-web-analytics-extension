@@ -2257,7 +2257,7 @@ export default function AnalyticsDashboard() {
                     <div className="premium-input-wrapper">
                       <select className="premium-input" value={exportRange} onChange={e => setExportRange(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
                         <option value="all" style={{ background: 'var(--bg)', color: 'var(--text)' }}>All Time</option>
-                        <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>This Month</option>
+                        <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Last 30 Days</option>
                         <option value="today" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Today</option>
                       </select>
                       <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>

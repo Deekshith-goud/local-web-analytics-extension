@@ -20,7 +20,7 @@ export default function ReportPage() {
       now.setHours(0, 0, 0, 0);
       startMs = now.getTime();
     } else if (rangeParam === "this_month") {
-      now.setDate(1);
+      now.setDate(now.getDate() - 30);
       now.setHours(0, 0, 0, 0);
       startMs = now.getTime();
     }
@@ -78,7 +78,7 @@ export default function ReportPage() {
 
   const getRangeLabel = () => {
     if (rangeStr === "today") return "TODAY";
-    if (rangeStr === "this_month") return "THIS MONTH";
+    if (rangeStr === "this_month") return "LAST 30 DAYS";
     return "ALL TIME";
   };
 
