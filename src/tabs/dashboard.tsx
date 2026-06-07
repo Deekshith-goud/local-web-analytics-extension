@@ -432,6 +432,8 @@ export default function AnalyticsDashboard() {
   const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings | null>(null);
   const [focusInput, setFocusInput] = useState<string>("");
   const [breakInput, setBreakInput] = useState<string>("");
+  const [isFocusActive, setIsFocusActive] = useState<boolean>(false);
+  const [isBreakActive, setIsBreakActive] = useState<boolean>(false);
   const [, setPomodoroTick] = useState(0);
 
   const [timeLimitRules, setTimeLimitRules] = useState<TimeLimitRule[]>([]);
@@ -441,10 +443,14 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     if (pomodoroSettings) {
-      setFocusInput(String(Math.floor(pomodoroSettings.focusDurationMs / 60000)));
-      setBreakInput(String(Math.floor(pomodoroSettings.breakDurationMs / 60000)));
+      if (!isFocusActive) {
+        setFocusInput(String(Math.floor(pomodoroSettings.focusDurationMs / 60000)));
+      }
+      if (!isBreakActive) {
+        setBreakInput(String(Math.floor(pomodoroSettings.breakDurationMs / 60000)));
+      }
     }
-  }, [pomodoroSettings]);
+  }, [pomodoroSettings, isFocusActive, isBreakActive]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -1843,13 +1849,20 @@ export default function AnalyticsDashboard() {
                                   pattern="[0-9]*"
                                   className="premium-input"
                                   value={focusInput}
+                                  onFocus={() => setIsFocusActive(true)}
+                                  onBlur={(e) => {
+                                    setIsFocusActive(false);
+                                    const val = e.target.value;
+                                    const parsed = parseInt(val, 10);
+                                    if (!val || isNaN(parsed) || parsed < 1) {
+                                      setFocusInput(String(Math.floor((pomodoroSettings?.focusDurationMs || 25 * 60000) / 60000)));
+                                    } else {
+                                      handlePomodoroDurationChange('focusDurationMs', parsed);
+                                    }
+                                  }}
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/[^0-9]/g, '');
                                     setFocusInput(val);
-                                    const parsed = parseInt(val, 10);
-                                    if (!isNaN(parsed) && parsed >= 1) {
-                                      handlePomodoroDurationChange('focusDurationMs', parsed);
-                                    }
                                   }}
                                   disabled={pomodoroState.status !== "idle"}
                                   placeholder="25"
@@ -1868,13 +1881,20 @@ export default function AnalyticsDashboard() {
                                   pattern="[0-9]*"
                                   className="premium-input"
                                   value={breakInput}
+                                  onFocus={() => setIsBreakActive(true)}
+                                  onBlur={(e) => {
+                                    setIsBreakActive(false);
+                                    const val = e.target.value;
+                                    const parsed = parseInt(val, 10);
+                                    if (!val || isNaN(parsed) || parsed < 1) {
+                                      setBreakInput(String(Math.floor((pomodoroSettings?.breakDurationMs || 5 * 60000) / 60000)));
+                                    } else {
+                                      handlePomodoroDurationChange('breakDurationMs', parsed);
+                                    }
+                                  }}
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/[^0-9]/g, '');
                                     setBreakInput(val);
-                                    const parsed = parseInt(val, 10);
-                                    if (!isNaN(parsed) && parsed >= 1) {
-                                      handlePomodoroDurationChange('breakDurationMs', parsed);
-                                    }
                                   }}
                                   disabled={pomodoroState.status !== "idle"}
                                   placeholder="5"
@@ -2635,15 +2655,17 @@ export default function AnalyticsDashboard() {
           <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-rule-modal-title" onClick={() => setShowAddRuleModal(false)}>
             <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 id="add-rule-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 300, marginRight: '10px' }}>+</span>
+                <h3 id="add-rule-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>
+                  </div>
                   Add Custom Rule
                 </h3>
                 <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddRuleModal(false)} aria-label="Close modal">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
-              <p className="modal-desc" style={{ fontSize: '14px' }}>
+              <p className="modal-desc" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '16px', marginBottom: '24px' }}>
                 Override the semantic analysis engine with your own domain classification.
               </p>
 
@@ -2659,38 +2681,50 @@ export default function AnalyticsDashboard() {
               )}
 
               <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddRule}>
-                <div>
-                  <label htmlFor="domain-input" className="modal-label-elegant">Domain (e.g. youtube.com)</label>
-                  <input
-                    id="domain-input"
-                    type="text"
-                    className="modal-input-elegant"
-                    placeholder="Enter hostname..."
-                    value={newDomain}
-                    onChange={(e) => setNewDomain(e.target.value)}
-                    required
-                  />
+                <div className="premium-input-group">
+                  <label htmlFor="domain-input" style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Domain (e.g. youtube.com)</label>
+                  <div className="premium-input-wrapper">
+                    <div className="premium-input-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <input
+                      id="domain-input"
+                      type="text"
+                      className="premium-input"
+                      placeholder="Enter hostname..."
+                      value={newDomain}
+                      onChange={(e) => setNewDomain(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="category-select" className="modal-label-elegant">Classification Category</label>
-                  <select
-                    id="category-select"
-                    className="modal-input-elegant"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
-                    required
-                  >
-                    <option value="productive">Productive (Deep Work)</option>
-                    <option value="distracting">Distracting (Entertainment)</option>
-                    <option value="neutral">Neutral (Utilities)</option>
-                    <option value="unknown">Unknown (Unclassified)</option>
-                  </select>
+                <div className="premium-input-group">
+                  <label htmlFor="category-select" style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Classification Category</label>
+                  <div className="premium-input-wrapper">
+                    <div className="premium-input-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    </div>
+                    <select
+                      id="category-select"
+                      className="premium-input"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
+                      required
+                      style={{ appearance: 'none', backgroundColor: 'transparent' }}
+                    >
+                      <option value="productive" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Productive (Deep Work)</option>
+                      <option value="distracting" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Distracting (Entertainment)</option>
+                      <option value="neutral" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Neutral (Utilities)</option>
+                      <option value="unknown" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Unknown (Unclassified)</option>
+                    </select>
+                    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
                 </div>
 
-
-
-                <button type="submit" className="btn-primary-elegant" style={{ width: "100%", justifyContent: "center", marginTop: "8px", padding: "12px" }}>
+                <button type="submit" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '14px 32px', fontSize: '14px', fontWeight: 600, borderRadius: '100px', background: 'linear-gradient(135deg, #a78bfa, #6366f1)', boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)', color: '#fff', border: 'none', cursor: 'pointer', transition: 'all 0.2s', width: '100%', marginTop: '8px' }}>
                   Save Custom Rule
                 </button>
               </form>
@@ -2703,15 +2737,17 @@ export default function AnalyticsDashboard() {
           <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-limit-modal-title" onClick={() => setShowAddLimitModal(false)}>
             <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 id="add-limit-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 300, marginRight: '10px' }}>+</span>
+                <h3 id="add-limit-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
                   Add Soft-Block Limit
                 </h3>
                 <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddLimitModal(false)} aria-label="Close modal">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
-              <p className="modal-desc" style={{ fontSize: '14px' }}>
+              <p className="modal-desc" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '16px', marginBottom: '24px' }}>
                 Set daily duration limits for distracting websites. Once reached, a soft-block overlay appears.
               </p>
 
@@ -2722,31 +2758,41 @@ export default function AnalyticsDashboard() {
               )}
 
               <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddTimeLimit}>
-                <div>
-                  <label className="modal-label-elegant">Domain (e.g. reddit.com)</label>
-                  <input
-                    type="text"
-                    className="modal-input-elegant"
-                    placeholder="Enter hostname..."
-                    value={newTimeLimitDomain}
-                    onChange={(e) => setNewTimeLimitDomain(e.target.value)}
-                    required
-                  />
+                <div className="premium-input-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Domain (e.g. reddit.com)</label>
+                  <div className="premium-input-wrapper">
+                    <div className="premium-input-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <input
+                      type="text"
+                      className="premium-input"
+                      placeholder="Enter hostname..."
+                      value={newTimeLimitDomain}
+                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="modal-label-elegant">Daily Limit (minutes)</label>
-                  <input
-                    type="number"
-                    className="modal-input-elegant"
-                    min="1"
-                    value={newTimeLimitDurationStr}
-                    onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
-                    required
-                  />
+                <div className="premium-input-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Daily Limit (minutes)</label>
+                  <div className="premium-input-wrapper">
+                    <div className="premium-input-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <input
+                      type="number"
+                      className="premium-input"
+                      min="1"
+                      value={newTimeLimitDurationStr}
+                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <button type="submit" className="btn-primary-elegant" style={{ width: "100%", justifyContent: "center", marginTop: "8px", padding: "12px" }}>
+                <button type="submit" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '14px 32px', fontSize: '14px', fontWeight: 600, borderRadius: '100px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 8px 24px rgba(245, 158, 11, 0.3)', color: '#fff', border: 'none', cursor: 'pointer', transition: 'all 0.2s', width: '100%', marginTop: '8px' }}>
                   Save Time Limit
                 </button>
               </form>
