@@ -18,6 +18,7 @@ import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-u
 import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
 import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroState, PomodoroSettings, TimeLimitRule } from "../types/tracking";
+import { generateExportBlob, downloadBlob, type ExportFormat, type ExportDateRange } from "../analytics/data-export";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -440,6 +441,24 @@ export default function AnalyticsDashboard() {
   const [newTimeLimitDomain, setNewTimeLimitDomain] = useState("");
   const [newTimeLimitDurationStr, setNewTimeLimitDurationStr] = useState("30");
   const [timeLimitError, setTimeLimitError] = useState<string | null>(null);
+
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
+  const [exportRange, setExportRange] = useState<ExportDateRange>("all");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDataExport = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await generateExportBlob(exportFormat, exportRange);
+      const ext = exportFormat === "json" ? "json" : "csv";
+      downloadBlob(blob, `web-swap-analytics-${exportRange}.${ext}`);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export data. Please check the console for details.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (pomodoroSettings) {
@@ -2205,6 +2224,64 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
+            {/* Portability */}
+            <div className="settings-card">
+              <div className="settings-card-icon blue" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Data Portability & Export</h3>
+                <p style={{ marginBottom: 16 }}>Securely export your local analytics data as a CSV for spreadsheet analysis, or as a JSON for a complete backup.</p>
+                
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                  <div className="premium-input-group" style={{ flex: 1, minWidth: '200px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Format</label>
+                    <div className="premium-input-wrapper">
+                      <select className="premium-input" value={exportFormat} onChange={e => setExportFormat(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
+                        <option value="csv" style={{ background: 'var(--bg)', color: 'var(--text)' }}>CSV (Spreadsheet Report)</option>
+                        <option value="json" style={{ background: 'var(--bg)', color: 'var(--text)' }}>JSON (Full Backup)</option>
+                      </select>
+                      <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="premium-input-group" style={{ flex: 1, minWidth: '200px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Time Range</label>
+                    <div className="premium-input-wrapper">
+                      <select className="premium-input" value={exportRange} onChange={e => setExportRange(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
+                        <option value="all" style={{ background: 'var(--bg)', color: 'var(--text)' }}>All Time</option>
+                        <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>This Month</option>
+                        <option value="today" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Today</option>
+                      </select>
+                      <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <button type="button" className="btn-primary" onClick={handleDataExport} disabled={isExporting} style={{ padding: '10px 24px', fontSize: '13px', fontWeight: 600, borderRadius: '100px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)', color: '#fff', border: 'none', cursor: isExporting ? 'wait' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {isExporting ? "Exporting Data..." : `Export Analytics Data`}
+                  </button>
+                  <button type="button" className="btn-secondary" onClick={handleExportRules}>
+                    Export Ruleset (.json)
+                  </button>
+                  <label className="btn-secondary" style={{ cursor: "pointer", margin: 0 }}>
+                    Import Ruleset
+                    <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportRules} />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* Storage card */}
             <div className="settings-card">
               <div className="settings-card-icon green" aria-hidden="true">
@@ -2223,36 +2300,6 @@ export default function AnalyticsDashboard() {
                   <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
                   <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-              </div>
-            </div>
-
-            {/* Portability */}
-            <div className="settings-card">
-              <div className="settings-card-icon blue" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </div>
-              <div className="settings-card-body">
-                <h3>Portability</h3>
-                <p style={{ marginBottom: 16 }}>Export your meticulously crafted custom ruleset to a JSON file for backup or import to another device.</p>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                  <button type="button" className="btn-secondary" onClick={handleExportRules}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Export Ruleset (.json)
-                  </button>
-                  <label className="btn-secondary" style={{ cursor: "pointer", margin: 0 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "6px" }}>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    Import Ruleset
-                    <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportRules} />
-                  </label>
-                </div>
               </div>
             </div>
 
