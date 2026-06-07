@@ -2,6 +2,22 @@ import React, { useEffect, useState } from "react";
 import type { HistoricalStatsResponse } from "../types/tracking";
 import "../style.css";
 
+const createSmoothPath = (points: [number, number][]) => {
+  if (points.length === 0) return "";
+  let d = `M ${points[0][0]},${points[0][1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const x_mid = (points[i][0] + points[i + 1][0]) / 2;
+    d += ` C ${x_mid},${points[i][1]} ${x_mid},${points[i + 1][1]} ${points[i + 1][0]},${points[i + 1][1]}`;
+  }
+  return d;
+};
+
+const createAreaPath = (points: [number, number][], bottomY: number) => {
+  if (points.length === 0) return "";
+  const linePath = createSmoothPath(points);
+  return `${linePath} L ${points[points.length - 1][0]},${bottomY} L ${points[0][0]},${bottomY} Z`;
+};
+
 export default function ReportPage() {
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [rangeStr, setRangeStr] = useState("all");
@@ -66,7 +82,7 @@ export default function ReportPage() {
     );
   }
 
-  const { metrics, topDomains } = stats;
+  const { metrics, topDomains, timeline } = stats;
   
   const formatDuration = (ms: number) => {
     if (ms < 60000) return "< 1m";
@@ -113,12 +129,51 @@ export default function ReportPage() {
   };
 
   const hasData = total > 0;
-  
   const getPercent = (val: number) => total > 0 ? Math.round((val / total) * 100) : 0;
   const prodPct = getPercent(metrics.productiveDurationMs);
   const distPct = getPercent(metrics.distractingDurationMs);
   const neutPct = getPercent(metrics.neutralDurationMs);
   const unkPct = getPercent(metrics.unknownDurationMs);
+
+  // Line Chart Computations
+  const chartWidth = 800;
+  const chartHeight = 200;
+  const paddingX = 40;
+  const paddingTop = 20;
+  const paddingBottom = 30;
+
+  const validTimeline = timeline || [];
+  const maxVal = Math.max(
+    1000, 
+    ...validTimeline.map(t => Math.max(t.productiveMs, t.distractingMs))
+  );
+
+  const pointsProd: [number, number][] = [];
+  const pointsDist: [number, number][] = [];
+  
+  if (validTimeline.length > 0) {
+    const stepX = (chartWidth - paddingX * 2) / Math.max(1, validTimeline.length - 1);
+    validTimeline.forEach((t, i) => {
+      const x = paddingX + i * stepX;
+      const yProd = paddingTop + (chartHeight - paddingTop - paddingBottom) * (1 - (t.productiveMs / maxVal));
+      const yDist = paddingTop + (chartHeight - paddingTop - paddingBottom) * (1 - (t.distractingMs / maxVal));
+      pointsProd.push([x, yProd]);
+      pointsDist.push([x, yDist]);
+    });
+  }
+
+  // Insight calculations
+  let mostActiveDay = null;
+  let topProductiveSite = null;
+  let topDistractingSite = null;
+  
+  if (validTimeline.length > 0) {
+    mostActiveDay = [...validTimeline].sort((a, b) => b.durationMs - a.durationMs)[0];
+  }
+  if (topDomains.length > 0) {
+    topProductiveSite = topDomains[0]; // Heuristic since we don't have per-domain classification mapped deeply here easily, but top domain is a good insight
+    topDistractingSite = topDomains.find(d => d.domain.includes('instagram') || d.domain.includes('youtube') || d.domain.includes('facebook') || d.domain.includes('twitter') || d.domain.includes('reddit')) || (topDomains.length > 1 ? topDomains[1] : null);
+  }
 
   return (
     <div className="report-viewport" style={{ 
@@ -161,9 +216,7 @@ export default function ReportPage() {
           overflow: hidden;
         }
         
-        .stat-card::before {
-          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
-        }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; }
         .stat-card.blue::before { background: #6366f1; }
         .stat-card.green::before { background: #10b981; }
         .stat-card.orange::before { background: #f59e0b; }
@@ -199,17 +252,41 @@ export default function ReportPage() {
         
         .share-bar-bg { width: 100px; height: 12px; background: #f1f5f9; border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 12px; }
         .share-bar-fill { height: 100%; }
+        
+        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .insight-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; overflow: hidden; }
+        .insight-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+        .insight-card.blue::before { background: #6366f1; }
+        .insight-card.green::before { background: #10b981; }
+        .insight-card.red::before { background: #ef4444; }
+        .insight-card.orange::before { background: #f59e0b; }
+        .insight-title { font-weight: 700; font-size: 16px; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
+        .insight-desc { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
 
         @media print {
-          body, .report-viewport { background: white !important; }
-          .header-bg { background: white !important; color: black !important; padding: 20px 0 !important; border-bottom: 2px solid #000; }
-          .top-cards { margin-top: 20px !important; }
-          .stat-card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
-          .section-card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; }
+          /* Force EXACT colors and styling when printing/saving to PDF */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          body, .report-viewport { 
+            background: #f3f4f6 !important; 
+          }
+          
+          /* Prevent page breaks inside cards */
+          .section-card, .stat-card, .insight-card {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          
+          /* Allow page break before insights section if needed */
+          .page-break-before {
+            page-break-before: always;
+            break-before: page;
+          }
+          
           .no-print { display: none !important; }
-          .header-bg h1 { color: black !important; }
-          .header-bg p { color: #64748b !important; }
-          .btn-primary { display: none !important; }
         }
       `}</style>
 
@@ -230,7 +307,7 @@ export default function ReportPage() {
                 className="btn-primary"
                 style={{ background: '#6366f1', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '6px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)' }}
               >
-                SAVE REPORT
+                SAVE AS PDF
               </button>
             </div>
           </div>
@@ -314,7 +391,73 @@ export default function ReportPage() {
           </div>
         </div>
 
-        <div className="section-card">
+        {validTimeline.length > 0 && (
+          <div className="section-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h3 className="section-title">Productivity vs Distraction</h3>
+                <p className="section-desc">Daily aggregates — trend analysis</p>
+              </div>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="legend-dot" style={{ background: '#10b981', width: '12px', height: '12px' }}></span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Productive</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="legend-dot" style={{ background: '#ef4444', width: '12px', height: '12px' }}></span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Distracting</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%', height: '220px', overflow: 'hidden' }}>
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                {/* Y Axis Grid Lines */}
+                {[0, 0.5, 1].map((pct, i) => {
+                  const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * pct;
+                  const val = maxVal * (1 - pct);
+                  return (
+                    <g key={i}>
+                      <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="#e2e8f0" strokeDasharray="4 4" strokeWidth="1" />
+                      <text x={paddingX - 10} y={y + 4} fontSize="11" fill="#94a3b8" textAnchor="end">{formatDuration(val)}</text>
+                    </g>
+                  );
+                })}
+
+                {/* Area Fills */}
+                <path d={createAreaPath(pointsProd, chartHeight - paddingBottom)} fill="rgba(16, 185, 129, 0.1)" stroke="none" />
+                <path d={createAreaPath(pointsDist, chartHeight - paddingBottom)} fill="rgba(239, 68, 68, 0.05)" stroke="none" />
+
+                {/* Line Paths */}
+                <path d={createSmoothPath(pointsProd)} fill="none" stroke="#10b981" strokeWidth="3" />
+                <path d={createSmoothPath(pointsDist)} fill="none" stroke="#ef4444" strokeWidth="3" />
+
+                {/* Data Points */}
+                {pointsProd.map((p, i) => (
+                  <circle key={`p-${i}`} cx={p[0]} cy={p[1]} r="4" fill="white" stroke="#10b981" strokeWidth="2" />
+                ))}
+                {pointsDist.map((p, i) => (
+                  <circle key={`d-${i}`} cx={p[0]} cy={p[1]} r="4" fill="white" stroke="#ef4444" strokeWidth="2" />
+                ))}
+
+                {/* X Axis Labels */}
+                {validTimeline.map((t, i) => {
+                  // If too many points, only show a subset
+                  if (validTimeline.length > 10 && i % Math.ceil(validTimeline.length / 8) !== 0 && i !== validTimeline.length - 1) return null;
+                  const x = paddingX + i * ((chartWidth - paddingX * 2) / Math.max(1, validTimeline.length - 1));
+                  const shortDate = t.date.length > 5 ? t.date.substring(5) : t.date; // Convert 2026-06-01 to 06-01
+                  return (
+                    <text key={i} x={x} y={chartHeight - 5} fontSize="11" fill="#94a3b8" textAnchor="middle">
+                      {shortDate}
+                    </text>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+        )}
+
+        <div className="section-card page-break-before">
           <h3 className="section-title">Top Visited Domains</h3>
           <p className="section-desc">Sorted by total duration &middot; Top domains of {metrics.uniqueDomainsCount} total</p>
           
@@ -329,7 +472,7 @@ export default function ReportPage() {
             </thead>
             <tbody>
               {topDomains.length > 0 ? (
-                topDomains.slice(0, 15).map((td, i) => {
+                topDomains.slice(0, 10).map((td, i) => {
                   const sharePct = total > 0 ? Math.round((td.durationMs / total) * 100) : 0;
                   const barColors = ['#6366f1', '#ec4899', '#f59e0b', '#ef4444', '#0ea5e9', '#10b981'];
                   const barColor = barColors[i % barColors.length];
@@ -355,6 +498,49 @@ export default function ReportPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="section-card">
+          <h3 className="section-title">Daily Breakdown & Insights</h3>
+          <p className="section-desc">PER-DAY STATS &middot; BEHAVIOR ANALYSIS</p>
+
+          <div className="insight-grid">
+            <div className="insight-card blue">
+              <h4 className="insight-title"><span style={{ color: '#6366f1' }}>■</span> Most Active Day</h4>
+              <p className="insight-desc">
+                {mostActiveDay 
+                  ? `${mostActiveDay.date} was your busiest day with ~${formatDuration(mostActiveDay.durationMs)} of browsing time.`
+                  : "Not enough data for this insight yet."}
+              </p>
+            </div>
+            
+            <div className="insight-card green">
+              <h4 className="insight-title"><span style={{ color: '#10b981' }}>■</span> Top Productive Site</h4>
+              <p className="insight-desc">
+                {topProductiveSite
+                  ? `${topProductiveSite.domain} leads with ${formatDuration(topProductiveSite.durationMs)} — strong focus.`
+                  : "No productive sites detected yet."}
+              </p>
+            </div>
+
+            <div className="insight-card red">
+              <h4 className="insight-title"><span style={{ color: '#ef4444' }}>■■</span> Distraction Alert</h4>
+              <p className="insight-desc">
+                {topDistractingSite
+                  ? `${topDistractingSite.domain} consumed ${formatDuration(topDistractingSite.durationMs)} (${topDistractingSite.visitCount} visits). Consider time limits.`
+                  : "Excellent! No major distraction sinks detected."}
+              </p>
+            </div>
+
+            <div className="insight-card orange">
+              <h4 className="insight-title"><span style={{ color: '#f59e0b' }}>■</span> Focus Opportunity</h4>
+              <p className="insight-desc">
+                {unkPct > 0 
+                  ? `${unkPct}% unclassified time — categorise these domains in the Dashboard for a more accurate productivity score.`
+                  : "All top domains are categorized. Great job maintaining your rules!"}
+              </p>
+            </div>
+          </div>
         </div>
         
       </div>
