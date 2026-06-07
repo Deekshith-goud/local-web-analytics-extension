@@ -1,178 +1,148 @@
 <div align="center">
   <img src="assets/logo-banner.png" alt="Local Browse Insights Logo" width="600" />
-  
-  # Local Browse Insights
-  
-  **Privacy-First Browser Analytics Extension**
-  
-  Track your browsing habits, productivity score, focus hours, and time usage entirely on-device.
-  
-  No accounts. No cloud. No telemetry. No tracking.
-  
-  [Install](#-quick-install) • [Demo](#demo) • [Documentation](#%EF%B8%8F-developer-installation)
-  
-  <br />
-  
-  <p>
-    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml"><img src="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml/badge.svg" alt="CI Build Status" /></a>
-    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/releases"><img src="https://img.shields.io/github/v/release/Deekshith-goud/local-web-analytics-extension?style=flat-square" alt="Latest Release" /></a>
-    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/issues"><img src="https://img.shields.io/github/issues/Deekshith-goud/local-web-analytics-extension?style=flat-square" alt="Open Issues" /></a>
-    <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/stargazers"><img src="https://img.shields.io/github/stars/Deekshith-goud/local-web-analytics-extension?style=social" alt="Stars" /></a>
-    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License" />
-    <img src="https://img.shields.io/badge/privacy-100%25_local-success.svg" alt="Privacy First" />
-    <img src="https://img.shields.io/badge/telemetry-ZERO-critical.svg" alt="Zero Telemetry" />
-  </p>
 </div>
 
----
+<p align="center">
+  <a href="https://reporanker.com/repos/Deekshith-goud/local-web-analytics-extension"><img src="https://reporanker.com/badge/Deekshith-goud/local-web-analytics-extension" alt="RepoRanker" /></a>
+  <a href="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml"><img src="https://github.com/Deekshith-goud/local-web-analytics-extension/actions/workflows/main.yml/badge.svg" alt="CI Build Status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/privacy-100%25_local-success.svg" alt="Privacy First" />
+</p>
 
-## Demo
+Local Browse Insights is a browser extension that tracks your browsing activity, time usage, and productivity score entirely on-device. Built for developers and privacy-conscious users who want to analyze their web habits without sacrificing their personal data. Unlike typical analytics tools that send your browsing history to the cloud, everything in Local Browse Insights stays local—there is zero telemetry, zero external tracking, and no account required.
 
-<img src="assets/demo.gif" width="800" />
+**Built With:** TypeScript, [Plasmo](https://docs.plasmo.com/), React, IndexedDB, TailwindCSS, and Recharts.
 
----
+<div align="center">
+  <img src="assets/dashboard.png" width="48%" alt="Analytics Dashboard" />
+  <img src="assets/widget.png" width="48%" alt="Floating Widget" />
+</div>
 
-## Screenshots
+## Why Local Browse Insights?
 
-| Dashboard | Analytics |
-|:---:|:---:|
-| <img src="assets/dashboard.png" width="100%" /> | <img src="assets/analytics.png" width="100%" /> |
-| **Floating Widget** | **Settings & Privacy** |
-| <img src="assets/widget.png" width="100%" /> | <img src="assets/settings.png" width="100%" /> |
+Most time-tracking tools send your deeply personal browsing history to the cloud. We don't.
 
----
+| Feature | Local Browse Insights | RescueTime / WakaTime / Webtime Tracker |
+|---------|-----------------------|------------------------|
+| **Data Storage** | 100% Local (IndexedDB) | Cloud servers / External syncing |
+| **Telemetry** | Zero | Extensive tracking |
+| **Accounts Required** | None | Mandatory login |
+| **Privacy Risk** | None (Runs offline) | High (Data sent externally) |
 
-## Features
+## Installation
 
-**📊 Local Analytics Dashboard**  
-Visualize browsing behavior without external services.
+### 🚀 For General Users (Recommended)
 
-**🎯 Productivity Scoring**  
-Automatically classify productive and distracting websites.
+Just want to use it? Install in 2 clicks:
 
-**⏱ Focus Hour Tracking**  
-Monitor deep work sessions.
+1. Download the `.zip` from the **[Latest Release →](https://github.com/Deekshith-goud/local-web-analytics-extension/releases)**
+2. Go to `chrome://extensions/`, enable **Developer mode**, and select **Load unpacked** on the extracted folder.
 
-**🔒 Privacy First**  
-Zero telemetry and zero external requests.
+### 🛠 For Developers
 
-**🧹 One-Click Data Purge**  
-Delete all stored data instantly.
+Want to build from source or contribute?
 
----
-
-## ⚡ Quick Install
-
-1. Download the [latest release](https://github.com/Deekshith-goud/local-web-analytics-extension/releases).
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** in the top-right corner.
-4. Click **Load unpacked**.
-5. Select the extracted extension folder.
-
----
-
-## 🛠️ Developer Installation
-
-### Prerequisites
-- **[Bun](https://bun.sh/)** (v1.0+)
-- **[Node.js](https://nodejs.org/)** (v18+)
-- **Git**
-
-### Setup Steps
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
-   cd local-web-analytics-extension
-   ```
-
-2. **Install dependencies**
-   ```bash
-   bun install
-   ```
-
-3. **Start the development server**
-   ```bash
-   bun run dev
-   ```
-
-4. **Load the Extension in Chrome**
-   - Go to `chrome://extensions/`
-   - Enable **Developer mode**
-   - Click **Load unpacked**
-   - Select `build/chrome-mv3-dev`
-
-*(For production builds, run `bun run build`. To run security audits and package, use `bun run package`.)*
-
----
-
-## 🏗 Architecture
-
-```mermaid
-flowchart TD
-
-A[Browser Activity]
-B[Tracking Engine]
-C[Classification Engine]
-D[IndexedDB]
-E[Analytics Dashboard]
-
-A --> B
-B --> C
-C --> D
-D --> E
+```bash
+git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
+cd local-web-analytics-extension
+bun install
+bun run dev  # For active development
+bun run build # For a production-optimized build
 ```
 
----
+Then load the generated `build/chrome-mv3-dev` (or `prod`) directory as an unpacked extension in Chrome.
 
-## 🛡️ Privacy Guarantees
+## Quick Start
 
-We believe your browsing history is deeply personal. **Local Browse Insights** adheres to the following strict privacy guarantees:
+Once installed, simply browse the web as usual. Click the floating widget on any page or click the extension icon in your browser toolbar to view your local analytics.
 
-1. **Zero Remote Processing**: No accounts are required. No cloud backups, no AI profiling, and no server-side rendering. Everything runs in your browser's sandboxed Service Worker.
-2. **Zero Telemetry**: We do not use Google Analytics, tracking pixels, crash reporters, or any other external monitoring tools. 
-3. **No External Connections**: The extension's `manifest.json` deliberately omits `host_permissions` outside of local execution, meaning the extension literally *cannot* make network requests to external servers.
-4. **Data Ownership**: You have complete control over your data. A built-in "Danger Zone" allows you to permanently and securely purge all IndexedDB records, local storage caches, and configurations with a multi-step confirmation.
+<img src="assets/demo.gif" width="800" alt="Demo GIF showing dashboard usage" />
 
----
+## Configuration Reference
 
-## 🔒 Security Architecture
+<details>
+<summary><strong>Click to view all configuration options</strong></summary>
 
-This extension was engineered over 10 rigorous phases with a focus on defense-in-depth:
-- **Deny-by-Default Gateway**: All internal messaging passes through a strict context-aware capability validator.
-- **XSS Mitigation**: Content scripts operate in isolated worlds. We never use `eval()`, `new Function()`, or unsafe inline scripts.
-- **Automated Security Pipelines**: Custom CI scripts audit manifest permissions, CSP directives, and dangerous APIs on every build to prevent accidental permission creep.
+You can configure tracking and privacy preferences in the extension's settings panel:
 
----
+| Option | Default | Description |
+|---|---|---|
+| **Tracking Level** | `Domains Only` | Tracks root domains (e.g. `github.com`). Full URLs are never saved. |
+| **Productivity Scoring** | `Enabled` | Automatically categorizes visited websites as productive or distracting. |
+| **Floating Widget** | `Enabled` | Displays a minimal, non-intrusive floating tracker on active web pages. |
+| **Data Purge** | `-` | A one-click button in the settings to instantly and permanently wipe all local IndexedDB data. |
 
-## 🗺 Roadmap
+</details>
 
-- [x] Productivity Tracking
-- [x] Analytics Dashboard
-- [x] Focus Hour Tracking
-- [x] Privacy Controls
+## Features & Architecture
 
-### Planned
-- [ ] Pomodoro Focus Timer
-- [ ] Soft-Block Time Limits 
-- [ ] Custom Time Reminders
-- [ ] CSV Data Export for Custom Analytics
+This extension is built to be a robust, offline-first analytics engine running directly in your browser:
 
----
+* **Active Tracking Engine**: Monitors browsing time only when the window is focused, the tab is active, and you are not idle.
+* **Productivity Classification**: Automatically scores websites to provide daily, weekly, and monthly productivity insights.
+* **Floating Widget**: A non-intrusive, isolated Shadow DOM widget that displays your current session and daily stats natively on the page.
+* **Full Analytics Dashboard**: Provides deep insights, activity heatmaps, session timelines, and top domains through an interactive, popup UI and full-page dashboard.
+* **Zero Overhead**: Engineered to minimize CPU/RAM usage by batching IndexedDB writes and debouncing updates.
 
-## 🤝 Contributing
+## Roadmap & Status
 
-Open source contributions are warmly welcomed and greatly appreciated! 
+**Status: v1.0 Released.** The core tracking engine, dashboard, and offline database are fully operational.  
+*Future feature planning (v1.1+) is actively tracked in our [GitHub Issues](https://github.com/Deekshith-goud/local-web-analytics-extension/issues).*
 
-1. **Fork the Project**
-2. **Create your Feature Branch** (`git checkout -b feature/AmazingFeature`)
-3. **Commit your Changes** (`git commit -m 'feat: add AmazingFeature'`)
-4. **Push to the Branch** (`git push origin feature/AmazingFeature`)
-5. **Open a Pull Request**
+## FAQ & Troubleshooting
 
-*Please ensure your code passes linting (`bun run lint`) and type checks (`bun x tsc --noEmit`). No PRs adding telemetry or remote API calls will be accepted.*
+<details>
+<summary><strong>The extension isn't tracking my time — what's wrong?</strong></summary>
 
----
+The tracker only runs when **all three** conditions are met:
+- The browser window is focused
+- The tab is active (not in the background)
+- You are not idle
 
-## 📄 License
+If tracking seems paused, try clicking directly on the page and moving your mouse. Also confirm the extension is enabled at `chrome://extensions/`.
+</details>
 
-Distributed under the MIT License. See `LICENSE` for more information.
+<details>
+<summary><strong>Does this work on Edge, Brave, or other browsers?</strong></summary>
+
+Yes. Any **Chromium-based browser** (Chrome, Edge, Brave, Arc, Opera) supports Manifest V3 extensions. Simply follow the same "Load unpacked" steps in that browser's extension settings page.
+</details>
+
+<details>
+<summary><strong>How do I back up or export my data?</strong></summary>
+
+All data is stored in your browser's **IndexedDB** under the extension's origin. You can inspect it at `chrome://extensions/` → Details → "Inspect views" → Application → IndexedDB. A one-click CSV export is planned for v1.1 — track it in [GitHub Issues](https://github.com/Deekshith-goud/local-web-analytics-extension/issues).
+</details>
+
+<details>
+<summary><strong>Will this slow down my browser?</strong></summary>
+
+No. The engine batches all IndexedDB writes and debounces UI updates to minimize CPU and RAM usage. It is designed to have near-zero overhead during normal browsing.
+</details>
+
+<details>
+<summary><strong>How do I completely remove all my data?</strong></summary>
+
+Go to the extension's **Settings panel** and click the **Data Purge** button. This instantly and permanently wipes all locally stored IndexedDB data.
+</details>
+
+## Contributing
+
+We warmly welcome open-source contributions! To ensure this project remains secure and high-quality, please follow these rules:
+
+1. **The Golden Rule (Privacy First)**: Under no circumstances will any PR be accepted if it introduces telemetry (e.g. Google Analytics), external network requests, remote scripts, or exfiltration of user data. All processing must remain **100% on-device**.
+2. **Open an Issue First**: Before submitting a PR, open an issue to discuss proposed changes to save hours of rework.
+3. **Commit Standards**: We use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat(dashboard): add chart`, `fix(tracking): resolve idle bug`).
+4. **Testing & Linting**: Make sure your code passes linting and strict TypeScript checks before pushing:
+   ```bash
+   bun run lint
+   bun x tsc --noEmit
+   ```
+
+For more detailed setup instructions, see our full [Contributing Guide](CONTRIBUTING.md).
+
+## License
+
+[MIT License](LICENSE)
+
+If this project is useful to you, consider giving it a ⭐ — it helps others find it.
