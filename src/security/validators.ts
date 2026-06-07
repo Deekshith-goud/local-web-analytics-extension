@@ -39,7 +39,7 @@ export const SUPPORTED_MESSAGE_VERSION = 1;
 
 // ─── Trusted Surfaces & Capability Routing ────────────────────────────────────
 
-export type ExtensionSurface = "content" | "popup" | "dashboard" | "background" | "unknown";
+export type ExtensionSurface = "content" | "popup" | "dashboard" | "report" | "background" | "unknown";
 
 /**
  * Centrally maps privilege levels for each message type.
@@ -49,7 +49,7 @@ export const MESSAGE_CAPABILITIES = Object.freeze({
   GET_ACTIVE_SESSION: Object.freeze(["content", "popup", "dashboard"]),
   GET_TODAY_STATS: Object.freeze(["content", "popup", "dashboard"]),
   GET_POPUP_SNAPSHOT: Object.freeze(["popup"]),
-  GET_HISTORICAL_STATS: Object.freeze(["dashboard"]),
+  GET_HISTORICAL_STATS: Object.freeze(["dashboard", "report"]),
   GET_CACHE_METRICS: Object.freeze(["dashboard"]),
   GET_TRACKING_STATUS: Object.freeze(["popup", "dashboard"]),
   GET_PRODUCTIVITY_RULES: Object.freeze(["popup", "dashboard"]),
@@ -178,6 +178,10 @@ export function deriveSurface(sender: chrome.runtime.MessageSender): ExtensionSu
     // Handle standard option dashboards (/tabs/dashboard.html or options.html)
     if (url.includes("/dashboard.html")) {
       return "dashboard";
+    }
+
+    if (url.includes("/report.html")) {
+      return "report";
     }
 
     // Classify system service worker context

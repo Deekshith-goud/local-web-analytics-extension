@@ -2,7 +2,7 @@ import { db } from "../storage/db";
 import { getCustomRules } from "./productivity-rules";
 import { getTimeLimitRules } from "./time-limits";
 
-export type ExportFormat = "json" | "csv";
+export type ExportFormat = "json" | "csv" | "pdf";
 export type ExportDateRange = "all" | "today" | "this_month";
 
 function getRangeStartTimestamp(range: ExportDateRange): number {

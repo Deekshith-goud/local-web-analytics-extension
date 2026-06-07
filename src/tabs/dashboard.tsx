@@ -448,6 +448,10 @@ export default function AnalyticsDashboard() {
 
   const handleDataExport = async () => {
     try {
+      if (exportFormat === "pdf") {
+        chrome.tabs.create({ url: `./tabs/report.html?range=${exportRange}` });
+        return;
+      }
       setIsExporting(true);
       const blob = await generateExportBlob(exportFormat, exportRange);
       const ext = exportFormat === "json" ? "json" : "csv";
@@ -2240,6 +2244,7 @@ export default function AnalyticsDashboard() {
                       <select className="premium-input" value={exportFormat} onChange={e => setExportFormat(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
                         <option value="csv" style={{ background: 'var(--bg)', color: 'var(--text)' }}>CSV (Spreadsheet Report)</option>
                         <option value="json" style={{ background: 'var(--bg)', color: 'var(--text)' }}>JSON (Full Backup)</option>
+                        <option value="pdf" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Visual Report (PDF/Print)</option>
                       </select>
                       <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
