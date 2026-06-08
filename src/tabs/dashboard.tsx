@@ -692,11 +692,9 @@ export default function AnalyticsDashboard() {
     if (!stats) return [];
     if (range === "today") {
       // Use the pre-built 24-hour buckets from background
+      // Returning all 24 hours prevents the chart from stretching early-day data into a giant blob.
       if (stats.hourlyTimeline && stats.hourlyTimeline.length > 0) {
-        // Only show hours 6am–current hour for a cleaner chart (skip empty early morning)
-        const now = new Date();
-        const currentHour = now.getHours();
-        return stats.hourlyTimeline.slice(0, currentHour + 1);
+        return stats.hourlyTimeline;
       }
       return [];
     }
@@ -1472,7 +1470,7 @@ export default function AnalyticsDashboard() {
                               width={bar.width * 0.8}
                               height={bar.height}
                               rx={(bar.width * 0.8) / 2}
-                              fill={isMax ? "url(#capsuleHighlightGradient)" : "url(#capsuleBrandGradient)"}
+                              fill={isMax ? "url(#capsuleHighlightGradient)" : bar.height <= 2 ? "rgba(255, 255, 255, 0.05)" : "url(#capsuleBrandGradient)"}
                               className="chart-capsule"
                               style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: 1 }}
                               onMouseEnter={() => setHoveredTooltip({

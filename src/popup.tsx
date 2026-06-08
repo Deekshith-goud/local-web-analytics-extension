@@ -55,6 +55,46 @@ const TimerDisplay: React.FC<{ startTime: number }> = ({ startTime }) => {
   );
 };
 
+// ─── Component: PomodoroClock ──────────────────────────────────────────────────
+// Keeps the pomodoro timer ticking locally every second without fetching from background.
+const PomodoroClock: React.FC<{ pomodoro: PomodoroState }> = ({ pomodoro }) => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (pomodoro.status !== "idle" && pomodoro.pausedTimeRemaining === undefined) {
+      const interval = setInterval(() => setTick(t => t + 1), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [pomodoro.status, pomodoro.pausedTimeRemaining]);
+
+  const isRunning = pomodoro.status !== "idle";
+  const isPaused = pomodoro.pausedTimeRemaining !== undefined;
+  let remainingMs = pomodoro.durationMs;
+  if (isRunning) {
+    if (isPaused) {
+      remainingMs = pomodoro.pausedTimeRemaining!;
+    } else {
+      const elapsed = Date.now() - pomodoro.startTime;
+      remainingMs = Math.max(0, pomodoro.durationMs - elapsed);
+    }
+  }
+  const minutes = Math.floor((remainingMs || 0) / 60000);
+  const seconds = Math.floor(((remainingMs || 0) % 60000) / 1000);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span style={{ fontSize: '20px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+        {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
+      </span>
+      {pomodoro.status !== "idle" && (
+        <span className={`badge-category ${pomodoro.status === 'focus' ? 'productive' : 'neutral'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
+          {pomodoro.status}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // ─── Component: Main Popup ─────────────────────────────────────────────────────
 export default function Popup() {
   const [snapshot, setSnapshot] = useState<PopupSnapshotResponse | null>(null);
@@ -296,34 +336,7 @@ export default function Popup() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Pomodoro Timer</span>
-              {(() => {
-                const isRunning = pomodoro.status !== "idle";
-                const isPaused = pomodoro.pausedTimeRemaining !== undefined;
-                let remainingMs = pomodoro.durationMs;
-                if (isRunning) {
-                  if (isPaused) {
-                    remainingMs = pomodoro.pausedTimeRemaining!;
-                  } else {
-                    const elapsed = Date.now() - pomodoro.startTime;
-                    remainingMs = Math.max(0, pomodoro.durationMs - elapsed);
-                  }
-                }
-                const minutes = Math.floor((remainingMs || 0) / 60000);
-                const seconds = Math.floor(((remainingMs || 0) % 60000) / 1000);
-                
-                return (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '20px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                      {String(minutes || 0).padStart(2, '0')}:{String(seconds || 0).padStart(2, '0')}
-                    </span>
-                    {pomodoro.status !== "idle" && (
-                      <span className={`badge-category ${pomodoro.status === 'focus' ? 'productive' : 'neutral'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
-                        {pomodoro.status}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
+              <PomodoroClock pomodoro={pomodoro} />
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {pomodoro.status === "idle" ? (

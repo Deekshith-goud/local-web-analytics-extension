@@ -242,7 +242,7 @@ export function computeBarCoordinates(
       y,
       width: barWidth,
       height: Math.max(2, barHeight), // Minimum height of 2px for visual visibility
-      label: item.date.substring(5), // Short date MM-DD
+      label: item.date.includes(":") ? item.date : item.date.substring(5), // Short date MM-DD or HH:00
       valueLabel,
       rawDate: item.date,
     };
