@@ -19,6 +19,7 @@ import { downsampleTimeline, computeBarCoordinates } from "../analytics/selector
 import { validateProductivityRule, type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
 import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroState, PomodoroSettings, TimeLimitRule } from "../types/tracking";
 import { generateExportBlob, downloadBlob, type ExportFormat, type ExportDateRange } from "../analytics/data-export";
+import { db } from "../storage/db";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -444,16 +445,53 @@ export default function AnalyticsDashboard() {
 
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [exportRange, setExportRange] = useState<ExportDateRange>("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [minAvailableDate, setMinAvailableDate] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    // Determine the earliest available date for custom range picker
+    db.activities.orderBy("startTime").first().then(firstAct => {
+      if (firstAct) {
+        const d = new Date(firstAct.startTime);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const minDateStr = `${yyyy}-${mm}-${dd}`;
+        setMinAvailableDate(minDateStr);
+        setCustomStartDate(minDateStr);
+      }
+    }).catch(console.error);
+  }, []);
 
   const handleDataExport = async () => {
     try {
       if (exportFormat === "pdf") {
-        chrome.tabs.create({ url: `./tabs/report.html?range=${exportRange}` });
+        let url = `./tabs/report.html?range=${exportRange}`;
+        if (exportRange === "custom" && customStartDate && customEndDate) {
+          url += `&start=${new Date(customStartDate).getTime()}&end=${new Date(customEndDate).getTime() + 86399999}`;
+        }
+        chrome.tabs.create({ url });
         return;
       }
       setIsExporting(true);
-      const blob = await generateExportBlob(exportFormat, exportRange);
+      let customStartMs: number | undefined = undefined;
+      let customEndMs: number | undefined = undefined;
+      if (exportRange === "custom") {
+        if (!customStartDate || !customEndDate) {
+          alert("Please select both start and end dates.");
+          setIsExporting(false);
+          return;
+        }
+        customStartMs = new Date(customStartDate).getTime();
+        customEndMs = new Date(customEndDate).getTime() + 86399999;
+      }
+      
+      const blob = await generateExportBlob(exportFormat, exportRange, customStartMs, customEndMs);
       const ext = exportFormat === "json" ? "json" : "csv";
       downloadBlob(blob, `web-swap-analytics-${exportRange}.${ext}`);
     } catch (err) {
@@ -2274,6 +2312,7 @@ export default function AnalyticsDashboard() {
                             <option value="all" style={{ background: 'var(--bg)', color: 'var(--text)' }}>All Time</option>
                             <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Last 30 Days</option>
                             <option value="today" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Today</option>
+                            <option value="custom" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Custom Range...</option>
                           </select>
                           <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2281,6 +2320,19 @@ export default function AnalyticsDashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {exportRange === "custom" && (
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '-4px' }}>
+                        <div className="premium-input-group" style={{ flex: 1, minWidth: '130px' }}>
+                          <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Start Date</label>
+                          <input type="date" value={customStartDate} min={minAvailableDate} max={customEndDate} onChange={e => setCustomStartDate(e.target.value)} style={{ width: '100%', padding: '10px 12px', fontSize: '13px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', outline: 'none' }} />
+                        </div>
+                        <div className="premium-input-group" style={{ flex: 1, minWidth: '130px' }}>
+                          <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>End Date</label>
+                          <input type="date" value={customEndDate} min={customStartDate || minAvailableDate} max={new Date().toISOString().split('T')[0]} onChange={e => setCustomEndDate(e.target.value)} style={{ width: '100%', padding: '10px 12px', fontSize: '13px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', outline: 'none' }} />
+                        </div>
+                      </div>
+                    )}
 
                     <button type="button" className="btn-primary" onClick={handleDataExport} disabled={isExporting} style={{ width: '100%', padding: '12px', fontSize: '13px', fontWeight: 600, borderRadius: '10px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)', color: '#fff', border: 'none', cursor: isExporting ? 'wait' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 'auto' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: "8px" }}>

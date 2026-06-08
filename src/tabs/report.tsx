@@ -31,6 +31,7 @@ export default function ReportPage() {
 
     const now = new Date();
     let startMs = 0;
+    let endMs = Date.now();
     
     if (rangeParam === "today") {
       now.setHours(0, 0, 0, 0);
@@ -39,9 +40,12 @@ export default function ReportPage() {
       now.setDate(now.getDate() - 30);
       now.setHours(0, 0, 0, 0);
       startMs = now.getTime();
+    } else if (rangeParam === "custom") {
+      const customStart = searchParams.get("start");
+      const customEnd = searchParams.get("end");
+      if (customStart) startMs = parseInt(customStart, 10);
+      if (customEnd) endMs = parseInt(customEnd, 10);
     }
-
-    const endMs = Date.now();
 
     chrome.runtime.sendMessage(
       { type: "GET_HISTORICAL_STATS", version: 1, startMs, endMs },
@@ -95,6 +99,7 @@ export default function ReportPage() {
   const getRangeLabel = () => {
     if (rangeStr === "today") return "TODAY";
     if (rangeStr === "this_month") return "LAST 30 DAYS";
+    if (rangeStr === "custom") return "CUSTOM RANGE";
     return "ALL TIME";
   };
 

@@ -3,7 +3,7 @@ import { getCustomRules } from "./productivity-rules";
 import { getTimeLimitRules } from "./time-limits";
 
 export type ExportFormat = "json" | "csv" | "pdf";
-export type ExportDateRange = "all" | "today" | "this_month";
+export type ExportDateRange = "all" | "today" | "this_month" | "custom";
 
 function getRangeStartTimestamp(range: ExportDateRange): number {
   const now = new Date();
@@ -19,7 +19,7 @@ function getRangeStartTimestamp(range: ExportDateRange): number {
   return 0;
 }
 
-function getLocalYYYYMMDD(d: Date): string {
+export function getLocalYYYYMMDD(d: Date): string {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -40,26 +40,34 @@ function getRangeDateString(range: ExportDateRange): string {
 /**
  * Generates a Blob containing either a full JSON backup or a clean CSV report.
  */
-export async function generateExportBlob(format: ExportFormat, range: ExportDateRange): Promise<Blob> {
+export async function generateExportBlob(format: ExportFormat, range: ExportDateRange, customStart?: number, customEnd?: number): Promise<Blob> {
   if (format === "json") {
-    return generateJsonBackup(range);
+    return generateJsonBackup(range, customStart, customEnd);
   } else {
-    return generateCsvReport(range);
+    return generateCsvReport(range, customStart, customEnd);
   }
 }
 
-async function generateJsonBackup(range: ExportDateRange): Promise<Blob> {
+async function generateJsonBackup(range: ExportDateRange, customStart?: number, customEnd?: number): Promise<Blob> {
   const minDateStr = getRangeDateString(range);
-  const minTs = getRangeStartTimestamp(range);
+  const minTs = range === "custom" && customStart ? customStart : getRangeStartTimestamp(range);
+  const maxTs = range === "custom" && customEnd ? customEnd : Date.now();
 
   let activities = await db.activities.toArray();
   let dailyDomainStats = await db.dailyDomainStats.toArray();
   let dailyTotals = await db.dailyTotals.toArray();
 
   if (range !== "all") {
-    activities = activities.filter(a => a.startTime >= minTs);
-    dailyDomainStats = dailyDomainStats.filter(d => d.date.startsWith(minDateStr));
-    dailyTotals = dailyTotals.filter(d => d.date.startsWith(minDateStr));
+    activities = activities.filter(a => a.startTime >= minTs && a.startTime <= maxTs);
+    if (range === "custom" && customStart && customEnd) {
+      const startStr = getLocalYYYYMMDD(new Date(customStart));
+      const endStr = getLocalYYYYMMDD(new Date(customEnd));
+      dailyDomainStats = dailyDomainStats.filter(d => d.date >= startStr && d.date <= endStr);
+      dailyTotals = dailyTotals.filter(d => d.date >= startStr && d.date <= endStr);
+    } else {
+      dailyDomainStats = dailyDomainStats.filter(d => d.date.startsWith(minDateStr));
+      dailyTotals = dailyTotals.filter(d => d.date.startsWith(minDateStr));
+    }
   }
 
   const rules = await getCustomRules();
@@ -69,7 +77,9 @@ async function generateJsonBackup(range: ExportDateRange): Promise<Blob> {
     metadata: {
       generatedAt: new Date().toISOString(),
       version: 1,
-      range
+      range,
+      customStart,
+      customEnd
     },
     database: {
       activities,
@@ -85,12 +95,13 @@ async function generateJsonBackup(range: ExportDateRange): Promise<Blob> {
   return new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
 }
 
-async function generateCsvReport(range: ExportDateRange): Promise<Blob> {
-  const minTs = getRangeStartTimestamp(range);
+async function generateCsvReport(range: ExportDateRange, customStart?: number, customEnd?: number): Promise<Blob> {
+  const minTs = range === "custom" && customStart ? customStart : getRangeStartTimestamp(range);
+  const maxTs = range === "custom" && customEnd ? customEnd : Date.now();
   
   let activities = await db.activities.toArray();
   if (range !== "all") {
-    activities = activities.filter(a => a.startTime >= minTs);
+    activities = activities.filter(a => a.startTime >= minTs && a.startTime <= maxTs);
   }
 
   const rules = await getCustomRules();
