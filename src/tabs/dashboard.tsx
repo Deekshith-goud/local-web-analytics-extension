@@ -1967,7 +1967,7 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="rules-main" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="rules-main" style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
               <div className="rules-card" style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -2095,7 +2095,7 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
 
-              <div className="rules-card" style={{ display: "flex", flexDirection: "column", marginTop: "16px" }}>
+              <div className="rules-card" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <h3 style={{ margin: 0 }}>Active Time Limits</h3>
@@ -2110,7 +2110,8 @@ export default function AnalyticsDashboard() {
                   </div>
                 </div>
 
-                <div className="elegant-list-container" style={{ maxHeight: "150px", overflowY: "auto", paddingRight: timeLimitRules.length > 5 ? "8px" : "0" }}>
+                <div style={{ flex: 1, position: 'relative', minHeight: '150px' }}>
+                  <div className="elegant-list-container" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", paddingRight: timeLimitRules.length > 5 ? "8px" : "0" }}>
                   {timeLimitRules.length === 0 ? (
                     <div className="vis-empty" style={{ minHeight: "150px" }}>
                       <p className="vis-empty-title">No Limits Set</p>
@@ -2144,6 +2145,7 @@ export default function AnalyticsDashboard() {
                       </div>
                     ))
                   )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2241,7 +2243,7 @@ export default function AnalyticsDashboard() {
                   <div className="premium-input-group" style={{ flex: 1, minWidth: '200px' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Format</label>
                     <div className="premium-input-wrapper">
-                      <select className="premium-input" value={exportFormat} onChange={e => setExportFormat(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
+                      <select className="premium-input" value={exportFormat} onChange={e => setExportFormat(e.target.value as ExportFormat)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
                         <option value="csv" style={{ background: 'var(--bg)', color: 'var(--text)' }}>CSV (Spreadsheet Report)</option>
                         <option value="json" style={{ background: 'var(--bg)', color: 'var(--text)' }}>JSON (Full Backup)</option>
                         <option value="pdf" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Visual Report (PDF/Print)</option>
@@ -2255,7 +2257,7 @@ export default function AnalyticsDashboard() {
                   <div className="premium-input-group" style={{ flex: 1, minWidth: '200px' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Time Range</label>
                     <div className="premium-input-wrapper">
-                      <select className="premium-input" value={exportRange} onChange={e => setExportRange(e.target.value as any)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
+                      <select className="premium-input" value={exportRange} onChange={e => setExportRange(e.target.value as ExportDateRange)} style={{ appearance: 'none', backgroundColor: 'transparent' }}>
                         <option value="all" style={{ background: 'var(--bg)', color: 'var(--text)' }}>All Time</option>
                         <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Last 30 Days</option>
                         <option value="today" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Today</option>

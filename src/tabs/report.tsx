@@ -45,7 +45,7 @@ export default function ReportPage() {
 
     chrome.runtime.sendMessage(
       { type: "GET_HISTORICAL_STATS", version: 1, startMs, endMs },
-      (res: any) => {
+      (res: HistoricalStatsResponse & { error?: string } | null) => {
         if (chrome.runtime.lastError) {
           setErrorDetails("Runtime Error: " + chrome.runtime.lastError.message);
         } else if (!res) {
@@ -109,7 +109,7 @@ export default function ReportPage() {
 
   const createPieSlice = (value: number, color: string, gap: number = 0.0) => {
     if (value === 0 || total === 0) return null;
-    let percent = value / total;
+    const percent = value / total;
     
     const adjustedPercent = percent;
     const startOffset = gap/2;
