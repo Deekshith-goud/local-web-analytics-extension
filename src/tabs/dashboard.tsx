@@ -531,13 +531,6 @@ export default function AnalyticsDashboard() {
       }, 1000);
     }
     
-    if (activeTab === "rules") {
-      chrome.runtime.sendMessage({ type: "GET_TIME_LIMIT_RULES", version: 1 }, (res) => {
-        if (res && res.success) {
-          setTimeLimitRules(res.rules);
-        }
-      });
-    }
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -671,6 +664,14 @@ export default function AnalyticsDashboard() {
         if (response && response.success) {
           setCustomRules(response.customRules ?? []);
           setDefaultRules(response.defaultRules ?? []);
+        }
+      }
+    );
+    chrome.runtime.sendMessage(
+      { type: "GET_TIME_LIMIT_RULES", version: 1 },
+      (res: { success: boolean; rules?: TimeLimitRule[] }) => {
+        if (res && res.success) {
+          setTimeLimitRules(res.rules ?? []);
         }
       }
     );
@@ -948,7 +949,8 @@ export default function AnalyticsDashboard() {
       schema: "web-swap-productivity-rules",
       version: 1,
       exportedAt: Date.now(),
-      rules: customRules
+      rules: customRules,
+      timeLimits: timeLimitRules
     }, null, 2);
 
     const blob = new Blob([payload], { type: "application/json" });
@@ -972,41 +974,69 @@ export default function AnalyticsDashboard() {
         const rawJson = event.target?.result as string;
         const parsed = JSON.parse(rawJson);
 
-        if (parsed.schema !== "web-swap-productivity-rules" || parsed.version !== 1 || !Array.isArray(parsed.rules)) {
+        if (parsed.schema !== "web-swap-productivity-rules" || parsed.version !== 1) {
           alert("Invalid schema file. Must be a valid web-swap rules configuration.");
           return;
         }
 
-        // Validate every rule in the array
         const importedRules: ProductivityRule[] = [];
-        for (const rule of parsed.rules) {
-          const check = validateProductivityRule(rule);
-          if (check) {
-            alert(`Validation failed for rule '${rule?.domain}': ${check}`);
-            return;
+        if (Array.isArray(parsed.rules)) {
+          for (const rule of parsed.rules) {
+            const check = validateProductivityRule(rule);
+            if (check) {
+              alert(`Validation failed for category rule '${rule?.domain}': ${check}`);
+              return;
+            }
+            importedRules.push({
+              domain: rule.domain,
+              category: rule.category,
+              priority: rule.priority,
+              createdAt: rule.createdAt ?? Date.now()
+            });
           }
-          importedRules.push({
-            domain: rule.domain,
-            category: rule.category,
-            priority: rule.priority,
-            createdAt: rule.createdAt ?? Date.now()
-          });
         }
 
-        if (confirm(`Importing ${importedRules.length} custom rules. Overwrite existing custom rules?`)) {
+        const importedTimeLimits: TimeLimitRule[] = [];
+        if (Array.isArray(parsed.timeLimits)) {
+          for (const limit of parsed.timeLimits) {
+            if (!limit.domain || typeof limit.domain !== "string") {
+              alert("Validation failed for time limit: missing/invalid domain");
+              return;
+            }
+            if (typeof limit.maxDurationMs !== "number" || limit.maxDurationMs <= 0) {
+              alert(`Validation failed for time limit on '${limit.domain}': invalid duration`);
+              return;
+            }
+            importedTimeLimits.push({
+              domain: limit.domain,
+              maxDurationMs: limit.maxDurationMs,
+              createdAt: limit.createdAt ?? Date.now(),
+              enabled: limit.enabled ?? true
+            });
+          }
+        }
+
+        if (confirm(`Importing ${importedRules.length} category rules and ${importedTimeLimits.length} time limits. Overwrite existing rules?`)) {
           chrome.runtime.sendMessage(
-            {
-              type: "SAVE_PRODUCTIVITY_RULES",
-              version: 1,
-              rules: importedRules
-            },
+            { type: "SAVE_PRODUCTIVITY_RULES", version: 1, rules: importedRules },
             (res: { success: boolean; error?: string }) => {
               if (res && res.success) {
                 setCustomRules(importedRules);
-                fetchStats();
-                alert("Rules imported successfully!");
+                
+                chrome.runtime.sendMessage(
+                  { type: "SAVE_TIME_LIMIT_RULES", version: 1, rules: importedTimeLimits },
+                  (resTL: { success: boolean; error?: string }) => {
+                    if (resTL && resTL.success) {
+                      setTimeLimitRules(importedTimeLimits);
+                      fetchStats();
+                      alert("Rules and Time Limits imported successfully!");
+                    } else {
+                      alert(resTL?.error ?? "Failed to save imported time limits.");
+                    }
+                  }
+                );
               } else {
-                alert(res?.error ?? "Failed to save imported rules.");
+                alert(res?.error ?? "Failed to save imported category rules.");
               }
             }
           );
