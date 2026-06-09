@@ -404,50 +404,7 @@ input:checked + .slider:before {
   color: var(--text-primary);
 }
 
-/* Dopamine Detox Action Bar */
-.detox-bar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  margin-top: auto; /* pushes it down to fill the gap */
-  background: var(--bg-glass);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: all var(--transition-medium);
-  width: 100%;
-}
 
-.detox-bar-btn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--text-muted);
-}
-
-.detox-bar-btn.active {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.detox-text {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  transition: color var(--transition-fast);
-}
-
-.detox-bar-btn:hover .detox-text {
-  color: var(--text-primary);
-}
-
-.detox-bar-btn.active .detox-text {
-  color: #fff;
-}
 
 /* ───────────────────────────────────────────────────────────── */
 /* RIGHT COLUMN & DOMAINS LIST */
@@ -783,3 +740,47 @@ input:checked + .slider:before {
   transform: translateY(-1px);
 }
 
+/* Detox Action Bar Button */
+.detox-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  text-transform: uppercase;
+}
+
+.detox-bar-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.detox-icon {
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+/* Active State */
+.detox-bar-btn.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detox-bar-btn.active .detox-icon {
+  color: var(--bg-primary);
+}

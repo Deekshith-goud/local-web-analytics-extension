@@ -383,7 +383,10 @@ export default function Popup() {
             aria-label="Toggle Grayscale Dopamine Detox Mode"
             aria-pressed={isDetoxModeEnabled}
           >
-            <span aria-hidden="true" style={{ filter: isDetoxModeEnabled ? 'grayscale(100%)' : 'none', fontSize: '14px' }}>☯️</span> 
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="detox-icon" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" />
+            </svg>
             <span className="detox-text">{isDetoxModeEnabled ? 'DETOX MODE ACTIVE' : 'ENABLE DOPAMINE DETOX'}</span>
           </button>
         </div>
@@ -401,8 +404,10 @@ export default function Popup() {
                   aria-label="Open full analytics dashboard in options page"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <path d="M21 9H3M21 15H3M12 3v18" />
+                    <rect x="3" y="3" width="7" height="9" rx="1" />
+                    <rect x="14" y="3" width="7" height="5" rx="1" />
+                    <rect x="14" y="12" width="7" height="9" rx="1" />
+                    <rect x="3" y="16" width="7" height="5" rx="1" />
                   </svg>
                 </button>
                 
