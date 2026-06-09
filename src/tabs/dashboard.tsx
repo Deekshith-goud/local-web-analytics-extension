@@ -332,7 +332,7 @@ const CustomDropdown = ({ value, options, onChange, width }: { value: string, op
 };
 
 export default function AnalyticsDashboard() {
-  const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings" | "pomodoro">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings" | "pomodoro" | "about">("analytics");
   const [range, setRange] = useState<RangeType>("7days");
   const [stats, setStats] = useState<HistoricalStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -446,6 +446,7 @@ export default function AnalyticsDashboard() {
   const [hoveredTooltip, setHoveredTooltip] = useState<{x: number, y: number, title: string, content: React.ReactNode} | null>(null);
   const [activeChart, setActiveChart] = useState<"total" | "productivity">("total");
   const [domainSort, setDomainSort] = useState<"duration" | "visits">("duration");
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   const [selectedDomainModal, setSelectedDomainModal] = useState<string | null>(null);
   const [domainIntervals, setDomainIntervals] = useState<ActivityRecord[]>([]);
@@ -1131,22 +1132,23 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Header */}
-        <header className="dashboard-header" role="banner" style={{ marginBottom: '28px' }}>
-          <div className="brand-section" style={{ flex: 1 }}>
+        <header className="dashboard-header" role="banner" style={{ marginBottom: '28px', flexWrap: 'nowrap', gap: '12px' }}>
+          <div className="brand-section" style={{ flex: '0 1 auto', minWidth: 'min-content' }}>
             <h1>
-              <img src={brandLogo} alt="Logo" width="28" height="28" style={{ borderRadius: 6 }} />
+              <img src={brandLogo} alt="Logo" width="36" height="36" style={{ borderRadius: 8 }} />
               Local Browse Insights
             </h1>
             <p>Privacy-first. Secure local tracking dashboard.</p>
           </div>
 
-          <nav className="dashboard-nav" aria-label="Main sections">
-            <button className={`nav-tab-btn ${activeTab === "analytics" ? "active" : ""}`} onClick={() => setActiveTab("analytics")}>Overview & Analytics</button>
-            <button className={`nav-tab-btn ${activeTab === "rules" ? "active" : ""}`} onClick={() => setActiveTab("rules")}>Productivity Rules</button>
-            <button className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Settings & Privacy</button>
+          <nav className="dashboard-nav" aria-label="Main sections" style={{ flexShrink: 0 }}>
+            <button className={`nav-tab-btn ${activeTab === "analytics" ? "active" : ""}`} onClick={() => setActiveTab("analytics")}>Dashboard</button>
+            <button className={`nav-tab-btn ${activeTab === "rules" ? "active" : ""}`} onClick={() => setActiveTab("rules")}>Productivity</button>
+            <button className={`nav-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Settings</button>
+            <button className={`nav-tab-btn ${activeTab === "about" ? "active" : ""}`} onClick={() => setActiveTab("about")}>About</button>
           </nav>
 
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          <div style={{ flex: '0 1 auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 'min-content', gap: '20px' }}>
             {/* Filter group hidden when not on analytics tab */}
             <nav aria-label="Dashboard range selection" style={{ visibility: activeTab === "analytics" ? "visible" : "hidden", transition: "opacity 0.2s", opacity: activeTab === "analytics" ? 1 : 0 }}>
               <div className="filter-group" style={{ whiteSpace: 'nowrap' }}>
@@ -2119,15 +2121,16 @@ export default function AnalyticsDashboard() {
                         <div className="elegant-list-row" key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
                           <div className="elegant-row-col domain-col" style={{ flex: 2.5, display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              <img 
-                                src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + rule.domain)}&size=32` : ""} 
-                                alt="" 
-                                style={{ width: "16px", height: "16px", borderRadius: "2px" }} 
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text3)"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-                                }}
-                              />
+                              {imgErrors[rule.domain] ? (
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text3)" }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                              ) : (
+                                <img 
+                                  src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + rule.domain)}&size=32` : ""} 
+                                  alt="" 
+                                  style={{ width: "16px", height: "16px", borderRadius: "2px" }} 
+                                  onError={() => setImgErrors(prev => ({ ...prev, [rule.domain]: true }))}
+                                />
+                              )}
                             </div>
                             <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{rule.domain}</span>
                           </div>
@@ -2484,6 +2487,56 @@ export default function AnalyticsDashboard() {
                   <circle cx="62" cy="28" r="2" fill="rgba(239,68,68,0.2)"/>
                 </svg>
               </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === "about" && (
+          <section className="settings-panel-layout tab-panel" aria-label="About the Extension">
+            {/* Project Overview */}
+            <div className="settings-card">
+              <div className="settings-card-icon blue" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Local Browse Analytics</h3>
+                <p style={{ marginBottom: '8px' }}>Version 1.0.0</p>
+                <p>A completely private, local-first browser extension designed to help you analyze your browsing habits, enforce productivity rules, and stay focused—all without sending a single byte of telemetry to external servers.</p>
+              </div>
+            </div>
+
+            {/* Author */}
+            <div className="settings-card">
+              <div className="settings-card-icon purple" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div className="settings-card-body">
+                <h3>Author & Creator</h3>
+                <p style={{ marginBottom: '12px' }}>Created with ❤️ by <strong>Deekshith-goud</strong>.</p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <a href="https://github.com/Deekshith-goud" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                    GitHub Profile
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Architecture stack */}
+            <div className="settings-card">
+               <div className="settings-card-icon green" aria-hidden="true">
+                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+               </div>
+               <div className="settings-card-body">
+                 <h3>Architecture & Stack</h3>
+                 <p style={{ marginBottom: '16px' }}>Built using modern, secure web technologies:</p>
+                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>React 18</span>
+                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>TypeScript</span>
+                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Plasmo Framework</span>
+                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Dexie.js (IndexedDB)</span>
+                 </div>
+               </div>
             </div>
           </section>
         )}
