@@ -232,8 +232,8 @@ export default function Popup() {
   const targetMs = 4 * 60 * 60 * 1000;
   const progressPercent = Math.min(100, Math.round((totalDurationMs / targetMs) * 100));
 
-  // Circular gauge stroke-dasharray properties: radius = 32, circumference = 201
-  const r = 32;
+  // Circular gauge stroke-dasharray properties: radius = 24, circumference = 150
+  const r = 24;
   const circ = 2 * Math.PI * r;
   const strokeOffset = circ - (progressPercent / 100) * circ;
 
@@ -245,169 +245,180 @@ export default function Popup() {
         <div className="glass-blob blob-indigo"></div>
       </div>
 
-      {/* Header section */}
-      <header className="popup-header">
-        <div className="brand-section">
-          <img src={brandLogo} alt="Logo" width="18" height="18" style={{ borderRadius: 3, marginRight: 4 }} />
-          <span className="brand-name">Local Browse Insights</span>
-        </div>
-        
-        <div className="controls-section">
-          <button 
-            className="dashboard-btn" 
-            onClick={handleOpenDashboard} 
-            title="Open Analytics Dashboard"
-            aria-label="Open full analytics dashboard in options page"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M21 9H3M21 15H3M12 3v18" />
-            </svg>
-          </button>
-          
-          <label className="switch" title={trackingPaused ? "Resume tracking" : "Pause tracking"}>
-            <input 
-              type="checkbox" 
-              checked={trackingPaused} 
-              onChange={handlePauseToggle}
-              aria-label="Toggle active browsing session tracking"
-            />
-            <span className="slider"></span>
-          </label>
-        </div>
-      </header>
 
-      {/* Hero tracking visual state card */}
-      <section className="hero-card" aria-label="Current Tracking Status">
-        <div className="gauge-wrapper">
-          <svg className="gauge-svg" aria-label={`Browsing goal progress is ${progressPercent}%`}>
-            <circle className="gauge-bg" cx="40" cy="40" r={r}></circle>
-            <circle 
-              className={`gauge-progress ${trackingPaused ? "paused" : ""}`} 
-              cx="40" 
-              cy="40" 
-              r={r}
-              style={{
-                strokeDasharray: `${circ} ${circ}`,
-                strokeDashoffset: strokeOffset
-              }}
-            ></circle>
-          </svg>
-          <div className="gauge-center-text" aria-hidden="true">{progressPercent}%</div>
-        </div>
 
-        <div className="session-info">
-          {trackingPaused ? (
-            <>
-              <div className="session-status paused" role="status">
-                <span className="status-dot paused"></span>
-                Tracking Paused
-              </div>
-              <div className="current-domain">Monitoring Standby</div>
-              <span className="live-clock">Timer suspended</span>
-            </>
-          ) : activeSession ? (
-            <>
-              <div className="session-status" role="status">
-                <span className="status-dot pulsing"></span>
-                Tracking Live
-              </div>
-              <div className="current-domain" title={activeSession.domain}>
-                {activeSession.domain}
-              </div>
-              <TimerDisplay startTime={activeSession.startTime} />
-            </>
-          ) : (
-            <>
-              <div className="session-status paused" role="status">
-                <span className="status-dot paused"></span>
-                Tracking Active
-              </div>
-              <div className="current-domain">System Idle</div>
-              <span className="live-clock">No untracked sites open</span>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Pomodoro Timer Compact View */}
-      {pomodoro && (
-        <section className="totals-grid" aria-label="Pomodoro Timer" style={{ padding: '16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', marginTop: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Pomodoro Timer</span>
-              <PomodoroClock pomodoro={pomodoro} />
+      <div className="main-content-grid">
+        <div className="left-column">
+          {/* Header embedded in left column to save top row space */}
+          <header className="popup-header">
+            <div className="brand-section">
+              <img src={brandLogo} alt="Logo" width="18" height="18" style={{ borderRadius: 3, marginRight: 4 }} />
+              <span className="brand-name">Local Browse Insights</span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {pomodoro.status === "idle" ? (
+          </header>
+
+          {/* Hero tracking visual state card */}
+          <section className="hero-card" aria-label="Current Tracking Status">
+            <div className="gauge-wrapper">
+              <svg className="gauge-svg" aria-label={`Browsing goal progress is ${progressPercent}%`} viewBox="0 0 60 60">
+                <circle className="gauge-bg" cx="30" cy="30" r={r}></circle>
+                <circle 
+                  className={`gauge-progress ${trackingPaused ? "paused" : ""}`} 
+                  cx="30" 
+                  cy="30" 
+                  r={r}
+                  style={{
+                    strokeDasharray: `${circ} ${circ}`,
+                    strokeDashoffset: strokeOffset
+                  }}
+                ></circle>
+              </svg>
+              <div className="gauge-center-text" aria-hidden="true">{progressPercent}%</div>
+            </div>
+
+            <div className="session-info">
+              {trackingPaused ? (
                 <>
-                  <button onClick={() => handlePomodoroAction("START_POMODORO", "focus")} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Focus</button>
-                  <button onClick={() => handlePomodoroAction("START_POMODORO", "break")} style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Break</button>
+                  <div className="session-status paused" role="status">
+                    <span className="status-dot paused"></span>
+                    Tracking Paused
+                  </div>
+                  <div className="current-domain">Monitoring Standby</div>
+                  <span className="live-clock">Timer suspended</span>
+                </>
+              ) : activeSession ? (
+                <>
+                  <div className="session-status" role="status">
+                    <span className="status-dot pulsing"></span>
+                    Tracking Live
+                  </div>
+                  <div className="current-domain" title={activeSession.domain}>
+                    {activeSession.domain}
+                  </div>
+                  <TimerDisplay startTime={activeSession.startTime} />
                 </>
               ) : (
                 <>
-                  {pomodoro.pausedTimeRemaining !== undefined ? (
-                    <button onClick={() => handlePomodoroAction("RESUME_POMODORO")} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Resume</button>
-                  ) : (
-                    <button onClick={() => handlePomodoroAction("PAUSE_POMODORO")} style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Pause</button>
-                  )}
-                  <button onClick={() => handlePomodoroAction("STOP_POMODORO")} style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Stop</button>
+                  <div className="session-status" role="status">
+                    <span className="status-dot pulsing"></span>
+                    Tracking Active
+                  </div>
+                  <div className="current-domain">System Idle</div>
+                  <span className="live-clock">No untracked sites open</span>
                 </>
               )}
             </div>
-          </div>
-        </section>
-      )}
+          </section>
 
-      {/* Grid of daily metrics */}
-      <section className="totals-grid" aria-label="Daily browsing aggregates summary">
-        <div className="stat-cell">
-          <span className="stat-label">Total Browsing ({totalVisits} visits)</span>
-          <span className="stat-value" aria-live="polite">{formatDuration(totalDurationMs)}</span>
-        </div>
-        <div className="stat-cell">
-          <span className="stat-label">Unique Domains</span>
-          <span className="stat-value">{uniqueDomainsCount}</span>
-        </div>
-      </section>
+          {/* Pomodoro Timer Compact View */}
+          {pomodoro && (
+            <section className="pomodoro-card" aria-label="Pomodoro Timer">
+              <div className="pomodoro-info">
+                <span className="pomodoro-label">Pomodoro</span>
+                <PomodoroClock pomodoro={pomodoro} />
+              </div>
+              <div className="pomodoro-actions">
+                {pomodoro.status === "idle" ? (
+                  <>
+                    <button className="btn-pomo primary" onClick={() => handlePomodoroAction("START_POMODORO", "focus")}>Focus</button>
+                    <button className="btn-pomo secondary" onClick={() => handlePomodoroAction("START_POMODORO", "break")}>Break</button>
+                  </>
+                ) : (
+                  <>
+                    {pomodoro.pausedTimeRemaining !== undefined ? (
+                      <button className="btn-pomo success" onClick={() => handlePomodoroAction("RESUME_POMODORO")}>Resume</button>
+                    ) : (
+                      <button className="btn-pomo secondary" onClick={() => handlePomodoroAction("PAUSE_POMODORO")}>Pause</button>
+                    )}
+                    <button className="btn-pomo danger" onClick={() => handlePomodoroAction("STOP_POMODORO")}>Stop</button>
+                  </>
+                )}
+              </div>
+            </section>
+          )}
 
-      {/* Domains list */}
-      <section className="domains-section" aria-label="Top active domains for today">
-        <h2 className="section-title">Top Sites Today</h2>
-        {topDomains.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
+          {/* Grid of daily metrics */}
+          <section className="totals-grid" aria-label="Daily browsing aggregates summary">
+            <div className="stat-cell">
+              <span className="stat-label">Total Time</span>
+              <span className="stat-value" aria-live="polite">{formatDuration(totalDurationMs)}</span>
             </div>
-            <p className="empty-text-title">No Activity Logged</p>
-            <p className="empty-text-desc">Start visiting web sites. Your data stays securely stored on this local device only.</p>
-          </div>
-        ) : (
-          <div className="domains-list">
-            {topDomains.map((item, idx) => {
-              // Bar width relative to the maximum domain duration
-              const maxDuration = Math.max(...topDomains.map(t => t.durationMs));
-              const fillPct = maxDuration > 0 ? (item.durationMs / maxDuration) * 100 : 0;
+            <div className="stat-cell">
+              <span className="stat-label">Total Visits</span>
+              <span className="stat-value">{totalVisits}</span>
+            </div>
+            <div className="stat-cell">
+              <span className="stat-label">Sites</span>
+              <span className="stat-value">{uniqueDomainsCount}</span>
+            </div>
+          </section>
+        </div>
 
-              return (
-                <div className="domain-row" key={item.domain}>
-                  <div className="domain-row-meta">
-                    <span className="domain-row-name" title={item.domain}>{idx + 1}. {item.domain}</span>
-                    <span className="domain-row-duration">{formatDuration(item.durationMs)}</span>
-                  </div>
-                  <div className="bar-track" aria-hidden="true">
-                    <div className="bar-fill" style={{ width: `${fillPct}%` }}></div>
-                  </div>
+        <div className="right-column">
+          {/* Domains list */}
+          <section className="domains-section" aria-label="Top active domains for today">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <h2 className="section-title">Top Sites Today</h2>
+              <div className="controls-section" style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  className="dashboard-btn" 
+                  onClick={handleOpenDashboard} 
+                  title="Open Analytics Dashboard"
+                  aria-label="Open full analytics dashboard in options page"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M21 9H3M21 15H3M12 3v18" />
+                  </svg>
+                </button>
+                
+                <label className="switch" title={trackingPaused ? "Resume tracking" : "Pause tracking"}>
+                  <input 
+                    type="checkbox" 
+                    checked={trackingPaused} 
+                    onChange={handlePauseToggle}
+                    aria-label="Toggle active browsing session tracking"
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+            </div>
+            {topDomains.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                <p className="empty-text-title">No Activity Logged</p>
+                <p className="empty-text-desc">Start visiting web sites. Your data stays securely stored on this local device only.</p>
+              </div>
+            ) : (
+              <div className="domains-list">
+                {topDomains.map((item, idx) => {
+                  // Bar width relative to the maximum domain duration
+                  const maxDuration = Math.max(...topDomains.map(t => t.durationMs));
+                  const fillPct = maxDuration > 0 ? (item.durationMs / maxDuration) * 100 : 0;
+
+                  return (
+                    <div className="domain-row" key={item.domain}>
+                      <div className="domain-row-meta">
+                        <span className="domain-row-name" title={item.domain}>{idx + 1}. {item.domain}</span>
+                        <span className="domain-row-duration">{formatDuration(item.durationMs)}</span>
+                      </div>
+                      <div className="bar-track" aria-hidden="true">
+                        <div className="bar-fill" style={{ width: `${fillPct}%` }}></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
 
       {/* Footer information section */}
       <footer className="popup-footer">
