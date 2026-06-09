@@ -339,16 +339,22 @@ export default function AnalyticsDashboard() {
   const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
   const [iconStyle, setIconStyle] = useState<IconStyleType>("minimal");
   const [blobStyle, setBlobStyle] = useState<"glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light">("glass-dark");
+  const [blobEnabled, setBlobEnabled] = useState<boolean>(true);
+  const [dailyLimitHours, setDailyLimitHours] = useState<number>(4);
 
   // Load and apply theme on startup
   useEffect(() => {
-    chrome.storage.local.get(["theme", "iconStyle", "blobStyle"], (res) => {
+    chrome.storage.local.get(["theme", "iconStyle", "blobStyle", "blobEnabled", "dailyLimitHours"], (res) => {
       const savedTheme = res.theme || "system";
       const savedIconStyle = res.iconStyle || "minimal";
       const savedBlobStyle = res.blobStyle || "glass-dark";
+      const savedBlobEnabled = res.blobEnabled !== undefined ? res.blobEnabled : true;
+      const savedDailyLimit = res.dailyLimitHours || 4;
       setTheme(savedTheme);
       setIconStyle(savedIconStyle);
       setBlobStyle(savedBlobStyle);
+      setBlobEnabled(savedBlobEnabled);
+      setDailyLimitHours(savedDailyLimit);
       applyTheme(savedTheme);
     });
   }, []);
@@ -377,6 +383,16 @@ export default function AnalyticsDashboard() {
   const handleBlobStyleChange = (newStyle: string) => {
     setBlobStyle(newStyle as "glass-dark" | "glass-light" | "brutalist-dark" | "brutalist-light");
     chrome.storage.local.set({ blobStyle: newStyle });
+  };
+
+  const handleBlobEnabledChange = (enabled: boolean) => {
+    setBlobEnabled(enabled);
+    chrome.storage.local.set({ blobEnabled: enabled });
+  };
+
+  const handleDailyLimitChange = (hours: number) => {
+    setDailyLimitHours(hours);
+    chrome.storage.local.set({ dailyLimitHours: hours });
   };
 
   // Apply Detox Mode to the Dashboard
@@ -2249,63 +2265,117 @@ export default function AnalyticsDashboard() {
 
         {activeTab === "settings" && (
         <section className="settings-panel-layout tab-panel" aria-label="Settings and Data Control">
-            {/* Theme card */}
-            <div className="settings-card" style={{ flexWrap: "wrap" }}>
-              <div className="settings-card-icon blue" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              </div>
-              <div className="settings-card-body">
-                <h3>Theme & Appearance</h3>
-                <p style={{ marginBottom: 12 }}>Select your preferred user interface appearance and iconography style.</p>
-                <div className="theme-selector-group" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '16px' }}>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Iconography Style</span>
-                    <CustomDropdown
-                      value={iconStyle}
-                      onChange={handleIconStyleChange}
-                      options={[
-                        { id: 'minimal', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Minimal</div> },
-                        { id: 'playful', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Playful</div> },
-                        { id: 'neon', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Neon</div> },
-                        { id: 'corporate', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Corporate</div> }
-                      ]}
-                    />
+            {/* Appearance Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+              
+              {/* Dashboard Appearance */}
+              <div className="settings-card" style={{ margin: 0, flexDirection: 'column', alignItems: 'flex-start', padding: '16px 20px', gap: 0 }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                  <div className="settings-card-icon orange" aria-hidden="true" style={{ margin: 0, width: '40px', height: '40px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Widget Appearance</span>
-                    <CustomDropdown
-                      value={blobStyle}
-                      onChange={handleBlobStyleChange}
-                      options={[
-                        { id: 'glass-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg> Glass Dark</div> },
-                        { id: 'glass-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Glass Light</div> },
-                        { id: 'brutalist-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Brutalist Dark</div> },
-                        { id: 'brutalist-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Brutalist Light</div> }
-                      ]}
-                    />
+                  <h3 style={{ margin: 0, fontSize: '16px' }}>Dashboard Preferences</h3>
+                </div>
+                <div className="settings-card-body" style={{ width: '100%' }}>
+                  <p style={{ marginBottom: 16, fontSize: '13px' }}>Configure your dashboard UI and daily tracking goals.</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Iconography Style</span>
+                      <div style={{ width: '170px' }}>
+                        <CustomDropdown
+                          width="100%"
+                          value={iconStyle}
+                          onChange={handleIconStyleChange}
+                          options={[
+                            { id: 'minimal', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Minimal</div> },
+                            { id: 'playful', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Playful</div> },
+                            { id: 'neon', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Neon</div> },
+                            { id: 'corporate', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Corporate</div> }
+                          ]}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Daily Goal Limit</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.8 }}>Target hours per day</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <input 
+                            type="range" 
+                            min="1" 
+                            max="8" 
+                            step="1"
+                            value={dailyLimitHours} 
+                            onChange={(e) => handleDailyLimitChange(parseInt(e.target.value))}
+                            className="elegant-slider"
+                          />
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', width: '28px', textAlign: 'right' }}>{dailyLimitHours}h</span>
+                        </div>
+                      </div>
+                      
+                      {dailyLimitHours >= 5 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b', fontSize: '12px', background: 'rgba(245, 158, 11, 0.1)', padding: '6px 10px', borderRadius: '6px', marginTop: '4px' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          <span>High target! Consider aiming for more offline breaks.</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="settings-card-illus" aria-hidden="true">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" fill="rgba(59,130,246,0.08)" />
-                  <rect x="18" y="22" width="44" height="32" rx="4" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" strokeWidth="1.5"/>
-                  <rect x="22" y="26" width="36" height="20" rx="2" fill="rgba(59,130,246,0.08)"/>
-                  <circle cx="32" cy="36" r="7" fill="rgba(59,130,246,0.25)" stroke="#3b82f6" strokeWidth="1"/>
-                  <line x1="42" y1="30" x2="54" y2="30" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="42" y1="34" x2="52" y2="34" stroke="rgba(59,130,246,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="54" cy="54" r="4" fill="rgba(59,130,246,0.3)"/>
-                  <circle cx="66" cy="30" r="3" fill="rgba(59,130,246,0.2)"/>
-                </svg>
+
+              {/* Floating Widget card */}
+              <div className="settings-card" style={{ margin: 0, flexDirection: 'column', alignItems: 'flex-start', padding: '16px 20px', gap: 0 }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                  <div className="settings-card-icon blue" aria-hidden="true" style={{ margin: 0, width: '40px', height: '40px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '16px' }}>Floating Widget</h3>
+                </div>
+                <div className="settings-card-body" style={{ width: '100%' }}>
+                  <p style={{ marginBottom: 16, fontSize: '13px' }}>Manage the on-page active tracking indicator.</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--surface2)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>Enable Widget</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Show floating blob</span>
+                      </div>
+                      <label className="toggle-switch">
+                        <input type="checkbox" checked={blobEnabled} onChange={(e) => handleBlobEnabledChange(e.target.checked)} />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: blobEnabled ? 1 : 0.5, pointerEvents: blobEnabled ? 'auto' : 'none', transition: 'opacity 0.2s', padding: '0 4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Widget Style</span>
+                      <div style={{ width: '170px' }}>
+                        <CustomDropdown
+                          width="100%"
+                          value={blobStyle}
+                          onChange={handleBlobStyleChange}
+                          options={[
+                            { id: 'glass-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg> Glass Dark</div> },
+                            { id: 'glass-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Glass Light</div> },
+                            { id: 'brutalist-dark', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Brutalist Dark</div> },
+                            { id: 'brutalist-light', label: <div style={{display:'flex',alignItems:'center',gap:'8px'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Brutalist Light</div> }
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Privacy card */}
             <div className="settings-card">
-              <div className="settings-card-icon purple" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b57e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div className="settings-card-icon green" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
               <div className="settings-card-body">
                 <h3>Privacy &amp; Local-First Policy</h3>
@@ -2313,13 +2383,13 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="settings-card-illus" aria-hidden="true">
                 <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" fill="rgba(91,87,230,0.08)" />
-                  <rect x="22" y="34" width="36" height="26" rx="4" fill="rgba(91,87,230,0.15)" stroke="#5b57e6" strokeWidth="1.5"/>
-                  <path d="M30 34V28a10 10 0 0 1 20 0v6" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="40" cy="47" r="4" fill="#5b57e6"/>
-                  <line x1="40" y1="51" x2="40" y2="55" stroke="#5b57e6" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="58" cy="24" r="3" fill="rgba(91,87,230,0.3)"/>
-                  <circle cx="20" cy="56" r="2" fill="rgba(91,87,230,0.2)"/>
+                  <circle cx="40" cy="40" r="36" fill="rgba(16,185,129,0.08)" />
+                  <rect x="22" y="34" width="36" height="26" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="1.5"/>
+                  <path d="M30 34V28a10 10 0 0 1 20 0v6" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="40" cy="47" r="4" fill="#10b981"/>
+                  <line x1="40" y1="51" x2="40" y2="55" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="58" cy="24" r="3" fill="rgba(16,185,129,0.3)"/>
+                  <circle cx="20" cy="56" r="2" fill="rgba(16,185,129,0.2)"/>
                 </svg>
               </div>
             </div>
@@ -2431,8 +2501,8 @@ export default function AnalyticsDashboard() {
 
             {/* Storage card */}
             <div className="settings-card">
-              <div className="settings-card-icon green" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <div className="settings-card-icon purple" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
               </div>
               <div className="settings-card-body">
                 <h3>Local Storage Behavior</h3>
@@ -2440,11 +2510,11 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="settings-card-illus" aria-hidden="true">
                 <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" fill="rgba(16,185,129,0.08)" />
-                  <ellipse cx="40" cy="28" rx="18" ry="6" fill="rgba(16,185,129,0.2)" stroke="#10b981" strokeWidth="1.5"/>
-                  <path d="M22 28v10c0 3.31 8.06 6 18 6s18-2.69 18-6V28" stroke="#10b981" strokeWidth="1.5"/>
-                  <path d="M22 38v10c0 3.31 8.06 6 18 6s18-2.69 18-6V38" stroke="#10b981" strokeWidth="1.5"/>
-                  <circle cx="52" cy="53" r="8" fill="rgba(16,185,129,0.9)"/>
+                  <circle cx="40" cy="40" r="36" fill="rgba(139,92,246,0.08)" />
+                  <ellipse cx="40" cy="28" rx="18" ry="6" fill="rgba(139,92,246,0.2)" stroke="#8b5cf6" strokeWidth="1.5"/>
+                  <path d="M22 28v10c0 3.31 8.06 6 18 6s18-2.69 18-6V28" stroke="#8b5cf6" strokeWidth="1.5"/>
+                  <path d="M22 38v10c0 3.31 8.06 6 18 6s18-2.69 18-6V38" stroke="#8b5cf6" strokeWidth="1.5"/>
+                  <circle cx="52" cy="53" r="8" fill="rgba(139,92,246,0.9)"/>
                   <path d="M49 53l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
@@ -2494,14 +2564,56 @@ export default function AnalyticsDashboard() {
         {activeTab === "about" && (
           <section className="settings-panel-layout tab-panel" aria-label="About the Extension">
             {/* Project Overview */}
-            <div className="settings-card">
-              <div className="settings-card-icon blue" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div className="settings-card" style={{ padding: '32px' }}>
+              <div className="settings-card-icon blue" aria-hidden="true" style={{ width: '64px', height: '64px', borderRadius: '16px', fontSize: '32px', marginBottom: '20px' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               </div>
-              <div className="settings-card-body">
-                <h3>Local Browse Analytics</h3>
-                <p style={{ marginBottom: '8px' }}>Version 1.0.0</p>
-                <p>A completely private, local-first browser extension designed to help you analyze your browsing habits, enforce productivity rules, and stay focused—all without sending a single byte of telemetry to external servers.</p>
+              <div className="settings-card-body" style={{ width: '100%' }}>
+                <h3 style={{ fontSize: '24px', marginBottom: '8px' }}>Local Browse Insights</h3>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
+                  <span style={{ padding: '4px 10px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: '16px', fontSize: '13px', fontWeight: 600 }}>v1.0.0</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Release: June 2026</span>
+                </div>
+                <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--text)', marginBottom: '16px' }}>A completely private, local-first browser extension designed to help you analyze your browsing habits, enforce productivity rules, and stay focused. Engineered from the ground up for privacy, speed, and beautiful aesthetics.</p>
+                
+                <h4 style={{ fontSize: '14px', color: 'var(--text)', marginTop: '24px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Zero Telemetry Guarantee</h4>
+                <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>Unlike cloud-based analytics, this extension never connects to an external database. All tracking data, browsing history, and classification rules are written directly to your browser's internal IndexedDB. You own your data. We have absolutely no way to access it.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {/* Architecture stack */}
+              <div className="settings-card">
+                 <div className="settings-card-icon green" aria-hidden="true">
+                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                 </div>
+                 <div className="settings-card-body">
+                   <h3>Architecture & Technology</h3>
+                   <p style={{ marginBottom: '16px' }}>Built using modern, secure web technologies running directly in your browser:</p>
+                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                     <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>React 18</span>
+                     <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>TypeScript</span>
+                     <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Plasmo Framework</span>
+                     <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Dexie.js (IndexedDB)</span>
+                     <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Recharts</span>
+                   </div>
+                 </div>
+              </div>
+
+              {/* Acknowledgements */}
+              <div className="settings-card">
+                 <div className="settings-card-icon orange" aria-hidden="true">
+                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                 </div>
+                 <div className="settings-card-body">
+                   <h3>Open Source Credits</h3>
+                   <p style={{ marginBottom: '16px' }}>This project stands on the shoulders of giants. We utilize several incredible open-source libraries to deliver a seamless experience:</p>
+                   <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.6 }}>
+                     <li><strong>Lucide Icons</strong> for beautiful, crisp vector iconography.</li>
+                     <li><strong>Recharts</strong> for robust, declarative data visualization.</li>
+                     <li><strong>Dexie.js</strong> for reliable, high-performance local database wrappers.</li>
+                   </ul>
+                 </div>
               </div>
             </div>
 
@@ -2511,8 +2623,8 @@ export default function AnalyticsDashboard() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div className="settings-card-body">
-                <h3>Author & Creator</h3>
-                <p style={{ marginBottom: '12px' }}>Created with ❤️ by <strong>Deekshith-goud</strong>.</p>
+                <h3>Author & Maintainer</h3>
+                <p style={{ marginBottom: '16px' }}>This analytics engine was architected and developed entirely by <strong>Deekshith-goud</strong> as an open, private alternative to invasive cloud tracking platforms.</p>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <a href="https://github.com/Deekshith-goud" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -2520,23 +2632,6 @@ export default function AnalyticsDashboard() {
                   </a>
                 </div>
               </div>
-            </div>
-
-            {/* Architecture stack */}
-            <div className="settings-card">
-               <div className="settings-card-icon green" aria-hidden="true">
-                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-               </div>
-               <div className="settings-card-body">
-                 <h3>Architecture & Stack</h3>
-                 <p style={{ marginBottom: '16px' }}>Built using modern, secure web technologies:</p>
-                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>React 18</span>
-                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>TypeScript</span>
-                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Plasmo Framework</span>
-                   <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Dexie.js (IndexedDB)</span>
-                 </div>
-               </div>
             </div>
           </section>
         )}

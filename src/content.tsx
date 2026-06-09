@@ -39,6 +39,7 @@ export default function BlobContent() {
   const [uiState, setUiState] = useState<UIState>("collapsed");
 
   const [blobStyle, setBlobStyle] = useState<"glass" | "brutalist">("glass");
+  const [blobEnabled, setBlobEnabled] = useState<boolean>(true);
 
   // Live aggregated stats from background
   const [stats, setStats] = useState<TodayStatsResponse & { _fetchedAt?: number }>({
@@ -137,9 +138,12 @@ export default function BlobContent() {
     setIsSensitive(false);
 
     // Load persisted coordinates from chrome.storage.local
-    chrome.storage.local.get(["blob_ui_state", "blobStyle"], (result) => {
+    chrome.storage.local.get(["blob_ui_state", "blobStyle", "blobEnabled"], (result) => {
       if (result.blobStyle) {
         setBlobStyle(result.blobStyle as "glass" | "brutalist");
+      }
+      if (result.blobEnabled !== undefined) {
+        setBlobEnabled(result.blobEnabled);
       }
       const saved = validateBlobUIState(result.blob_ui_state);
       // Verify against window size to avoid offscreen positioning on lower res
@@ -175,8 +179,13 @@ export default function BlobContent() {
   // Listen for blob style changes dynamically
   useEffect(() => {
     const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
-      if (areaName === "local" && changes.blobStyle) {
-        setBlobStyle(changes.blobStyle.newValue as "glass" | "brutalist");
+      if (areaName === "local") {
+        if (changes.blobStyle) {
+          setBlobStyle(changes.blobStyle.newValue as "glass" | "brutalist");
+        }
+        if (changes.blobEnabled) {
+          setBlobEnabled(changes.blobEnabled.newValue);
+        }
       }
     };
     chrome.storage.onChanged.addListener(handleStorageChange);
@@ -351,10 +360,10 @@ export default function BlobContent() {
     return () => window.removeEventListener("resize", handleResize);
   }, [clampPosition]);
 
-  // Return empty immediately if site is marked as high-sensitivity
-  if (isSensitive) {
-    return null;
-  }
+  // 5. Early Returns for hidden states
+  if (isSensitive) return null;
+  if (!blobEnabled) return null;
+  if (uiState === "hidden") return null;
 
   // 5. Drag & Drop mouse sequence utilizing requestAnimationFrame
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

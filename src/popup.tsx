@@ -102,20 +102,27 @@ export default function Popup() {
   const [isDetoxModeEnabled, setIsDetoxModeEnabled] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [dailyLimitHours, setDailyLimitHours] = useState<number>(4);
 
   // Load and apply theme on startup
   useEffect(() => {
-    chrome.storage.local.get(["theme", "isDetoxModeEnabled"], (res) => {
+    chrome.storage.local.get(["theme", "isDetoxModeEnabled", "dailyLimitHours"], (res) => {
       const savedTheme = res.theme || "system";
       applyTheme(savedTheme);
       if (res.isDetoxModeEnabled !== undefined) {
         setIsDetoxModeEnabled(res.isDetoxModeEnabled);
+      }
+      if (res.dailyLimitHours !== undefined) {
+        setDailyLimitHours(res.dailyLimitHours);
       }
     });
 
     const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }) => {
       if (changes.theme) {
         applyTheme(changes.theme.newValue || "system");
+      }
+      if (changes.dailyLimitHours) {
+        setDailyLimitHours(changes.dailyLimitHours.newValue);
       }
     };
     chrome.storage.onChanged.addListener(handleStorageChange);
@@ -250,8 +257,8 @@ export default function Popup() {
   const totalVisits = todayTotals.totalVisits;
   const uniqueDomainsCount = todayTotals.uniqueDomainsCount;
 
-  // Visual Target Goal Progress circle (Target: 4 hours daily productivity limit = 14,400,000 ms)
-  const targetMs = 4 * 60 * 60 * 1000;
+  // Visual Target Goal Progress circle
+  const targetMs = dailyLimitHours * 60 * 60 * 1000;
   const progressPercent = Math.min(100, Math.round((totalDurationMs / targetMs) * 100));
 
   // Circular gauge stroke-dasharray properties: radius = 24, circumference = 150
