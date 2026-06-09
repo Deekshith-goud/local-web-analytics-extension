@@ -179,6 +179,31 @@ export default function BlobContent() {
     return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
+  // Dopamine Detox (Grayscale) CSS Injection
+  useEffect(() => {
+    const updateDetoxStyle = (enabled: boolean) => {
+      if (enabled) {
+        document.documentElement.style.setProperty('filter', 'grayscale(100%)', 'important');
+        document.documentElement.style.setProperty('transition', 'filter 0.8s ease-in-out', 'important');
+      } else {
+        document.documentElement.style.removeProperty('filter');
+        document.documentElement.style.removeProperty('transition');
+      }
+    };
+
+    chrome.storage.local.get(["isDetoxModeEnabled"], (res) => {
+      updateDetoxStyle(!!res.isDetoxModeEnabled);
+    });
+
+    const handleStorage = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area === "local" && changes.isDetoxModeEnabled) {
+        updateDetoxStyle(changes.isDetoxModeEnabled.newValue);
+      }
+    };
+    chrome.storage.onChanged.addListener(handleStorage);
+    return () => chrome.storage.onChanged.removeListener(handleStorage);
+  }, []);
+
   // 2. Poll aggregates VERY sparsely (every 30s only when expanded)
   useEffect(() => {
     if (uiState !== "expanded") return;

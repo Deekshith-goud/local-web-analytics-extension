@@ -165,31 +165,34 @@ input:focus-visible {
 }
 
 /* Pause Toggle and Action Buttons */
+/* Controls section: Dashboard, Detox, Tracking Switch */
 .controls-section {
   display: flex;
+  gap: 8px;
   align-items: center;
-  gap: 10px;
 }
 
 .dashboard-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .dashboard-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+  background: var(--bg-glass);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
 }
 
-/* Toggle Switch Styling */
+/* Pause Tracking Switch */
 .switch {
   position: relative;
   display: inline-block;
@@ -397,12 +400,58 @@ input:checked + .slider:before {
 }
 
 .stat-value {
-  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-/* Top Domains list visualizer */
+/* Dopamine Detox Action Bar */
+.detox-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: auto; /* pushes it down to fill the gap */
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-medium);
+  width: 100%;
+}
+
+.detox-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--text-muted);
+}
+
+.detox-bar-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.detox-text {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.detox-bar-btn:hover .detox-text {
+  color: var(--text-primary);
+}
+
+.detox-bar-btn.active .detox-text {
+  color: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* RIGHT COLUMN & DOMAINS LIST */
+/* ───────────────────────────────────────────────────────────── */
 .domains-section {
   display: flex;
   flex-direction: column;

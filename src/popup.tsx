@@ -99,14 +99,18 @@ const PomodoroClock: React.FC<{ pomodoro: PomodoroState }> = ({ pomodoro }) => {
 export default function Popup() {
   const [snapshot, setSnapshot] = useState<PopupSnapshotResponse | null>(null);
   const [pomodoro, setPomodoro] = useState<PomodoroState | null>(null);
+  const [isDetoxModeEnabled, setIsDetoxModeEnabled] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Load and apply theme on startup
   useEffect(() => {
-    chrome.storage.local.get(["theme"], (res) => {
+    chrome.storage.local.get(["theme", "isDetoxModeEnabled"], (res) => {
       const savedTheme = res.theme || "system";
       applyTheme(savedTheme);
+      if (res.isDetoxModeEnabled !== undefined) {
+        setIsDetoxModeEnabled(res.isDetoxModeEnabled);
+      }
     });
 
     const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }) => {
@@ -198,6 +202,13 @@ export default function Popup() {
   // Triggers Plasmo centralized tab routing to the premium analytics dashboard
   const handleOpenDashboard = () => {
     openDashboard();
+  };
+
+  const handleDetoxToggle = () => {
+    const newState = !isDetoxModeEnabled;
+    chrome.storage.local.set({ isDetoxModeEnabled: newState }, () => {
+      setIsDetoxModeEnabled(newState);
+    });
   };
 
   const handlePomodoroAction = (action: "START_POMODORO" | "PAUSE_POMODORO" | "RESUME_POMODORO" | "STOP_POMODORO", phase?: "focus" | "break") => {
@@ -352,6 +363,18 @@ export default function Popup() {
               <span className="stat-value">{uniqueDomainsCount}</span>
             </div>
           </section>
+
+          {/* Dopamine Detox Action Bar */}
+          <button 
+            className={`detox-bar-btn ${isDetoxModeEnabled ? 'active' : ''}`}
+            onClick={handleDetoxToggle}
+            title="Toggle Dopamine Detox (Grayscale Mode)"
+            aria-label="Toggle Grayscale Dopamine Detox Mode"
+            aria-pressed={isDetoxModeEnabled}
+          >
+            <span aria-hidden="true" style={{ filter: isDetoxModeEnabled ? 'grayscale(100%)' : 'none', fontSize: '14px' }}>☯️</span> 
+            <span className="detox-text">{isDetoxModeEnabled ? 'DETOX MODE ACTIVE' : 'ENABLE DOPAMINE DETOX'}</span>
+          </button>
         </div>
 
         <div className="right-column">
@@ -359,7 +382,7 @@ export default function Popup() {
           <section className="domains-section" aria-label="Top active domains for today">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
               <h2 className="section-title">Top Sites Today</h2>
-              <div className="controls-section" style={{ display: 'flex', gap: '8px' }}>
+              <div className="controls-section" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button 
                   className="dashboard-btn" 
                   onClick={handleOpenDashboard} 
