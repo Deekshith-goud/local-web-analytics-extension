@@ -4,10 +4,12 @@ import "../style.css";
 
 const createSmoothPath = (points: [number, number][]) => {
   if (points.length === 0) return "";
-  let d = `M ${points[0][0]},${points[0][1]}`;
+  let d = `M ${points[0]![0]},${points[0]![1]}`;
   for (let i = 0; i < points.length - 1; i++) {
-    const x_mid = (points[i][0] + points[i + 1][0]) / 2;
-    d += ` C ${x_mid},${points[i][1]} ${x_mid},${points[i + 1][1]} ${points[i + 1][0]},${points[i + 1][1]}`;
+    const p1 = points[i]!;
+    const p2 = points[i + 1]!;
+    const x_mid = (p1[0] + p2[0]) / 2;
+    d += ` C ${x_mid},${p1[1]} ${x_mid},${p2[1]} ${p2[0]},${p2[1]}`;
   }
   return d;
 };
@@ -15,7 +17,7 @@ const createSmoothPath = (points: [number, number][]) => {
 const createAreaPath = (points: [number, number][], bottomY: number) => {
   if (points.length === 0) return "";
   const linePath = createSmoothPath(points);
-  return `${linePath} L ${points[points.length - 1][0]},${bottomY} L ${points[0][0]},${bottomY} Z`;
+  return `${linePath} L ${points[points.length - 1]![0]},${bottomY} L ${points[0]![0]},${bottomY} Z`;
 };
 
 export default function ReportPage() {

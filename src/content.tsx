@@ -49,7 +49,6 @@ export default function BlobContent() {
   });
 
   // Ticking time derived locally in-memory (0 messages sent)
-  const [localLiveDurationMs, setLocalLiveDurationMs] = useState<number>(0);
   const [activeDomainTodayLiveMs, setActiveDomainTodayLiveMs] = useState<number>(0);
 
   // Position attributes
@@ -303,7 +302,6 @@ export default function BlobContent() {
     // If we are NOT the globally active tracking session (e.g., user is on another tab/window),
     // we freeze the ticker and display the last known database total for this domain.
     if (!active || active.domain !== currentDomain) {
-      setLocalLiveDurationMs(0);
       const staticDomainStat = stats.topDomains.find(d => d.domain === currentDomain);
       setActiveDomainTodayLiveMs(staticDomainStat ? staticDomainStat.durationMs : 0);
       return;
@@ -312,7 +310,6 @@ export default function BlobContent() {
     // Set initial duration
     const computeDuration = () => {
       const elapsed = Math.max(0, Date.now() - active.startTime);
-      setLocalLiveDurationMs(elapsed);
       
       const fetchedAt = stats._fetchedAt || Date.now();
       const baseDbTotalApprox = active.todayTotalMs - Math.max(0, fetchedAt - active.startTime);

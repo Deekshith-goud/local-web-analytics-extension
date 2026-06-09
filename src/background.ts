@@ -453,7 +453,7 @@ async function getLiveTodayStats(): Promise<TodayStatsResponse> {
 
   // 2. Query in-memory live tracking state
   const active = engine.getActiveSession();
-  let activeSessionPayload = active
+  const activeSessionPayload = active
     ? { domain: active.domain, startTime: active.startTime, todayTotalMs: 0 }
     : null;
 
@@ -475,7 +475,7 @@ async function getLiveTodayStats(): Promise<TodayStatsResponse> {
     totalDurationMs += elapsed;
     uniqueDomains.add(active.domain);
     domainDurations[active.domain] = (domainDurations[active.domain] ?? 0) + elapsed;
-    activeSessionPayload.todayTotalMs = domainDurations[active.domain];
+    activeSessionPayload.todayTotalMs = domainDurations[active.domain] ?? 0;
   }
 
   // Map to list, sort descending by duration
@@ -570,7 +570,7 @@ async function getLivePopupSnapshot(
 
   let finalUniqueDomainsCount = uniqueDomainsCount;
 
-  let finalActiveSession = activeSession ? { ...activeSession, todayTotalMs: 0 } : null;
+  const finalActiveSession = activeSession ? { ...activeSession, todayTotalMs: 0 } : null;
 
   if (activeSession && finalActiveSession) {
     const elapsed = Math.max(0, now - activeSession.startTime);
@@ -581,7 +581,7 @@ async function getLivePopupSnapshot(
       finalUniqueDomainsCount += 1;
     }
     domainDurations[activeSession.domain] = (domainDurations[activeSession.domain] ?? 0) + elapsed;
-    finalActiveSession.todayTotalMs = domainDurations[activeSession.domain];
+    finalActiveSession.todayTotalMs = domainDurations[activeSession.domain] ?? 0;
   }
 
   const topDomains = Object.entries(domainDurations)

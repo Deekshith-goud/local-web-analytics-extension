@@ -884,7 +884,7 @@ export default function AnalyticsDashboard() {
       updatedRules = updatedRules.filter(r => r.domain !== domain);
       updatedRules.push({
         domain,
-        category,
+        category: category!,
         priority: 1,
         createdAt: Date.now()
       });

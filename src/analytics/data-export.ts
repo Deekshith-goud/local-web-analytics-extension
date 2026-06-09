@@ -119,8 +119,8 @@ async function generateCsvReport(range: ExportDateRange, customStart?: number, c
     if (!statsMap[key]) {
       statsMap[key] = { date: dateStr, domain: a.domain, durationMs: 0, visitCount: 0 };
     }
-    statsMap[key].durationMs += a.durationMs;
-    statsMap[key].visitCount += 1;
+    statsMap[key]!.durationMs += a.durationMs;
+    statsMap[key]!.visitCount += 1;
   });
 
   const stats = Object.values(statsMap);
