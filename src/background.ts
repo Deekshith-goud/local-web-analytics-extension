@@ -63,6 +63,19 @@ const classifier = new ProductivityClassifier([]);
 (async () => {
   try {
     await engine.initialize();
+    
+    // Broadcast a state sync to all tabs when a new tracking session begins.
+    // This allows content scripts to perfectly resume their local timers without phantom ticking.
+    engine.events.on("session-started", () => {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, { type: "SYNC_REQUESTED", version: 1 }).catch(() => {});
+          }
+        });
+      });
+    });
+
     await pomodoroEngine.initialize();
     logger.info("[Background] All async engines initialized successfully.");
   } catch (err) {
@@ -440,8 +453,8 @@ async function getLiveTodayStats(): Promise<TodayStatsResponse> {
 
   // 2. Query in-memory live tracking state
   const active = engine.getActiveSession();
-  const activeSessionPayload = active
-    ? { domain: active.domain, startTime: active.startTime }
+  let activeSessionPayload = active
+    ? { domain: active.domain, startTime: active.startTime, todayTotalMs: 0 }
     : null;
 
   // 3. Build aggregated structures
@@ -457,11 +470,12 @@ async function getLiveTodayStats(): Promise<TodayStatsResponse> {
   }
 
   // Add live active tracking session duration
-  if (active) {
+  if (active && activeSessionPayload) {
     const elapsed = Math.max(0, now - active.startTime);
     totalDurationMs += elapsed;
     uniqueDomains.add(active.domain);
     domainDurations[active.domain] = (domainDurations[active.domain] ?? 0) + elapsed;
+    activeSessionPayload.todayTotalMs = domainDurations[active.domain];
   }
 
   // Map to list, sort descending by duration
@@ -556,7 +570,9 @@ async function getLivePopupSnapshot(
 
   let finalUniqueDomainsCount = uniqueDomainsCount;
 
-  if (activeSession) {
+  let finalActiveSession = activeSession ? { ...activeSession, todayTotalMs: 0 } : null;
+
+  if (activeSession && finalActiveSession) {
     const elapsed = Math.max(0, now - activeSession.startTime);
     totalDurationMs += elapsed;
     totalVisits += 1;
@@ -565,6 +581,7 @@ async function getLivePopupSnapshot(
       finalUniqueDomainsCount += 1;
     }
     domainDurations[activeSession.domain] = (domainDurations[activeSession.domain] ?? 0) + elapsed;
+    finalActiveSession.todayTotalMs = domainDurations[activeSession.domain];
   }
 
   const topDomains = Object.entries(domainDurations)
@@ -574,7 +591,7 @@ async function getLivePopupSnapshot(
 
   return {
     trackingPaused,
-    activeSession,
+    activeSession: finalActiveSession,
     todayTotals: {
       totalDurationMs,
       totalVisits,

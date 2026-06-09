@@ -1,10 +1,10 @@
 import { logger } from "./logger";
 
 /**
- * Normalizes a domain name by removing leading and trailing dots and lowercase conversion.
+ * Normalizes a domain name by removing leading/trailing dots, lowercase conversion, and stripping www.
  */
 export function normalizeDomain(domain: string): string {
-  return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, "");
+  return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, "").replace(/^www\./, "");
 }
 
 /**

@@ -41,7 +41,7 @@ export default function BlobContent() {
   const [blobStyle, setBlobStyle] = useState<"glass" | "brutalist">("glass");
 
   // Live aggregated stats from background
-  const [stats, setStats] = useState<TodayStatsResponse>({
+  const [stats, setStats] = useState<TodayStatsResponse & { _fetchedAt?: number }>({
     activeSession: null,
     totalDurationMs: 0,
     uniqueDomainsCount: 0,
@@ -50,6 +50,7 @@ export default function BlobContent() {
 
   // Ticking time derived locally in-memory (0 messages sent)
   const [localLiveDurationMs, setLocalLiveDurationMs] = useState<number>(0);
+  const [activeDomainTodayLiveMs, setActiveDomainTodayLiveMs] = useState<number>(0);
 
   // Position attributes
   const [position, setPosition] = useState<BlobUIState>({
@@ -105,7 +106,7 @@ export default function BlobContent() {
           return;
         }
         if (response) {
-          setStats(response);
+          setStats({ ...response, _fetchedAt: Date.now() });
         }
       }
     );
@@ -156,12 +157,16 @@ export default function BlobContent() {
     // Load base today stats from background
     fetchFreshStats();
 
-    // Listen for Pomodoro notifications
+    // Listen for Pomodoro notifications and Background State Syncs
     const handleMessage = (msg: Record<string, unknown>) => {
       if (msg.type === "SHOW_POMODORO_NOTIFICATION" && msg.version === 1) {
         setPomodoroAlert({ title: msg.title as string, message: msg.message as string, phase: msg.phase as string });
         // The CSS animation handles hiding after 6s. We just clean up state slightly after to allow animation to complete.
         setTimeout(() => setPomodoroAlert(null), 6500);
+      }
+      
+      if (msg.type === "SYNC_REQUESTED" && msg.version === 1) {
+        fetchFreshStats();
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);
@@ -214,6 +219,23 @@ export default function BlobContent() {
 
     return () => clearInterval(interval);
   }, [uiState, fetchFreshStats]);
+
+  // 2a. Immediately fetch fresh stats when the tab comes back into focus
+  // This ensures the local tracker doesn't falsely tick when inactive, and syncs immediately on return.
+  useEffect(() => {
+    const handleActiveChange = () => {
+      if (document.visibilityState === "visible" || document.hasFocus()) {
+        fetchFreshStats();
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleActiveChange);
+    window.addEventListener("focus", handleActiveChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleActiveChange);
+      window.removeEventListener("focus", handleActiveChange);
+    };
+  }, [fetchFreshStats]);
 
   // 2b. Poll Time Limit State
   useEffect(() => {
@@ -276,8 +298,14 @@ export default function BlobContent() {
   // 3. Local Timer Ticker - derived entirely in-memory at 1s resolution
   useEffect(() => {
     const active = stats.activeSession;
-    if (!active) {
+    const currentDomain = window.location.hostname.replace(/^www\./, "");
+    
+    // If we are NOT the globally active tracking session (e.g., user is on another tab/window),
+    // we freeze the ticker and display the last known database total for this domain.
+    if (!active || active.domain !== currentDomain) {
       setLocalLiveDurationMs(0);
+      const staticDomainStat = stats.topDomains.find(d => d.domain === currentDomain);
+      setActiveDomainTodayLiveMs(staticDomainStat ? staticDomainStat.durationMs : 0);
       return;
     }
 
@@ -285,13 +313,17 @@ export default function BlobContent() {
     const computeDuration = () => {
       const elapsed = Math.max(0, Date.now() - active.startTime);
       setLocalLiveDurationMs(elapsed);
+      
+      const fetchedAt = stats._fetchedAt || Date.now();
+      const baseDbTotalApprox = active.todayTotalMs - Math.max(0, fetchedAt - active.startTime);
+      setActiveDomainTodayLiveMs(Math.max(0, baseDbTotalApprox) + elapsed);
     };
 
     computeDuration();
     const interval = setInterval(computeDuration, 1000);
 
     return () => clearInterval(interval);
-  }, [stats.activeSession]);
+  }, [stats]);
 
   // 4. Global Accessibility & Keyboard Handlers (ESC key close)
   useEffect(() => {
@@ -714,7 +746,7 @@ export default function BlobContent() {
                 <>
                   <span style={{ fontSize: "8px", fontWeight: 700, color: "var(--w-text-accent-dim)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1 }}>live</span>
                   <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--w-text-accent)", fontFamily: "monospace", lineHeight: 1, letterSpacing: "-0.01em" }}>
-                    {formatDuration(localLiveDurationMs)}
+                    {formatDuration(activeDomainTodayLiveMs)}
                   </span>
                 </>
               ) : (
@@ -831,9 +863,9 @@ export default function BlobContent() {
                 {stats.activeSession && (
                   <div style={{ display: "flex", alignItems: "baseline", gap: "5px", marginTop: "4px" }}>
                     <span style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--w-text-accent)", textShadow: "0 0 12px var(--w-glow-color)", fontFamily: "monospace" }}>
-                      {formatDuration(localLiveDurationMs)}
+                      {formatDuration(activeDomainTodayLiveMs)}
                     </span>
-                    <span style={{ fontSize: "9px", color: "var(--w-text-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>this session</span>
+                    <span style={{ fontSize: "9px", color: "var(--w-text-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>today on site</span>
                   </div>
                 )}
               </div>

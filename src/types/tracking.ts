@@ -122,6 +122,7 @@ export interface TodayStatsResponse {
   activeSession: {
     domain: string;
     startTime: number;
+    todayTotalMs: number;
   } | null;
   totalDurationMs: number;
   uniqueDomainsCount: number;
@@ -136,6 +137,7 @@ export interface PopupSnapshotResponse {
   activeSession: {
     domain: string;
     startTime: number;
+    todayTotalMs: number;
   } | null;
   todayTotals: {
     totalDurationMs: number;

@@ -379,6 +379,31 @@ export default function AnalyticsDashboard() {
     chrome.storage.local.set({ blobStyle: newStyle });
   };
 
+  // Apply Detox Mode to the Dashboard
+  useEffect(() => {
+    const updateDetoxStyle = (enabled: boolean) => {
+      if (enabled) {
+        document.documentElement.style.setProperty('filter', 'grayscale(100%)', 'important');
+        document.documentElement.style.setProperty('transition', 'filter 0.8s ease-in-out', 'important');
+      } else {
+        document.documentElement.style.removeProperty('filter');
+        document.documentElement.style.removeProperty('transition');
+      }
+    };
+
+    chrome.storage.local.get(["isDetoxModeEnabled"], (res) => {
+      updateDetoxStyle(!!res.isDetoxModeEnabled);
+    });
+
+    const handleStorage = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area === "local" && changes.isDetoxModeEnabled) {
+        updateDetoxStyle(changes.isDetoxModeEnabled.newValue);
+      }
+    };
+    chrome.storage.onChanged.addListener(handleStorage);
+    return () => chrome.storage.onChanged.removeListener(handleStorage);
+  }, []);
+
   // Keep theme updated if system scheme changes and setting is system
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

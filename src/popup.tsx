@@ -168,6 +168,17 @@ export default function Popup() {
     return () => clearInterval(pollInterval);
   }, [loadSnapshot]);
 
+  // Apply Detox Mode to the Popup itself
+  useEffect(() => {
+    if (isDetoxModeEnabled) {
+      document.documentElement.style.setProperty('filter', 'grayscale(100%)', 'important');
+      document.documentElement.style.setProperty('transition', 'filter 0.8s ease-in-out', 'important');
+    } else {
+      document.documentElement.style.removeProperty('filter');
+      document.documentElement.style.removeProperty('transition');
+    }
+  }, [isDetoxModeEnabled]);
+
   // Handle dynamic tracking pausing toggles
   const handlePauseToggle = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const isPausedDesired = e.target.checked;
