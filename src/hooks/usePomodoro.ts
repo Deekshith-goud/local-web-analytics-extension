@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { PomodoroState, PomodoroSettings } from "../../types/tracking";
+import type { PomodoroState, PomodoroSettings } from "../types/tracking";
 
 export function usePomodoro(activeTab: string) {
   const [pomodoroState, setPomodoroState] = useState<PomodoroState | null>(null);
@@ -69,6 +69,11 @@ export function usePomodoro(activeTab: string) {
     chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
   };
 
+  const updateSettings = (newSettings: PomodoroSettings) => {
+    setPomodoroSettings(newSettings);
+    chrome.runtime.sendMessage({ type: "SAVE_POMODORO_SETTINGS", version: 1, settings: newSettings });
+  };
+
   return {
     pomodoroState,
     pomodoroSettings,
@@ -83,6 +88,7 @@ export function usePomodoro(activeTab: string) {
     handlePomodoroAction,
     handlePomodoroSettingToggle,
     handlePomodoroDurationChange,
-    handlePomodoroMessageChange
+    handlePomodoroMessageChange,
+    updateSettings
   };
 }

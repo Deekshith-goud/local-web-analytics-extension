@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import type { ProductivityRule, TimeLimitRule, ProductivityCategory } from "../../types/tracking";
-import type { RuntimeMessage } from "../../types/tracking";
+import type { ProductivityRule } from "../analytics/productivity-rules";
+import type { ProductivityCategory } from "../analytics/productivity-rules";
+import type { RuntimeMessage, TimeLimitBypass, TimeLimitRule } from "../types/tracking";
 import { validateProductivityRule } from "../analytics/productivity-rules";
 
 export function useProductivityRules(activeTab: string, onRulesChanged: () => void) {
