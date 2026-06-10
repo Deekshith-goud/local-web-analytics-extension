@@ -1,0 +1,64 @@
+/* ── Tokens ── */
+:root {
+  --bg: #f0f1f7;
+  --surface: #ffffff;
+  --surface2: #f8f9fc;
+  --border: #e2e5ef;
+  --text: #1a1d2e;
+  --text2: #6b7280;
+  --text3: #9ca3af;
+  --accent: #5b57e6;
+  --accent-hover: #4340c4;
+  --accent-bg: rgba(91,87,230,0.08);
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,0.1);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.08);
+  --orange: #f59e0b;
+  --orange-bg: rgba(245,158,11,0.1);
+  --track-bg: #e5e7eb;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Playful Theme Variables */
+  --playful-bg-90: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  --playful-color-90: #065f46;
+  --playful-bg-70: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  --playful-color-70: #166534;
+  --playful-bg-50: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  --playful-color-50: #1e40af;
+  --playful-bg-30: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  --playful-color-30: #854d0e;
+  --playful-bg-15: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  --playful-color-15: #991b1b;
+  --playful-bg-0: linear-gradient(135deg, #fecdd3 0%, #fda4af 100%);
+  --playful-color-0: #9f1239;
+}
+
+[data-theme="dark"] {
+  --bg: #030712;
+  --surface: rgba(17, 24, 39, 0.45);
+  --surface2: rgba(30, 41, 59, 0.35);
+  --border: rgba(255, 255, 255, 0.06);
+  --text: #f8fafc;
+  --text2: #cbd5e1;
+  --text-secondary: var(--text2);
+  --text3: #94a3b8;
+  --track-bg: rgba(255, 255, 255, 0.1);
+  --shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.04);
+
+  /* Playful Theme Variables (Dark Mode) */
+  --playful-bg-90: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%);
+  --playful-color-90: #34d399;
+  --playful-bg-70: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.05) 100%);
+  --playful-color-70: #4ade80;
+  --playful-bg-50: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
+  --playful-color-50: #60a5fa;
+  --playful-bg-30: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+  --playful-color-30: #fbbf24;
+  --playful-bg-15: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 100%);
+  --playful-color-15: #f87171;
+  --playful-bg-0: linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(225, 29, 72, 0.05) 100%);
+  --playful-color-0: #fb7185;
+}

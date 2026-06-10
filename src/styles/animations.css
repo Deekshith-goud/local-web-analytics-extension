@@ -1,0 +1,12 @@
+.glass-blob-container { display: none; }
+[data-theme="dark"] .glass-blob-container {
+  display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+}
+.glass-blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.15; }
+.blob-purple { width: 500px; height: 500px; background: #c084fc; top: -10%; left: -5%; animation: fb1 25s infinite alternate ease-in-out; }
+.blob-indigo { width: 600px; height: 600px; background: #6366f1; bottom: -10%; right: -5%; animation: fb2 30s infinite alternate ease-in-out; }
+.blob-cyan   { width: 400px; height: 400px; background: #22d3ee; top: 30%; right: 20%; animation: fb3 20s infinite alternate ease-in-out; }
+@keyframes fb1 { 0%{transform:translate(0,0)} 100%{transform:translate(80px,120px)} }
+@keyframes fb2 { 0%{transform:translate(0,0)} 100%{transform:translate(-100px,-80px)} }
+@keyframes fb3 { 0%{transform:translate(0,0)} 100%{transform:translate(60px,-100px)} }
+
