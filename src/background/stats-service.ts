@@ -194,7 +194,7 @@ export async function handleGetHistoricalStats(
   // 1. Get dates range in YYYY-MM-DD format (Canonical key boundaries)
   const dates = getDateRangeList(startMs, endMs);
 
-  const key = getCacheKey(startMs, endMs);
+  const key = getCacheKey(startMs, endMs, classifier.getRulesCount());
 
   // 2. Cache Hit checking (Soft boundaries: 5s for today, 60s for historical)
   const cached = historicalSnapshotCache.get(key);

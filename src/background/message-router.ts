@@ -1,11 +1,11 @@
 import { engine, classifier } from "./engine-instance";
-import { getLivePopupSnapshot, handleGetHistoricalStats } from "./stats-service";
-import { invalidateAllCaches, invalidateTodayCache } from "./cache-service";
-import { resetExtensionState } from "../storage/repository";
+import { getLivePopupSnapshot, handleGetHistoricalStats, getLiveTodayStats } from "./stats-service";
+import { invalidateAllCaches, invalidateTodayCache, cacheMetrics, cacheEventsLog, maintenanceEventsLog, historicalSnapshotCache } from "./cache-service";
+
 import { DEFAULT_RULES, getCustomRules, saveCustomRules } from "../analytics/productivity-rules";
 import { getTimeLimitRules, saveTimeLimitRules, getTimeLimitBypasses, setTimeLimitBypass } from "../analytics/time-limits";
 import { pomodoroEngine } from "../analytics/pomodoro-engine";
-import { deriveSurface, isRuntimeMessage, logSecurityEvent, MESSAGE_CAPABILITIES, securityMetrics } from "../security/validators";
+import { deriveSurface, isRuntimeMessage, logSecurityEvent, MESSAGE_CAPABILITIES, securityMetrics, securityEventsLog } from "../security/validators";
 import { getStartOfDayTimestamp, getLocalTodayDateString } from "../utils/date-utils";
 import { getActivityRecordsInRange } from "../storage/repository";
 import { logger } from "../utils/logger";
