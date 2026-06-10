@@ -1,0 +1,66 @@
+/* ── Rules Tab ── */
+.rules-manager-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+@media(max-width:900px){ .rules-manager-layout { grid-template-columns:1fr; } }
+
+.rules-sidebar { display: flex; flex-direction: column; gap: 16px; }
+.rules-main { display: flex; flex-direction: column; }
+
+.rules-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow);
+}
+.rules-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+
+.rules-card-header {
+  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;
+}
+.rules-card-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--accent-bg); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-group label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.form-input {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; padding: 9px 12px;
+  font-size: 13px; width: 100%; outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--accent); }
+
+/* ── Rules Table ── */
+.rules-table-container { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+.rules-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rules-table th {
+  background: var(--surface2); padding: 11px 16px;
+  font-weight: 600; color: var(--text2); text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.rules-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
+.rules-table tr:last-child td { border-bottom: none; }
+.rules-table tbody tr:hover { background: var(--surface2); }
+
+.source-badge {
+  font-size: 11px; font-weight: 500; padding: 2px 8px;
+  border-radius: 4px; color: var(--text2);
+}
+
+.btn-icon {
+  background: none; border: 1px solid var(--border); color: var(--text2);
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.btn-icon:hover { color: var(--text); border-color: var(--text2); }
+.btn-icon.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+
+.btn-delete-rule {
+  background: none; border: 1px solid var(--border); color: var(--text3);
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.btn-delete-rule:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+
