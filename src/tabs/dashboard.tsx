@@ -21,12 +21,13 @@ import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainInt
 
 import { usePomodoro } from "../hooks/usePomodoro";
 import { useProductivityRules } from "../hooks/useProductivityRules";
+import { useTheme } from "../hooks/useTheme";
 import { AboutTab } from "./dashboard/AboutTab";
 import { SettingsTab } from "./dashboard/SettingsTab";
 import { RulesTab } from "./dashboard/RulesTab";
 import { AnalyticsTab } from "./dashboard/AnalyticsTab";
 import { CustomDropdown } from "../components/ui/CustomDropdown";
-import { ScoreIllustration, getProductivityLabel } from "../components/ui/ScoreIllustration";
+import { ScoreIllustration, getProductivityLabel, getScoreCriteria } from "../components/ui/ScoreIllustration";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -55,7 +56,7 @@ class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}
 }
 
 // Formatting utility for durations
-// formatDuration is now imported from utils
+import { formatDuration } from "../utils/format";
 
 
 
@@ -145,7 +146,8 @@ export default function AnalyticsDashboard() {
     handlePomodoroAction,
     handlePomodoroSettingToggle,
     handlePomodoroDurationChange,
-    handlePomodoroMessageChange
+    handlePomodoroMessageChange,
+    updateSettings
   } = usePomodoro(activeTab);
 
   const [newTimeLimitDomain, setNewTimeLimitDomain] = useState("");
@@ -518,7 +520,7 @@ export default function AnalyticsDashboard() {
           iconStyle={iconStyle}
           productivityScore={productivityScore}
           scoreAngle={scoreAngle}
-          domainStat={domainStat}
+          
           productivePct={productivePct}
           distractingPct={distractingPct}
           neutralPct={neutralPct}
@@ -533,14 +535,19 @@ export default function AnalyticsDashboard() {
 
 
         {activeTab === "rules" && (
+          !pomodoroState || !pomodoroSettings ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-subtle)' }}>
+              Loading productivity settings...
+            </div>
+          ) : (
           <RulesTab
-            pomodoroState={pomodoroState!}
-            pomodoroSettings={pomodoroSettings!}
+            pomodoroState={pomodoroState}
+            pomodoroSettings={pomodoroSettings}
             handlePomodoroAction={handlePomodoroAction}
             handlePomodoroSettingToggle={handlePomodoroSettingToggle}
             handlePomodoroDurationChange={handlePomodoroDurationChange}
             handlePomodoroMessageChange={handlePomodoroMessageChange}
-            setPomodoroSettings={setPomodoroSettings}
+            setPomodoroSettings={updateSettings}
             setInfoModal={setInfoModal}
             setShowAddRuleModal={setShowAddRuleModal}
             setShowAddLimitModal={setShowAddLimitModal}
@@ -552,6 +559,7 @@ export default function AnalyticsDashboard() {
             handleToggleTimeLimit={handleToggleTimeLimit}
             handleDeleteTimeLimit={handleDeleteTimeLimit}
           />
+          )
         )}
 
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import "./AnalyticsTab.css";
 import { ScoreIllustration, getProductivityLabel } from "../../components/ui/ScoreIllustration";
-import type { ProductivityStat, ActivityRecord } from "../../types/tracking";
+import type { ActivityRecord } from "../../types/tracking";
 
 import { formatDuration } from "../../utils/format";
 import { downsampleTimeline, computeBarCoordinates } from "../../analytics/selectors/transforms";
@@ -29,7 +29,7 @@ interface AnalyticsTabProps {
   // Productivity data
   productivityScore: number;
   scoreAngle: string;
-  domainStat: ProductivityStat;
+  
   productivePct: number;
   distractingPct: number;
   neutralPct: number;
@@ -59,7 +59,7 @@ export function AnalyticsTab({
   iconStyle,
   productivityScore,
   scoreAngle,
-  domainStat,
+  
   productivePct,
   distractingPct,
   neutralPct,
@@ -242,7 +242,7 @@ export function AnalyticsTab({
               </div>
             </div>
             <div className={`prod-score-illus ${productivityScore >= 50 ? 'productive' : 'distracted'}`} aria-hidden="true">
-              <ScoreIllustration score={typeof domainStat.productivityScore === "number" ? domainStat.productivityScore : 50} iconStyle={iconStyle} />
+              <ScoreIllustration score={productivityScore} iconStyle={iconStyle} />
             </div>
           </div>
 
