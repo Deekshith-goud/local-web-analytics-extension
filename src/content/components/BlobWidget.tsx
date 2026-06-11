@@ -190,7 +190,7 @@ export function BlobWidget({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", flexShrink: 0 }}>
             <div style={{ padding: "9px 12px", background: "var(--w-card-bg)", border: "1px solid var(--w-card-border)", borderRadius: "12px" }}>
               <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--w-text-subtle)", display: "block", marginBottom: "2px", fontWeight: 700 }}>
-                Today's Total
+                Today&apos;s Total
               </span>
               <span style={{ fontSize: "17px", fontWeight: 800, color: "var(--w-text-main)", fontFamily: "monospace" }}>
                 {formatTimer(stats.totalDurationMs)}

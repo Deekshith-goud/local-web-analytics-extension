@@ -10,7 +10,7 @@ interface AddRuleModalProps {
 export function AddRuleModal({ isOpen, onClose, onAddRule }: AddRuleModalProps) {
   const [newDomain, setNewDomain] = useState("");
   const [newCategory, setNewCategory] = useState<ProductivityCategory>("productive");
-  const [newPriority, setNewPriority] = useState("1");
+  const [newPriority] = useState("1");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 

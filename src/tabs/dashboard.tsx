@@ -23,9 +23,8 @@ import { AddRuleModal } from "./dashboard/modals/AddRuleModal";
 import { AddLimitModal } from "./dashboard/modals/AddLimitModal";
 import { InfoModal, type InfoModalType } from "./dashboard/modals/InfoModal";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
-import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
-import { type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
-import type { HistoricalStatsResponse, RuntimeMessage, ActivityRecord, DomainIntervalsResponse, PomodoroSettings } from "../types/tracking";
+
+import type { HistoricalStatsResponse, RuntimeMessage } from "../types/tracking";
 
 import { usePomodoro } from "../hooks/usePomodoro";
 import { useProductivityRules } from "../hooks/useProductivityRules";
@@ -34,8 +33,8 @@ import { AboutTab } from "./dashboard/AboutTab";
 import { SettingsTab } from "./dashboard/SettingsTab";
 import { RulesTab } from "./dashboard/RulesTab";
 import { AnalyticsTab } from "./dashboard/AnalyticsTab";
-import { CustomDropdown } from "../components/ui/CustomDropdown";
-import { ScoreIllustration, getProductivityLabel } from "../components/ui/ScoreIllustration";
+import { } from "../components/ui/CustomDropdown";
+import { } from "../components/ui/";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -64,30 +63,12 @@ class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}
 }
 
 // Formatting utility for durations
-import { formatDuration } from "../utils/format";
+import { } from "../utils/format";
 
 
 
 type RangeType = "today" | "7days" | "30days";
 
-const computeSmoothPath = (points: {x: number, y: number}[]) => {
-  if (points.length === 0) return "";
-  const firstPoint = points[0];
-  if (!firstPoint) return "";
-  if (points.length === 1) return `M ${firstPoint.x} ${firstPoint.y}`;
-  let d = `M ${firstPoint.x} ${firstPoint.y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const curr = points[i];
-    const next = points[i+1];
-    if (!curr || !next) continue;
-    const cp1x = curr.x + (next.x - curr.x) / 3;
-    const cp1y = curr.y;
-    const cp2x = next.x - (next.x - curr.x) / 3;
-    const cp2y = next.y;
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
-  }
-  return d;
-}
 
 export default function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<"analytics" | "rules" | "settings" | "pomodoro" | "about">("analytics");
@@ -123,33 +104,15 @@ export default function AnalyticsDashboard() {
   const [domainSort, setDomainSort] = useState<"duration" | "visits">("duration");
 
   const [selectedDomainModal, setSelectedDomainModal] = useState<string | null>(null);
-  const [domainIntervals, setDomainIntervals] = useState<ActivityRecord[]>([]);
-  const [isLoadingIntervals, setIsLoadingIntervals] = useState(false);
-
-
-
-  const [modalRange, setModalRange] = useState<"7days" | "30days">("7days");
-
   const {
     pomodoroState,
     pomodoroSettings,
-    focusInput,
-    setFocusInput,
-    breakInput,
-    setBreakInput,
-    setIsFocusActive,
-    setIsBreakActive,
     handlePomodoroAction,
     handlePomodoroSettingToggle,
     handlePomodoroDurationChange,
     handlePomodoroMessageChange,
     updateSettings
   } = usePomodoro(activeTab);
-
-  const [newTimeLimitDomain, setNewTimeLimitDomain] = useState("");
-  const [newTimeLimitDurationStr, setNewTimeLimitDurationStr] = useState("30");
-  const [timeLimitError, setTimeLimitError] = useState<string | null>(null);
-
 
   // 1. Core range calculation
   const rangeTimestamps = useMemo(() => {
@@ -194,7 +157,6 @@ export default function AnalyticsDashboard() {
     customRules,
     defaultRules,
     timeLimitRules,
-    fetchRules,
     isQuickClassifyMode,
     setIsQuickClassifyMode,
     quickClassifications,
@@ -256,7 +218,7 @@ export default function AnalyticsDashboard() {
 
 
   // ─── Form Submission Handlers ───
-  const handleEditRule = (rule: ProductivityRule) => {
+  const handleEditRule = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setShowAddRuleModal(true);
   };

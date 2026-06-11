@@ -33,7 +33,6 @@ export const config: PlasmoCSConfig = {
   ]
 };
 
-type UIState = "collapsed" | "expanded" | "dragging" | "hidden";
 export default function BlobContent() {
   // Check sensitive site on mount (double security layer)
   const [isSensitive, setIsSensitive] = useState<boolean>(true);
@@ -366,7 +365,7 @@ export default function BlobContent() {
   // 5. Early Returns for hidden states
   if (isSensitive) return null;
   if (!blobEnabled) return null;
-  if (uiState as any === "hidden") return null;
+  if ((uiState as unknown) === "hidden") return null;
 
   // 5. Drag & Drop mouse sequence utilizing requestAnimationFrame
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -440,7 +439,7 @@ export default function BlobContent() {
   };
 
   const updateDOMPosition = () => {
-    if (uiState as any === "hidden" || !containerRef.current) return;
+    if ((uiState as unknown) === "hidden" || !containerRef.current) return;
 
     const element = containerRef.current;
     const anchor = targetAnchorRef.current;

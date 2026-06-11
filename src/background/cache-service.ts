@@ -148,4 +148,4 @@ export function setHistoricalCache(key: string, payload: HistoricalStatsResponse
 }
 
 export function getTodaySnapshotCache() { return _todaySnapshotCache; }
-export function setTodaySnapshotCache(snapshot: any) { _todaySnapshotCache = snapshot; }
+export function setTodaySnapshotCache(snapshot: unknown) { _todaySnapshotCache = snapshot; }
