@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import "./AnalyticsTab.css";
-import { ScoreIllustration, getProductivityLabel } from "../../components/ui/ScoreIllustration";
+import { ScoreIllustration, getProductivityLabel, type IconStyleType } from "../../components/ui/ScoreIllustration";
 import type { ActivityRecord } from "../../types/tracking";
 
 import { formatDuration } from "../../utils/format";
@@ -24,7 +24,7 @@ interface AnalyticsTabProps {
   setShowAllDomainsModal: (show: boolean) => void;
   setShowCriteriaModal: (show: boolean) => void;
   
-  iconStyle: "minimal" | "colorful" | "glass" | "pixel";
+  iconStyle: IconStyleType;
   
   // Productivity data
   productivityScore: number;
@@ -121,7 +121,7 @@ export function AnalyticsTab({
   // Max duration for the chart Y-axis
   const maxTimelineMs = useMemo(() => {
     if (processedTimeline.length === 0) return 1000;
-    return Math.max(...processedTimeline.map(t => t.durationMs), 1000);
+    return Math.max(...processedTimeline.map((t: any) => t.durationMs), 1000);
   }, [processedTimeline]);
 
   const formatAxisLabel = (ms: number) => {
@@ -133,12 +133,14 @@ export function AnalyticsTab({
 
   const computeSmoothPath = (points: {x: number, y: number}[]) => {
     if (points.length === 0) return "";
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+    const firstPoint = points[0];
+    if (!firstPoint) return "";
+    if (points.length === 1) return `M ${firstPoint.x} ${firstPoint.y}`;
     
-    let path = `M ${points[0].x} ${points[0].y}`;
+    let path = `M ${firstPoint.x} ${firstPoint.y}`;
     for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
+      const p1 = points[i]!;
+      const p2 = points[i + 1]!;
       const cx = (p1.x + p2.x) / 2;
       path += ` C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`;
     }

@@ -12,13 +12,13 @@ export interface DisplayRule extends ProductivityRule {
 interface RulesTabProps {
   pomodoroState: PomodoroState;
   pomodoroSettings: PomodoroSettings;
-  handlePomodoroAction: (action: string, type?: "focus" | "break") => void;
+  handlePomodoroAction: (action: "START_POMODORO" | "PAUSE_POMODORO" | "RESUME_POMODORO" | "STOP_POMODORO", type?: "focus" | "break") => void;
   handlePomodoroSettingToggle: (key: keyof PomodoroSettings) => void;
   handlePomodoroDurationChange: (key: "focusDurationMs" | "breakDurationMs", val: number) => void;
   handlePomodoroMessageChange: (key: "customFocusMessage" | "customBreakMessage", val: string) => void;
   setPomodoroSettings: (settings: PomodoroSettings) => void;
   
-  setInfoModal: (modal: "timer" | "classification" | "score" | "categories" | "timeline" | "blocker" | null) => void;
+  setInfoModal: (modal: any) => void;
   setShowAddRuleModal: (show: boolean) => void;
   setShowAddLimitModal: (show: boolean) => void;
   

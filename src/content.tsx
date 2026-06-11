@@ -34,13 +34,12 @@ export const config: PlasmoCSConfig = {
 };
 
 type UIState = "collapsed" | "expanded" | "dragging" | "hidden";
-
 export default function BlobContent() {
   // Check sensitive site on mount (double security layer)
   const [isSensitive, setIsSensitive] = useState<boolean>(true);
 
   // Core Explicit UI State Machine
-  const [uiState, setUiState] = useState<UIState>("collapsed");
+  const [uiState, setUiState] = useState<"expanded" | "collapsed" | "dragging" | "hidden">("collapsed");
 
   const [blobStyle, setBlobStyle] = useState<"glass" | "brutalist">("glass");
   const [blobEnabled, setBlobEnabled] = useState<boolean>(true);
@@ -367,7 +366,7 @@ export default function BlobContent() {
   // 5. Early Returns for hidden states
   if (isSensitive) return null;
   if (!blobEnabled) return null;
-  if (uiState === "hidden") return null;
+  if (uiState as any === "hidden") return null;
 
   // 5. Drag & Drop mouse sequence utilizing requestAnimationFrame
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -441,7 +440,7 @@ export default function BlobContent() {
   };
 
   const updateDOMPosition = () => {
-    if (uiState === "hidden" || !containerRef.current) return;
+    if (uiState as any === "hidden" || !containerRef.current) return;
 
     const element = containerRef.current;
     const anchor = targetAnchorRef.current;
@@ -492,6 +491,17 @@ export default function BlobContent() {
     }
 
     dragStartRef.current = null;
+  };
+
+  const handleBypass = () => {
+    chrome.runtime.sendMessage({ type: "BYPASS_LIMIT", domain: window.location.hostname });
+  };
+
+  const inlinePos = {
+    top: position.anchorCorner.startsWith("top") ? position.offsetY : "auto",
+    bottom: position.anchorCorner.startsWith("bottom") ? position.offsetY : "auto",
+    left: position.anchorCorner.endsWith("left") ? position.offsetX : "auto",
+    right: position.anchorCorner.endsWith("right") ? position.offsetX : "auto"
   };
 
     return (
@@ -555,7 +565,7 @@ export default function BlobContent() {
         />
 
         <BlobWidget 
-          isCollapsed={isCollapsed} 
+          isCollapsed={position.isCollapsed} 
           blobStyle={blobStyle} 
           stats={stats} 
           activeDomainTodayLiveMs={activeDomainTodayLiveMs} 

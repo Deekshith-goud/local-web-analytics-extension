@@ -17,7 +17,7 @@ interface SettingsTabProps {
   handleExportRules: () => void;
   handleImportRules: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setShowPurgeModal: (show: boolean) => void;
-  setPurgeConfirmText: (text: string) => void;
+  
 }
 
 export function SettingsTab({
@@ -32,7 +32,7 @@ export function SettingsTab({
   handleExportRules,
   handleImportRules,
   setShowPurgeModal,
-  setPurgeConfirmText
+
 }: SettingsTabProps) {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [exportRange, setExportRange] = useState<ExportDateRange>("all");
@@ -46,11 +46,11 @@ export function SettingsTab({
 
   useEffect(() => {
     const getMinDate = async () => {
-      const oldestRecord = await db.timeline.orderBy("timestamp").first();
+      const oldestRecord = await db.activities.orderBy("startTime").first();
       if (oldestRecord) {
-        const minDateStr = new Date(oldestRecord.timestamp).toISOString().split('T')[0];
-        setMinAvailableDate(minDateStr);
-        setCustomStartDate(minDateStr);
+        const minDateStr = new Date(oldestRecord.startTime).toISOString().split('T')[0];
+        setMinAvailableDate(minDateStr || "");
+        setCustomStartDate(minDateStr || "");
       }
     };
     getMinDate();
@@ -359,7 +359,7 @@ export function SettingsTab({
             <button
               type="button"
               className="btn-danger"
-              onClick={() => { setShowPurgeModal(true); setPurgeConfirmText(""); }}
+              onClick={() => setShowPurgeModal(true)}
               aria-haspopup="dialog"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
