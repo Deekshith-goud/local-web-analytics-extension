@@ -33,8 +33,6 @@ import { AboutTab } from "./dashboard/AboutTab";
 import { SettingsTab } from "./dashboard/SettingsTab";
 import { RulesTab } from "./dashboard/RulesTab";
 import { AnalyticsTab } from "./dashboard/AnalyticsTab";
-import { } from "../components/ui/CustomDropdown";
-import { } from "../components/ui/";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
