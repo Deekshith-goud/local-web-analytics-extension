@@ -493,8 +493,9 @@ export default function BlobContent() {
     dragStartRef.current = null;
   };
 
-  const handleBypass = () => {
-    chrome.runtime.sendMessage({ type: "BYPASS_LIMIT", domain: window.location.hostname });
+  const handleBypass = (durationMs: number) => {
+    chrome.runtime.sendMessage({ type: "BYPASS_TIME_LIMIT", domain: window.location.hostname, durationMs, version: 1 });
+    setTimeLimitState(prev => prev ? { ...prev, isBlocked: false } : null);
   };
 
   const inlinePos = {
