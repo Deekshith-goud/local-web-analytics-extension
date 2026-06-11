@@ -9,6 +9,10 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
+import "../styles/variables.css";
+import "../styles/global.css";
+import "../styles/animations.css";
+import "../styles/components.css";
 import "./dashboard.css";
 import brandLogo from "url:~assets/icon.png";
 import timerDemoImg from "url:~assets/timer-demo.png";

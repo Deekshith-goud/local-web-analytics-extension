@@ -1,4 +1,4 @@
-.glass-blob-container { display: none; }
+﻿.glass-blob-container { display: none; }
 [data-theme="dark"] .glass-blob-container {
   display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
 }

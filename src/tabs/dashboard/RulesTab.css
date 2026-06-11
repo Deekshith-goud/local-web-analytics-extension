@@ -1,4 +1,4 @@
-/* ── Rules Tab ── */
+﻿/* â”€â”€ Rules Tab â”€â”€ */
 .rules-manager-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
 @media(max-width:900px){ .rules-manager-layout { grid-template-columns:1fr; } }
 
@@ -30,7 +30,7 @@
 }
 .form-input:focus { border-color: var(--accent); }
 
-/* ── Rules Table ── */
+/* â”€â”€ Rules Table â”€â”€ */
 .rules-table-container { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
 .rules-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .rules-table th {

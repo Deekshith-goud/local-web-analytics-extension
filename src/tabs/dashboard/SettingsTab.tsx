@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import "./SettingsTab.css";
 import { CustomDropdown } from "../../components/ui/CustomDropdown";
 import { type IconStyleType } from "../../components/ui/ScoreIllustration";
 import { generateExportBlob, downloadBlob, type ExportFormat, type ExportDateRange } from "../../analytics/data-export";

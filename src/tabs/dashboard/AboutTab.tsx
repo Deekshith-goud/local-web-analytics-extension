@@ -1,4 +1,5 @@
 import React from "react";
+import "./SettingsTab.css";
 
 export function AboutTab() {
   return (

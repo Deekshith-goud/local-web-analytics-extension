@@ -1,4 +1,4 @@
-.filter-group { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+﻿.filter-group { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
 .filter-btn {
   background: none; border: none; color: var(--text2);
   font-size: 14px; font-weight: 500; padding: 8px 16px;
@@ -7,7 +7,7 @@
 .filter-btn:hover { color: var(--text); }
 .filter-btn.active { background: var(--accent); color: #fff; font-weight: 600; }
 
-/* ── Buttons ── */
+/* â”€â”€ Buttons â”€â”€ */
 .btn-primary {
   background: var(--accent); color: #fff; border: none;
   font-size: 13px; font-weight: 600; padding: 10px 18px;
@@ -48,7 +48,7 @@
 .rules-form-alert.error   { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
 .rules-form-alert.success { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
 
-/* ── Modal ── */
+/* â”€â”€ Modal â”€â”€ */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center;
@@ -93,7 +93,7 @@
 }
 .theme-select-input:focus { border-color: var(--accent); }
 
-/* ── Modal ── */
+/* â”€â”€ Modal â”€â”€ */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center;
@@ -131,7 +131,7 @@
 .btn-modal-confirm:hover:not(:disabled) { background: #dc2626; }
 .btn-modal-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── Rules form ── */
+/* â”€â”€ Rules form â”€â”€ */
 .rules-form { display: flex; flex-direction: column; gap: 0; }
 /* -- Custom Toggle Switch -- */
 .toggle-switch {
@@ -308,7 +308,7 @@ input:checked + .toggle-slider:before {
   font-weight: 600;
 }
 
-/* ── Elegant UI Adjustments ── */
+/* â”€â”€ Elegant UI Adjustments â”€â”€ */
 
 .btn-primary-elegant {
   background: #6366f1; color: #fff; border: none;

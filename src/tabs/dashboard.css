@@ -1,7 +1,7 @@
-@import "../styles/variables.css";
-@import "../styles/global.css";
-@import "../styles/animations.css";
-@import "../styles/components.css";
+
+
+
+
 .dashboard-wrapper { max-width: 1160px; margin: 0 auto; padding: 32px 24px; }
 
 /* ── Header ── */
