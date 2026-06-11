@@ -15,9 +15,13 @@ import "../styles/animations.css";
 import "../styles/components.css";
 import "./dashboard.css";
 import brandLogo from "url:~assets/icon.png";
-import timerDemoImg from "url:~assets/timer-demo.png";
-import classifyDemoImg from "url:~assets/classify-demo.png";
-import blockerDemoImg from "url:~assets/blocker-demo.png";
+import { PurgeDataModal } from "./dashboard/modals/PurgeDataModal";
+import { CriteriaModal } from "./dashboard/modals/CriteriaModal";
+import { AllDomainsModal } from "./dashboard/modals/AllDomainsModal";
+import { DomainIntervalsModal } from "./dashboard/modals/DomainIntervalsModal";
+import { AddRuleModal } from "./dashboard/modals/AddRuleModal";
+import { AddLimitModal } from "./dashboard/modals/AddLimitModal";
+import { InfoModal, type InfoModalType } from "./dashboard/modals/InfoModal";
 import { getLocalTodayDateString, getStartOfDayTimestamp } from "../utils/date-utils";
 import { downsampleTimeline, computeBarCoordinates } from "../analytics/selectors/transforms";
 import { type ProductivityRule, type ProductivityCategory } from "../analytics/productivity-rules";
@@ -31,7 +35,7 @@ import { SettingsTab } from "./dashboard/SettingsTab";
 import { RulesTab } from "./dashboard/RulesTab";
 import { AnalyticsTab } from "./dashboard/AnalyticsTab";
 import { CustomDropdown } from "../components/ui/CustomDropdown";
-import { ScoreIllustration, getProductivityLabel, getScoreCriteria } from "../components/ui/ScoreIllustration";
+import { ScoreIllustration, getProductivityLabel } from "../components/ui/ScoreIllustration";
 
 class DashboardErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -108,23 +112,11 @@ export default function AnalyticsDashboard() {
 
   // Settings & Database Purge modal states
   const [showPurgeModal, setShowPurgeModal] = useState(false);
-  const [purgeConfirmText, setPurgeConfirmText] = useState("");
-  const [isPurging, setIsPurging] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [showAllDomainsModal, setShowAllDomainsModal] = useState(false);
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
   const [showAddLimitModal, setShowAddLimitModal] = useState(false);
-  const [allDomainsSort, setAllDomainsSort] = useState<"duration" | "visits">("duration");
-  const [allDomainsSearch, setAllDomainsSearch] = useState("");
-  const [infoModal, setInfoModal] = useState<"timer" | "classification" | "blocker" | null>(null);
-
-
-  // Form States for custom rules creation
-  const [newDomain, setNewDomain] = useState("");
-  const [newCategory, setNewCategory] = useState<ProductivityCategory>("productive");
-  const [newPriority, setNewPriority] = useState("1");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [infoModal, setInfoModal] = useState<InfoModalType | null>(null);
 
   const [hoveredTooltip, setHoveredTooltip] = useState<{x: number, y: number, title: string, content: React.ReactNode} | null>(null);
   const [activeChart, setActiveChart] = useState<"total" | "productivity">("total");
@@ -175,59 +167,7 @@ export default function AnalyticsDashboard() {
     }
   }, [range]);
 
-  const fetchDomainIntervals = React.useCallback((domain: string, specificRange?: "today" | "7days" | "30days") => {
-    setSelectedDomainModal(domain);
-    setIsLoadingIntervals(true);
-    
-    // Map "today" to "7days" to provide better visual context in the timeline
-    const mappedRange = specificRange === "today" ? "7days" : specificRange;
-    const activeRange = mappedRange || modalRange;
-    
-    if (mappedRange && mappedRange !== modalRange) {
-      setModalRange(mappedRange as "7days" | "30days");
-    }
 
-    const now = Date.now();
-    const todayStr = getLocalTodayDateString();
-    const todayStart = getStartOfDayTimestamp(todayStr);
-    let sMs = todayStart;
-    
-    if (activeRange === "7days") sMs = todayStart - 6 * 24 * 60 * 60 * 1000;
-    else if (activeRange === "30days") sMs = todayStart - 29 * 24 * 60 * 60 * 1000;
-
-    chrome.runtime.sendMessage(
-      {
-        type: "GET_DOMAIN_INTERVALS",
-        version: 1,
-        domain,
-        startMs: sMs,
-        endMs: now
-      } satisfies RuntimeMessage,
-      (response: DomainIntervalsResponse) => {
-        setIsLoadingIntervals(false);
-        if (response && response.intervals) {
-          const sorted = [...response.intervals].sort((a, b) => b.startTime - a.startTime);
-          setDomainIntervals(sorted);
-        } else {
-          setDomainIntervals([]);
-        }
-      }
-    );
-  }, [modalRange]);
-
-  const groupedIntervals = React.useMemo(() => {
-    const groups: Record<string, { date: Date, sessions: ActivityRecord[], totalMs: number }> = {};
-    domainIntervals.forEach(interval => {
-      const d = new Date(interval.startTime);
-      const dateStr = d.toLocaleDateString();
-      if (!groups[dateStr]) {
-         groups[dateStr] = { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), sessions: [], totalMs: 0 };
-      }
-      groups[dateStr]!.sessions.push(interval);
-      groups[dateStr]!.totalMs += interval.durationMs;
-    });
-    return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [domainIntervals]);
 
   // 2. Fetch stats asynchronously via Chrome runtime message passing
   const fetchStats = React.useCallback(() => {
@@ -317,61 +257,8 @@ export default function AnalyticsDashboard() {
 
   // ─── Form Submission Handlers ───
   const handleEditRule = (rule: ProductivityRule) => {
-    setNewDomain(rule.domain);
-    setNewCategory(rule.category);
-    setNewPriority(rule.priority.toString());
-    setFormError(null);
-    setFormSuccess(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setShowAddRuleModal(true);
-  };
-
-  const handleAddRule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-    setFormSuccess(null);
-
-    const priorityInt = parseInt(newPriority, 10);
-    const candidateRule: ProductivityRule = {
-      domain: newDomain.trim().toLowerCase(),
-      category: newCategory,
-      priority: isNaN(priorityInt) ? 1 : priorityInt,
-      createdAt: Date.now()
-    };
-
-    const res = await handleAddCustomRule(candidateRule);
-    if (res.success) {
-      setFormSuccess(`Rule for '${candidateRule.domain}' added successfully.`);
-      setNewDomain("");
-      setNewPriority("10");
-      setShowAddRuleModal(false);
-    } else {
-      setFormError(res.error || "Failed to save rule.");
-    }
-  };
-
-
-
-  const handleExecutePurge = () => {
-    if (purgeConfirmText !== "PURGE") return;
-    setIsPurging(true);
-    chrome.runtime.sendMessage(
-      { type: "PURGE_ALL_DATA", version: 1 } satisfies RuntimeMessage,
-      (res: { success: boolean; error?: string }) => {
-        setIsPurging(false);
-        setShowPurgeModal(false);
-        setPurgeConfirmText("");
-        if (res && res.success) {
-          alert("All local database records, rules, and cache keys have been permanently purged.");
-          // Refresh statistics
-          fetchStats();
-          // Reload custom/default rules lists
-          fetchRules();
-        } else {
-          alert(`Failed to purge database: ${res?.error ?? "Unknown error"}`);
-        }
-      }
-    );
   };
 
   const handleImportRules = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -385,23 +272,6 @@ export default function AnalyticsDashboard() {
     }
     e.target.value = ""; // Reset file input
   };
-
-  const handleAddLimit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTimeLimitError(null);
-    const domain = newTimeLimitDomain.trim().toLowerCase();
-    const durationMins = parseInt(newTimeLimitDurationStr, 10);
-    const res = await handleAddTimeLimit(domain, durationMins);
-    if (res.success) {
-      setNewTimeLimitDomain("");
-      setNewTimeLimitDurationStr("30");
-      setShowAddLimitModal(false);
-    } else {
-      setTimeLimitError(res.error || "Failed to save time limit.");
-    }
-  };
-
-
 
   return (
     <DashboardErrorBoundary>
@@ -533,7 +403,7 @@ export default function AnalyticsDashboard() {
           distractingMs={distractingMs}
           neutralMs={neutralMs}
           unknownMs={unknownMs}
-          fetchDomainIntervals={fetchDomainIntervals}
+          fetchDomainIntervals={(domain) => setSelectedDomainModal(domain)}
         />
       )}
 
@@ -580,592 +450,29 @@ export default function AnalyticsDashboard() {
             handleExportRules={handleExportRules}
             handleImportRules={handleImportRules}
             setShowPurgeModal={setShowPurgeModal}
-            setPurgeConfirmText={setPurgeConfirmText}
-          />
+                      />
         )}
 
         {activeTab === "about" && <AboutTab />}
 
-        {/* MULTI-STEP CONFIRMATION MODAL OVERLAY */}
-        {showPurgeModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
-            <div className="modal-content">
-              <h3 id="purge-modal-title" className="modal-title" style={{ color: 'var(--red)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                Confirm Permanent Purge
-              </h3>
-              <p className="modal-desc">
-                This action is destructive and <strong>absolutely irreversible</strong>. Your on-device data will be permanently wiped.
-                To proceed, please type <strong>PURGE</strong> in the input field below to authorize this request:
-              </p>
-              <input
-                type="text"
-                className="modal-input"
-                value={purgeConfirmText}
-                onChange={(e) => setPurgeConfirmText(e.target.value.toUpperCase())}
-                placeholder="Type PURGE to delete"
-                disabled={isPurging}
-                autoFocus
-              />
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn-modal-cancel"
-                  onClick={() => {
-                    setShowPurgeModal(false);
-                    setPurgeConfirmText("");
-                  }}
-                  disabled={isPurging}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-modal-confirm"
-                  onClick={handleExecutePurge}
-                  disabled={purgeConfirmText !== "PURGE" || isPurging}
-                >
-                  {isPurging ? "Purging..." : "Confirm Purge"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Criteria Modal */}
-        {showCriteriaModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="criteria-modal-title" onClick={() => setShowCriteriaModal(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '95vw', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 id="criteria-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: '10px' }}>
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                  </svg>
-                  Productivity Score Criteria
-                </h3>
-                <button className="btn-icon" onClick={() => setShowCriteriaModal(false)} aria-label="Close modal">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              <p className="modal-desc" style={{ marginBottom: '24px', fontSize: '15px' }}>
-                Your score is determined by the ratio of time spent on productive vs distracting domains. Here is how your focus levels break down.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                {getScoreCriteria(iconStyle).map((item, i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <div style={{ 
-                        width: '48px', 
-                        height: '48px', 
-                        borderRadius: (iconStyle === "minimal" || iconStyle === "corporate" || iconStyle === "neon") ? '12px' : '50%', 
-                        background: item.bg, 
-                        color: item.color, 
-                        border: (iconStyle === "minimal" || iconStyle === "corporate") ? `1px solid ${item.color}40` : 'none', 
-                        boxShadow: iconStyle === "neon" ? `inset 0 0 10px ${item.color}40, 0 0 15px ${item.color}60` : 'none',
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        fontSize: iconStyle === "playful" ? '24px' : undefined 
-                      }}>
-                        {item.icon}
-                      </div>
-                      <div style={{ fontWeight: 800, color: item.color, fontSize: '15px', background: item.bg, padding: '6px 12px', borderRadius: '8px', border: `1px solid ${item.color}30` }}>
-                        {item.score}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '16px', marginBottom: '6px' }}>{item.label}</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5, flex: 1 }}>{item.desc}</div>
-                    <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '8px', borderLeft: `3px solid ${item.color}`, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.5 }}>
-                      &quot;{item.quote}&quot;
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* All Domains Modal */}
-        {showAllDomainsModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="all-domains-modal-title" onClick={() => setShowAllDomainsModal(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px', width: '95vw', padding: '24px', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
-                <h3 id="all-domains-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-orange)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px' }}>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  All Unique Domains
-                </h3>
-                <button className="btn-icon" onClick={() => setShowAllDomainsModal(false)} aria-label="Close modal">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexShrink: 0 }}>
-                <input 
-                  type="text" 
-                  placeholder="Search domains..." 
-                  value={allDomainsSearch}
-                  onChange={(e) => setAllDomainsSearch(e.target.value)}
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px' }}
-                />
-                <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
-                  <button onClick={() => setAllDomainsSort("duration")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "duration" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "duration" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "duration" ? 600 : 400 }}>Duration</button>
-                  <button onClick={() => setAllDomainsSort("visits")} style={{ padding: '4px 12px', borderRadius: '6px', background: allDomainsSort === "visits" ? 'var(--bg-elevated)' : 'transparent', border: 'none', color: allDomainsSort === "visits" ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px', fontWeight: allDomainsSort === "visits" ? 600 : 400 }}>Sessions</button>
-                </div>
-                {isQuickClassifyMode ? (
-                  <button 
-                    onClick={handleSaveQuickClassifications}
-                    className="btn-primary-elegant" 
-                    style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '13px', margin: 0, height: 'auto', display: 'flex', alignItems: 'center' }}
-                  >
-                    Save Changes
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => setIsQuickClassifyMode(true)}
-                    style={{ padding: '6px 14px', borderRadius: '8px', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center' }}
-                  >
-                    Quick Classify
-                  </button>
-                )}
-              </div>
-
-              <div style={{ flex: 1, overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
-                {(() => {
-                  if (!stats || !stats.topDomains) return <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No domains found</div>;
-                  
-                  const filtered = stats.topDomains.filter(d => d.domain.toLowerCase().includes(allDomainsSearch.toLowerCase()));
-                  filtered.sort((a, b) => allDomainsSort === "visits" ? b.visitCount - a.visitCount : b.durationMs - a.durationMs);
-                  
-                  const maxD = Math.max(...filtered.map(d => d.durationMs), 1);
-                  const maxV = Math.max(...filtered.map(d => d.visitCount), 1);
-
-                  if (filtered.length === 0) return <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No matching domains</div>;
-
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {filtered.map((item, idx) => {
-                        const fillWidth = allDomainsSort === "visits" ? (item.visitCount / maxV) * 100 : (item.durationMs / maxD) * 100;
-                        return (
-                          <div 
-                            key={item.domain} 
-                            style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s', background: 'var(--bg-secondary)', cursor: isQuickClassifyMode ? 'default' : 'pointer' }} 
-                            className="hover-bg-elevated"
-                            onClick={() => { if (!isQuickClassifyMode) fetchDomainIntervals(item.domain, range); }}
-                            title={isQuickClassifyMode ? "Quick classify" : "Click to view full session timeline"}
-                          >
-                            <div style={{ width: '24px', color: 'var(--text-subtle)', fontSize: '12px', fontWeight: 500, marginRight: '12px', textAlign: 'right', flexShrink: 0 }}>
-                              {idx + 1}
-                            </div>
-                            
-                            <img 
-                              src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + item.domain)}&size=64` : ""} 
-                              alt="" 
-                              style={{ width: '18px', height: '18px', borderRadius: '3px', marginRight: '14px', flexShrink: 0 }} 
-                            />
-
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px', letterSpacing: '-0.01em' }}>{item.domain}</span>
-                                {isQuickClassifyMode ? (
-                                  <div style={{ display: 'flex', border: '1px solid var(--border-subtle)', borderRadius: '6px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-                                    <button 
-                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'productive' }))}
-                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', borderRight: '1px solid var(--border-subtle)', background: quickClassifications[item.domain] === 'productive' ? '#10b981' : 'transparent', color: quickClassifications[item.domain] === 'productive' ? '#fff' : '#10b981', cursor: 'pointer', transition: 'all 0.15s' }}
-                                    >PROD</button>
-                                    <button 
-                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'distracting' }))}
-                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', borderRight: '1px solid var(--border-subtle)', background: quickClassifications[item.domain] === 'distracting' ? '#ef4444' : 'transparent', color: quickClassifications[item.domain] === 'distracting' ? '#fff' : '#ef4444', cursor: 'pointer', transition: 'all 0.15s' }}
-                                    >DIST</button>
-                                    <button 
-                                      onClick={() => setQuickClassifications(prev => ({ ...prev, [item.domain]: 'neutral' }))}
-                                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, border: 'none', background: quickClassifications[item.domain] === 'neutral' ? '#6b7280' : 'transparent', color: quickClassifications[item.domain] === 'neutral' ? '#fff' : '#6b7280', cursor: 'pointer', transition: 'all 0.15s' }}
-                                    >NEUT</button>
-                                  </div>
-                                ) : (
-                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                      {formatDuration(item.durationMs)}
-                                    </span>
-                                    <span style={{ color: 'var(--border-subtle)' }}>•</span>
-                                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                      {item.visitCount} visits
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              {!isQuickClassifyMode && (
-                                <div style={{ height: '3px', background: 'var(--bg-elevated)', borderRadius: '1.5px', overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${fillWidth}%`, background: 'var(--brand-purple, #8b5cf6)', borderRadius: '1.5px', opacity: 0.85 }} />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Domain Intervals Modal */}
-        {selectedDomainModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="domain-intervals-modal-title" onClick={() => setSelectedDomainModal(null)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', width: '95vw', padding: '24px', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
-                <h3 id="domain-intervals-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', color: 'inherit' }}>
-                  <img 
-                    src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + selectedDomainModal)}&size=64` : ""} 
-                    alt="" 
-                    style={{ width: '24px', height: '24px', borderRadius: '4px', marginRight: '10px' }} 
-                  />
-                  <span style={{ color: 'inherit', fontWeight: 600 }}>{selectedDomainModal}</span>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: '8px', fontSize: '14px', fontWeight: 500 }}>Sessions</span>
-                </h3>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '6px', borderRadius: '12px', gap: '6px' }}>
-                    <button 
-                      onClick={() => fetchDomainIntervals(selectedDomainModal!, "7days")} 
-                      style={{ padding: '8px 16px', borderRadius: '8px', background: modalRange === "7days" ? '#3b82f6' : 'transparent', border: 'none', color: modalRange === "7days" ? '#ffffff' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: modalRange === "7days" ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none', transform: modalRange === "7days" ? 'scale(1)' : 'scale(0.95)' }}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
-                      onMouseUp={e => e.currentTarget.style.transform = modalRange === "7days" ? 'scale(1)' : 'scale(0.95)'}
-                    >7 Days</button>
-                    <button 
-                      onClick={() => fetchDomainIntervals(selectedDomainModal!, "30days")} 
-                      style={{ padding: '8px 16px', borderRadius: '8px', background: modalRange === "30days" ? '#3b82f6' : 'transparent', border: 'none', color: modalRange === "30days" ? '#ffffff' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: modalRange === "30days" ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none', transform: modalRange === "30days" ? 'scale(1)' : 'scale(0.95)' }}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
-                      onMouseUp={e => e.currentTarget.style.transform = modalRange === "30days" ? 'scale(1)' : 'scale(0.95)'}
-                    >30 Days</button>
-                  </div>
-                  <button className="btn-icon" onClick={() => setSelectedDomainModal(null)} aria-label="Close modal" style={{ marginLeft: '12px' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                </div>
-              </div>
-              
-              <div style={{ flex: 1, overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
-                {isLoadingIntervals ? (
-                   <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading sessions...</div>
-                ) : domainIntervals.length === 0 ? (
-                   <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>No sessions found for this timeframe.</div>
-                ) : (
-                  <div style={{ display: 'flex', height: '500px', padding: '30px 24px 16px 24px', position: 'relative' }}>
-                     {/* Y-Axis: Hours */}
-                     <div style={{ width: '50px', position: 'relative', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, marginRight: '16px', paddingBottom: '50px' }}>
-                        <div style={{ position: 'absolute', top: '0%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-subtle)' }}>12 AM</div>
-                        <div style={{ position: 'absolute', top: '25%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-subtle)' }}>6 AM</div>
-                        <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-subtle)' }}>12 PM</div>
-                        <div style={{ position: 'absolute', top: '75%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-subtle)' }}>6 PM</div>
-                        <div style={{ position: 'absolute', top: '100%', marginTop: '-50px', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-subtle)' }}>11:59</div>
-                     </div>
-
-                     {/* X-Axis Dates & Timeline Columns */}
-                     <div style={{ flex: 1, display: 'flex', overflowX: 'auto', paddingBottom: '8px', gap: '6px' }}>
-                        {[...groupedIntervals].reverse().map(group => (
-                           <div key={group.date.getTime()} style={{ flex: 1, minWidth: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                              
-                              {/* Timeline Column */}
-                              <div style={{ width: '100%', height: 'calc(100% - 50px)', position: 'relative', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                                 {group.sessions.map((session, i) => {
-                                    const startOfDay = group.date.getTime();
-                                    const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
-                                    const clampedStart = Math.max(startOfDay, session.startTime);
-                                    const clampedEnd = Math.min(endOfDay, session.endTime);
-                                    
-                                    const topPct = ((clampedStart - startOfDay) / (24 * 60 * 60 * 1000)) * 100;
-                                    const heightPct = ((clampedEnd - clampedStart) / (24 * 60 * 60 * 1000)) * 100;
-                                    const isLive = session.terminationReason === "idle" && Date.now() - session.endTime < 5000 && i === 0;
-
-                                    return (
-                                       <div 
-                                          key={session.sessionId}
-                                          style={{
-                                             position: 'absolute',
-                                             top: `${topPct}%`,
-                                             height: `${Math.max(0.4, heightPct)}%`,
-                                             left: '20%',
-                                             right: '20%',
-                                             background: isLive ? '#10b981' : '#3b82f6',
-                                             borderRadius: '2px',
-                                             opacity: 0.9,
-                                             cursor: 'pointer',
-                                             transition: 'opacity 0.2s, background 0.2s, transform 0.15s',
-                                          }}
-                                          onMouseEnter={(e) => {
-                                             (e.target as HTMLDivElement).style.opacity = '1';
-                                             (e.target as HTMLDivElement).style.background = isLive ? '#34d399' : '#60a5fa';
-                                             (e.target as HTMLDivElement).style.transform = 'scaleX(1.4)';
-                                             (e.target as HTMLDivElement).style.zIndex = '10';
-                                          }}
-                                          onMouseLeave={(e) => {
-                                             (e.target as HTMLDivElement).style.opacity = '0.9';
-                                             (e.target as HTMLDivElement).style.background = isLive ? '#10b981' : '#3b82f6';
-                                             (e.target as HTMLDivElement).style.transform = 'scaleX(1)';
-                                             (e.target as HTMLDivElement).style.zIndex = '1';
-                                          }}
-                                          title={`${new Date(clampedStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} - ${new Date(clampedEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\nDuration: ${formatDuration(session.durationMs)}\nReason: ${session.terminationReason.replace("-", " ")}${isLive ? ' (LIVE)' : ''}`}
-                                       />
-                                    );
-                                 })}
-                              </div>
-                              
-                              {/* X-Axis Date Label */}
-                              <div style={{ height: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '8px' }}>
-                                 <span style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                    {group.date.toLocaleDateString(undefined, { weekday: 'short' })}
-                                 </span>
-                                 <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                                    {group.date.getDate()}
-                                 </span>
-                                 <span style={{ fontSize: '9px', color: 'var(--text-subtle)', marginTop: '4px' }}>
-                                    {formatDuration(group.totalMs)}
-                                 </span>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Custom Rule Modal */}
-        {showAddRuleModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-rule-modal-title" onClick={() => setShowAddRuleModal(false)}>
-            <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 id="add-rule-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>
-                  </div>
-                  Add Custom Rule
-                </h3>
-                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddRuleModal(false)} aria-label="Close modal">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              <p className="modal-desc" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '16px', marginBottom: '24px' }}>
-                Override the semantic analysis engine with your own domain classification.
-              </p>
-
-              {formError && (
-                <div className="rules-form-alert error" role="alert">
-                  {formError}
-                </div>
-              )}
-              {formSuccess && (
-                <div className="rules-form-alert success" role="status">
-                  {formSuccess}
-                </div>
-              )}
-
-              <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddRule}>
-                <div className="premium-input-group">
-                  <label htmlFor="domain-input" style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Domain (e.g. youtube.com)</label>
-                  <div className="premium-input-wrapper">
-                    <div className="premium-input-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    </div>
-                    <input
-                      id="domain-input"
-                      type="text"
-                      className="premium-input"
-                      placeholder="Enter hostname..."
-                      value={newDomain}
-                      onChange={(e) => setNewDomain(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="premium-input-group">
-                  <label htmlFor="category-select" style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Classification Category</label>
-                  <div className="premium-input-wrapper">
-                    <div className="premium-input-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                    </div>
-                    <select
-                      id="category-select"
-                      className="premium-input"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as ProductivityCategory)}
-                      required
-                      style={{ appearance: 'none', backgroundColor: 'transparent' }}
-                    >
-                      <option value="productive" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Productive (Deep Work)</option>
-                      <option value="distracting" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Distracting (Entertainment)</option>
-                      <option value="neutral" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Neutral (Utilities)</option>
-                      <option value="unknown" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Unknown (Unclassified)</option>
-                    </select>
-                    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <button type="submit" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '14px 32px', fontSize: '14px', fontWeight: 600, borderRadius: '100px', background: 'linear-gradient(135deg, #a78bfa, #6366f1)', boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)', color: '#fff', border: 'none', cursor: 'pointer', transition: 'all 0.2s', width: '100%', marginTop: '8px' }}>
-                  Save Custom Rule
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Soft-Block Limit Modal */}
-        {showAddLimitModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-limit-modal-title" onClick={() => setShowAddLimitModal(false)}>
-            <div className="modal-content-elegant" onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 id="add-limit-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </div>
-                  Add Soft-Block Limit
-                </h3>
-                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setShowAddLimitModal(false)} aria-label="Close modal">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              <p className="modal-desc" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '16px', marginBottom: '24px' }}>
-                Set daily duration limits for distracting websites. Once reached, a soft-block overlay appears.
-              </p>
-
-              {timeLimitError && (
-                <div className="rules-form-alert error" role="alert">
-                  {timeLimitError}
-                </div>
-              )}
-
-              <form className="rules-form" style={{ gap: '16px' }} onSubmit={handleAddLimit}>
-                <div className="premium-input-group">
-                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Domain (e.g. reddit.com)</label>
-                  <div className="premium-input-wrapper">
-                    <div className="premium-input-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    </div>
-                    <input
-                      type="text"
-                      className="premium-input"
-                      placeholder="Enter hostname..."
-                      value={newTimeLimitDomain}
-                      onChange={(e) => setNewTimeLimitDomain(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="premium-input-group">
-                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Daily Limit (minutes)</label>
-                  <div className="premium-input-wrapper">
-                    <div className="premium-input-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <input
-                      type="number"
-                      className="premium-input"
-                      min="1"
-                      value={newTimeLimitDurationStr}
-                      onChange={(e) => setNewTimeLimitDurationStr(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button type="submit" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '14px 32px', fontSize: '14px', fontWeight: 600, borderRadius: '100px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 8px 24px rgba(245, 158, 11, 0.3)', color: '#fff', border: 'none', cursor: 'pointer', transition: 'all 0.2s', width: '100%', marginTop: '8px' }}>
-                  Save Time Limit
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Info Modal */}
-        {infoModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" onClick={() => setInfoModal(null)}>
-            <div className="modal-content-elegant" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 id="info-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {infoModal === "timer" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-purple, #8b5cf6)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> About Timer</>}
-                  {infoModal === "classification" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue, #3b82f6)" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> About Productivity Engine</>}
-                  {infoModal === "blocker" && <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-orange, #f59e0b)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> About Soft-Blocker</>}
-                </h3>
-                <button className="btn-icon-elegant" style={{ border: 'none' }} onClick={() => setInfoModal(null)} aria-label="Close modal">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-                <div className="modal-desc" style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)', flex: 1 }}>
-                  {infoModal === "timer" && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                      <p style={{ margin: 0 }}>The Pomodoro Timer helps you maintain focus using timeboxed work sessions.</p>
-                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong>Cycles:</strong> The timer naturally reciprocates. When a Focus session ends, it automatically prompts you to start a Break, and vice versa.</li>
-                        <li><strong>Customization:</strong> You can adjust the exact minutes for Focus and Break periods below.</li>
-                        <li><strong>Notifications:</strong> Toggle desktop notifications or choose from several notification sounds (Beep, Chime, Digital) to alert you when a cycle ends.</li>
-                        <li><strong>Custom Messages:</strong> Set custom motivational messages that will appear in your notifications when it&apos;s time to focus or take a break.</li>
-                      </ul>
-                    </div>
-                  )}
-                  {infoModal === "classification" && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                      <p style={{ margin: 0 }}>Categorize domains to let the analytics engine calculate your exact productivity score.</p>
-                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong><span style={{ color: '#10b981' }}>Productive:</span></strong> Sites essential for work (e.g. github.com, docs.google.com).</li>
-                        <li><strong><span style={{ color: '#ef4444' }}>Distracting:</span></strong> Sites that break your workflow (e.g. reddit.com, youtube.com).</li>
-                        <li><strong>How to Add:</strong> Click <em>&quot;+ Add Custom Rule&quot;</em> to manually assign a category to a domain.</li>
-                        <li><strong>Quick Classify:</strong> Go to the Dashboard tab, click <em>&quot;View All Domains&quot;</em>, and use the inline PROD/DIST/NEUT buttons to rapidly categorize your most visited sites in bulk.</li>
-                      </ul>
-                    </div>
-                  )}
-                  {infoModal === "blocker" && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                      <p style={{ margin: 0 }}>The Soft-Blocker prevents you from doomscrolling by enforcing daily allowances.</p>
-                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <li><strong>Setting Limits:</strong> Assign a maximum daily allowance (in minutes) for specific distracting domains.</li>
-                        <li><strong>Gentle Interventions:</strong> Once the limit is reached, a full-page overlay is injected over the site to block access and remind you to refocus.</li>
-                        <li><strong>Daily Resets:</strong> All accumulated time resets automatically at midnight, giving you a fresh allowance the next day.</li>
-                        <li><strong>Toggles:</strong> You can temporarily disable a limit using the toggle button without deleting the rule entirely.</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {infoModal === "timer" && <img src={timerDemoImg} alt="Timer Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
-                  {infoModal === "classification" && <img src={classifyDemoImg} alt="Classification Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
-                  {infoModal === "blocker" && <img src={blockerDemoImg} alt="Blocker Example" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }} />}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer Info */}
-        <footer className="dashboard-footer" role="contentinfo">
-          <div className="status-indicator">
-            <span
-              className={`status-dot-indicator ${stats?.trackingPaused ? "paused" : ""}`}
-              aria-hidden="true"
-            ></span>
-            <span>
-              {stats?.trackingPaused ? "Tracking paused" : "Real-time tracking active"}
-            </span>
-          </div>
-          <div>
-            <span>Data freshness: {stats ? `Last synced locally at ${new Date(stats.snapshotGeneratedAt).toLocaleTimeString()}` : "Not synced"}</span>
-            <span style={{ marginLeft: "16px" }}>v1.0.0</span>
-          </div>
-        </footer>
+        <PurgeDataModal isOpen={showPurgeModal} onClose={() => setShowPurgeModal(false)} onPurgeComplete={fetchStats} />
+        <CriteriaModal isOpen={showCriteriaModal} onClose={() => setShowCriteriaModal(false)} iconStyle={iconStyle} />
+        <AllDomainsModal 
+          isOpen={showAllDomainsModal} 
+          onClose={() => setShowAllDomainsModal(false)} 
+          stats={stats} 
+          isQuickClassifyMode={isQuickClassifyMode}
+          setIsQuickClassifyMode={setIsQuickClassifyMode}
+          handleSaveQuickClassifications={handleSaveQuickClassifications}
+          fetchDomainIntervals={(domain) => setSelectedDomainModal(domain)}
+          range={range}
+          quickClassifications={quickClassifications}
+          setQuickClassifications={setQuickClassifications}
+        />
+        <DomainIntervalsModal domain={selectedDomainModal} onClose={() => setSelectedDomainModal(null)} initialRange={range} />
+        <AddRuleModal isOpen={showAddRuleModal} onClose={() => setShowAddRuleModal(false)} onAddRule={handleAddCustomRule} />
+        <AddLimitModal isOpen={showAddLimitModal} onClose={() => setShowAddLimitModal(false)} onAddLimit={handleAddTimeLimit} />
+        <InfoModal infoType={infoModal} onClose={() => setInfoModal(null)} />
       </div>
     </DashboardErrorBoundary>
   );
