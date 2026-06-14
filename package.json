@@ -9,7 +9,8 @@
     "build": "plasmo build",
     "package": "bun run build && node scripts/package-extension.js && plasmo package",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "dexie": "^4.4.2",
@@ -35,7 +36,9 @@
     "postcss": "8.4.38",
     "prettier": "3.2.5",
     "tailwindcss": "3.4.3",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "vitest": "^4.1.8",
+    "vitest-mock-extended": "^4.0.0"
   },
   "manifest": {
     "host_permissions": [],

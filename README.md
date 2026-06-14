@@ -58,6 +58,25 @@ Once installed, simply browse the web as usual. Click the floating widget on any
 
 <img src="assets/demo.gif" width="800" alt="Demo GIF showing dashboard usage" />
 
+## Data Transparency & Schema
+
+We believe you deserve to know exactly what is saved. **Local Browse Insights** stores its data entirely inside your browser's IndexedDB.
+
+### What is stored?
+* **Domain Names**: Only root domains (e.g., `github.com`) are stored. **Full URLs, query parameters, and specific paths are immediately stripped and NEVER saved.**
+* **Timestamps & Durations**: The start time and duration of your active tab sessions.
+
+### Data Retention & Portability
+* **Retention Controls**: You can configure the extension to automatically purge raw activity data older than a specified timeframe (e.g., 30, 60, or 90 days) directly from the **Settings** panel. Aggregated daily totals are kept indefinitely for long-term insights while saving disk space.
+* **Export/Import**: You have full control of your data. Export your analytics into CSV, JSON, or a visual PDF report locally.
+
+## Auditability & Manual Verification
+
+You don't have to trust our word—you can verify the "no remote requests" and "local-only" claims yourself using Chrome Developer Tools.
+
+1. **Verify Local Storage**: Open the extension dashboard, press `F12` (or `Cmd+Option+I` on Mac) to open DevTools, navigate to the **Application** tab, and expand **IndexedDB**. You will see the `LocalBrowseAnalyticsDB` and can inspect exactly what is saved.
+2. **Verify Network Activity**: In DevTools, navigate to the **Network** tab, and browse. You will see **zero** external tracking requests being made.
+
 ## Configuration Reference
 
 <details>
