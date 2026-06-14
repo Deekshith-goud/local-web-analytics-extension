@@ -35,7 +35,7 @@ export function SettingsTab({
 
 }: SettingsTabProps) {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
-  const [exportRange, setExportRange] = useState<ExportDateRange>("all");
+  const [exportRange, setExportRange] = useState<ExportDateRange>("this_month");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState(() => {
     const today = new Date();
@@ -59,7 +59,7 @@ export function SettingsTab({
   const handleDataExport = async () => {
     try {
       if (exportFormat === "pdf") {
-        let url = `./tabs/report.html?range=${exportRange}`;
+        let url = `report.html?range=${exportRange}`;
         if (exportRange === "custom" && customStartDate && customEndDate) {
           url += `&start=${new Date(customStartDate).getTime()}&end=${new Date(customEndDate).getTime() + 86399999}`;
         }
@@ -263,7 +263,7 @@ export function SettingsTab({
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'block' }}>Time Range</label>
                     <div className="premium-input-wrapper" style={{ background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border)', position: 'relative' }}>
                       <select className="premium-input" value={exportRange} onChange={e => setExportRange(e.target.value as ExportDateRange)} style={{ appearance: 'none', backgroundColor: 'transparent', padding: '12px 14px', fontSize: '13px', width: '100%', color: 'var(--text)', border: 'none', outline: 'none', cursor: 'pointer' }}>
-                        <option value="all" style={{ background: 'var(--bg)', color: 'var(--text)' }}>All Time</option>
+
                         <option value="this_month" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Last 30 Days</option>
                         <option value="today" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Today</option>
                         <option value="custom" style={{ background: 'var(--bg)', color: 'var(--text)' }}>Custom Range...</option>
