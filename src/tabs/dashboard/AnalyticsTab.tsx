@@ -652,9 +652,12 @@ export function AnalyticsTab({
                           alt="" 
                           style={{ width: '16px', height: '16px', borderRadius: '3px', marginRight: '8px', flexShrink: 0 }} 
                         />
-                        <span className="leaderboard-name" title={item.domain} style={{ fontWeight: 600 }}>
+                        <span className="leaderboard-name" title={item.domain} style={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text3)', marginRight: '6px', fontWeight: 500 }}>#{idx + 1}</span>
-                          {item.domain}
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.domain}</span>
+                          <a href={`https://${item.domain}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', opacity: 0.5, transition: 'opacity 0.2s', marginLeft: '6px', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.5'} title={`Visit ${item.domain}`}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          </a>
                         </span>
                       </div>
                       <span className="leaderboard-time" style={{ color: 'var(--text2)', fontSize: '12px' }}>

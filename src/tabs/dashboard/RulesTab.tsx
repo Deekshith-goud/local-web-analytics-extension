@@ -160,6 +160,9 @@ export function RulesTab({
                         )}
                       </div>
                       <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{rule.domain}</span>
+                      <a href={`https://${rule.domain}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', opacity: 0.5, transition: 'opacity 0.2s', padding: '4px' }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.5'} title={`Visit ${rule.domain}`}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      </a>
                     </div>
                     <div className="elegant-row-col category-col" style={{ flex: 1.5 }}>
                       <span className={`badge-category ${rule.category}`}>{rule.category.toUpperCase()}</span>
@@ -241,8 +244,11 @@ export function RulesTab({
             ) : (
               timeLimitRules.map((rule) => (
                 <div className="elegant-list-row" key={rule.domain} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                  <div className="elegant-row-col domain-col" style={{ flex: 2, fontFamily: "monospace", fontSize: "13px" }}>
-                    {rule.domain}
+                  <div className="elegant-row-col domain-col" style={{ flex: 2, fontFamily: "monospace", fontSize: "13px", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rule.domain}</span>
+                    <a href={`https://${rule.domain}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', opacity: 0.5, transition: 'opacity 0.2s', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.5'} title={`Visit ${rule.domain}`}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
                   </div>
                   <div className="elegant-row-col limit-col" style={{ flex: 1, fontFamily: "monospace", fontSize: "13px", color: "var(--text-secondary)" }}>
                     {formatDuration(rule.maxDurationMs)}
