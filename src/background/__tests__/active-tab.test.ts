@@ -49,7 +49,7 @@ global.chrome = {
     getLastFocused: mockWindowsGetLastFocused,
     WINDOW_ID_NONE: -1
   }
-} as any
+} as unknown as typeof chrome
 
 describe("Active Tab Tracking in TrackingEngine", () => {
   let engine: TrackingEngine
@@ -70,7 +70,7 @@ describe("Active Tab Tracking in TrackingEngine", () => {
       { id: 1, url: "https://site-a.com", active: true, windowId: 10 }
     ])
     mockWindowsGetLastFocused.mockResolvedValue({ id: 10, focused: true })
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.evaluateCurrentState()
     expect(engine.getActiveSession()?.domain).toBe("site-a.com")
 
@@ -83,7 +83,7 @@ describe("Active Tab Tracking in TrackingEngine", () => {
       windowId: 10
     })
 
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.onTabActivated({ tabId: 2, windowId: 10 })
 
     expect(engine.getActiveSession()?.domain).toBe("site-b.com")
@@ -97,12 +97,12 @@ describe("Active Tab Tracking in TrackingEngine", () => {
       { id: 1, url: "https://site-a.com", active: true, windowId: 10 }
     ])
     mockWindowsGetLastFocused.mockResolvedValue({ id: 10, focused: true })
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.evaluateCurrentState()
     expect(engine.getActiveSession()?.domain).toBe("site-a.com")
 
     // Simulate losing focus
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.onWindowFocusChanged(chrome.windows.WINDOW_ID_NONE)
 
     expect(engine.getActiveSession()).toBeNull()

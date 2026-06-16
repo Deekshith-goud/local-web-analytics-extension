@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./RulesTab.css";
 import { PomodoroTimer } from "../../components/ui/PomodoroTimer";
+import { CustomDropdown } from "../../components/ui/CustomDropdown";
 import type { ProductivityRule } from "../../analytics/productivity-rules";
 import type { PomodoroState, PomodoroSettings, TimeLimitRule } from "../../types/tracking";
 
@@ -116,19 +117,18 @@ export function RulesTab({
                 aria-label="Search rules by domain"
               />
             </div>
-            <select
-              className="modal-input-elegant"
+            <CustomDropdown
               value={ruleTypeFilter}
-              onChange={(e) => setRuleTypeFilter(e.target.value as 'all' | 'productive' | 'distracting' | 'neutral' | 'unknown')}
-              aria-label="Filter rules by type"
-              style={{ width: "150px" }}
-            >
-              <option value="all">All Categories</option>
-              <option value="productive">Productive</option>
-              <option value="distracting">Distracting</option>
-              <option value="neutral">Neutral</option>
-              <option value="unknown">Unknown</option>
-            </select>
+              options={[
+                { id: "all", label: "All Categories" },
+                { id: "productive", label: "Productive" },
+                { id: "distracting", label: "Distracting" },
+                { id: "neutral", label: "Neutral" },
+                { id: "unknown", label: "Unknown" }
+              ]}
+              onChange={(val) => setRuleTypeFilter(val as 'all' | 'productive' | 'distracting' | 'neutral' | 'unknown')}
+              width="150px"
+            />
           </div>
 
           <div className="elegant-list-container" style={{ maxHeight: "280px", overflowY: "auto", paddingRight: searchedRules.length > 5 ? "8px" : "0" }}>

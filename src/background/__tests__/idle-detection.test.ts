@@ -46,7 +46,7 @@ global.chrome = {
     onFocusChanged: { addListener: vi.fn() },
     getLastFocused: mockWindowsGetLastFocused
   }
-} as any
+} as unknown as typeof chrome
 
 describe("Idle Detection in TrackingEngine", () => {
   let engine: TrackingEngine
@@ -68,12 +68,12 @@ describe("Idle Detection in TrackingEngine", () => {
     ])
     mockWindowsGetLastFocused.mockResolvedValue({ id: 10, focused: true })
 
-    // @ts-ignore - internal method access for test
+    // @ts-expect-error - private method testing - internal method access for test
     await engine.evaluateCurrentState()
     expect(engine.getActiveSession()?.domain).toBe("example.com")
 
     // Trigger Idle
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.onIdleStateChanged("idle")
 
     // Session should be cleared
@@ -89,7 +89,7 @@ describe("Idle Detection in TrackingEngine", () => {
     ])
     mockWindowsGetLastFocused.mockResolvedValue({ id: 11, focused: true })
 
-    // @ts-ignore
+    // @ts-expect-error - private method testing
     await engine.onIdleStateChanged("active")
 
     // Should have evaluated state and started tracking github
