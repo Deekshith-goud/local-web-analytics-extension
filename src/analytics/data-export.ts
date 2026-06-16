@@ -3,11 +3,16 @@ import { getCustomRules } from "./productivity-rules";
 import { getTimeLimitRules } from "./time-limits";
 
 export type ExportFormat = "json" | "csv" | "pdf";
-export type ExportDateRange = "all" | "today" | "this_month" | "custom";
+export type ExportDateRange = "all" | "today" | "last_7_days" | "this_month" | "custom";
 
 function getRangeStartTimestamp(range: ExportDateRange): number {
   const now = new Date();
   if (range === "today") {
+    now.setHours(0, 0, 0, 0);
+    return now.getTime();
+  }
+  if (range === "last_7_days") {
+    now.setDate(now.getDate() - 7);
     now.setHours(0, 0, 0, 0);
     return now.getTime();
   }
@@ -30,6 +35,9 @@ function getRangeDateString(range: ExportDateRange): string {
   const now = new Date();
   if (range === "today") {
     return getLocalYYYYMMDD(now); // YYYY-MM-DD
+  }
+  if (range === "last_7_days") {
+    return "7d-" + getLocalYYYYMMDD(now); // 7d-YYYY-MM-DD
   }
   if (range === "this_month") {
     return getLocalYYYYMMDD(now).substring(0, 7); // YYYY-MM

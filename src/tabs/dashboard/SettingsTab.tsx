@@ -1080,6 +1080,15 @@ export function SettingsTab({
                         Last 30 Days
                       </option>
                       <option
+                        value="last_7_days"
+                        style={{
+                          background: "var(--bg)",
+                          color: "var(--text)"
+                        }}
+                      >
+                        Last 7 Days
+                      </option>
+                      <option
                         value="today"
                         style={{
                           background: "var(--bg)",

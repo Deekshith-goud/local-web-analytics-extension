@@ -38,6 +38,10 @@ export default function ReportPage() {
     if (rangeParam === "today") {
       now.setHours(0, 0, 0, 0);
       startMs = now.getTime();
+    } else if (rangeParam === "last_7_days") {
+      now.setDate(now.getDate() - 7);
+      now.setHours(0, 0, 0, 0);
+      startMs = now.getTime();
     } else if (rangeParam === "this_month") {
       now.setDate(now.getDate() - 30);
       now.setHours(0, 0, 0, 0);
@@ -100,6 +104,7 @@ export default function ReportPage() {
 
   const getRangeLabel = () => {
     if (rangeStr === "today") return "TODAY";
+    if (rangeStr === "last_7_days") return "LAST 7 DAYS";
     if (rangeStr === "this_month") return "LAST 30 DAYS";
     if (rangeStr === "custom") return "CUSTOM RANGE";
     return "ALL TIME";
@@ -149,7 +154,9 @@ export default function ReportPage() {
   const paddingTop = 30;
   const paddingBottom = 40;
 
-  const validTimeline = timeline || [];
+  const validTimeline = (rangeStr === "today" && stats.hourlyTimeline && stats.hourlyTimeline.length > 0)
+    ? stats.hourlyTimeline
+    : (timeline || []);
   const maxVal = Math.max(
     1000, 
     ...validTimeline.map(t => Math.max(t.productiveMs, t.distractingMs))
@@ -403,7 +410,7 @@ export default function ReportPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
                 <h3 className="section-title">Productivity vs Distraction</h3>
-                <p className="section-desc">Daily aggregates — trend analysis</p>
+                <p className="section-desc">{rangeStr === "today" ? "Hourly intervals" : "Daily aggregates"} — trend analysis</p>
               </div>
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
