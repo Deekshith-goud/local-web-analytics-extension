@@ -651,6 +651,18 @@ export default function AnalyticsDashboard() {
           onAddLimit={handleAddTimeLimit}
         />
         <InfoModal infoType={infoModal} onClose={() => setInfoModal(null)} />
+
+        {/* Dashboard Footer */}
+        <footer className="dashboard-footer" style={{ marginTop: "auto", borderTop: "1px solid var(--border-subtle)", padding: "16px 30px" }}>
+          <div className="status-indicator">
+            <span className={`status-dot-indicator ${stats?.trackingPaused ? "paused" : ""}`} aria-hidden="true"></span>
+            <span>{stats?.trackingPaused ? "Tracking paused" : "Real-time tracking active"}</span>
+          </div>
+          <div>
+            Data freshness: Last synced locally at {stats?.snapshotGeneratedAt ? new Date(stats.snapshotGeneratedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }) : "Unknown"}
+            <span style={{ marginLeft: "16px", opacity: 0.7 }}>v{chrome.runtime.getManifest ? chrome.runtime.getManifest().version : "1.0.0"}</span>
+          </div>
+        </footer>
       </div>
     </DashboardErrorBoundary>
   )
