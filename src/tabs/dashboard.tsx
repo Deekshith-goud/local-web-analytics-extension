@@ -33,6 +33,7 @@ import { AddRuleModal } from "./dashboard/modals/AddRuleModal"
 import { AllDomainsModal } from "./dashboard/modals/AllDomainsModal"
 import { CriteriaModal } from "./dashboard/modals/CriteriaModal"
 import { DomainIntervalsModal } from "./dashboard/modals/DomainIntervalsModal"
+import { MetricDetailsModal } from "./dashboard/modals/MetricDetailsModal"
 import { InfoModal, type InfoModalType } from "./dashboard/modals/InfoModal"
 import { PurgeDataModal } from "./dashboard/modals/PurgeDataModal"
 import { RulesTab } from "./dashboard/RulesTab"
@@ -134,6 +135,7 @@ export default function AnalyticsDashboard() {
   const [selectedDomainModal, setSelectedDomainModal] = useState<string | null>(
     null
   )
+  const [metricModal, setMetricModal] = useState<"tracked" | "focus" | "visits" | null>(null)
   const {
     pomodoroState,
     pomodoroSettings,
@@ -555,6 +557,7 @@ export default function AnalyticsDashboard() {
             neutralMs={neutralMs}
             unknownMs={unknownMs}
             fetchDomainIntervals={(domain) => setSelectedDomainModal(domain)}
+            setShowMetricModal={setMetricModal}
           />
         )}
 
@@ -649,6 +652,12 @@ export default function AnalyticsDashboard() {
           isOpen={showAddLimitModal}
           onClose={() => setShowAddLimitModal(false)}
           onAddLimit={handleAddTimeLimit}
+        />
+        <MetricDetailsModal
+          isOpen={metricModal !== null}
+          onClose={() => setMetricModal(null)}
+          metricType={metricModal}
+          stats={stats}
         />
         <InfoModal infoType={infoModal} onClose={() => setInfoModal(null)} />
 

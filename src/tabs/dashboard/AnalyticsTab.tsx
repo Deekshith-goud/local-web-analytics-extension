@@ -5,7 +5,6 @@ import { ScoreIllustration, getProductivityLabel, type IconStyleType } from "../
 
 import { formatDuration } from "../../utils/format";
 import { downsampleTimeline, computeBarCoordinates } from "../../analytics/selectors/transforms";
-import { MetricDetailsModal } from "./modals/MetricDetailsModal";
 
 interface AnalyticsTabProps {
   isLoading: boolean;
@@ -41,6 +40,7 @@ interface AnalyticsTabProps {
   unknownMs: number;
   
   fetchDomainIntervals: (domain: string) => void;
+  setShowMetricModal: (modal: "tracked" | "focus" | "visits" | null) => void;
 }
 
 export function AnalyticsTab({
@@ -69,9 +69,9 @@ export function AnalyticsTab({
   distractingMs,
   neutralMs,
   unknownMs,
-  fetchDomainIntervals
+  fetchDomainIntervals,
+  setShowMetricModal
 }: AnalyticsTabProps) {
-  const [metricModal, setMetricModal] = React.useState<"tracked" | "focus" | "visits" | null>(null);
 
   // Process timeline data
   const processedTimeline = useMemo(() => {
@@ -164,7 +164,7 @@ export function AnalyticsTab({
             </div>
             {!isLoading && !isDatabaseEmpty && (
               <button 
-                onClick={() => setMetricModal("tracked")}
+                onClick={() => setShowMetricModal("tracked")}
                 className="hover-text-black"
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               >
@@ -187,7 +187,7 @@ export function AnalyticsTab({
             </div>
             {!isLoading && !isDatabaseEmpty && (
               <button 
-                onClick={() => setMetricModal("focus")}
+                onClick={() => setShowMetricModal("focus")}
                 className="hover-text-black"
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               >
@@ -210,7 +210,7 @@ export function AnalyticsTab({
             </div>
             {!isLoading && !isDatabaseEmpty && (
               <button 
-                onClick={() => setMetricModal("visits")}
+                onClick={() => setShowMetricModal("visits")}
                 className="hover-text-black"
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               >
@@ -712,13 +712,6 @@ export function AnalyticsTab({
           )}
         </section>
       </div>
-
-      <MetricDetailsModal
-        isOpen={metricModal !== null}
-        onClose={() => setMetricModal(null)}
-        metricType={metricModal}
-        stats={stats}
-      />
     </div>
   );
 }

@@ -16,19 +16,19 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
     if (metricType === "tracked") {
       const maxDay = [...(stats.timeline || [])].sort((a, b) => b.durationMs - a.durationMs)[0];
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-            <span style={{ color: 'var(--text2)' }}>Total Tracked Duration</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.totalDurationMs)}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Total Tracked Duration</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.totalDurationMs)}</span>
           </div>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-            <span style={{ color: 'var(--text2)' }}>Average Session Time</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.averageSessionMs)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Average Session Time</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.averageSessionMs)}</span>
           </div>
           {maxDay && (
-            <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-              <span style={{ color: 'var(--text2)' }}>Most Active Day ({maxDay.date})</span>
-              <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(maxDay.durationMs)}</span>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+              <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Most Active Day ({maxDay.date})</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(maxDay.durationMs)}</span>
             </div>
           )}
         </div>
@@ -37,22 +37,26 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
 
     if (metricType === "focus") {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px', borderLeft: '4px solid var(--productive)' }}>
-            <span style={{ color: 'var(--text2)' }}>Productive Time</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.productiveDurationMs)}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--productive)', marginRight: '12px' }} />
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Productive Time</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.productiveDurationMs)}</span>
           </div>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px', borderLeft: '4px solid var(--distracting)' }}>
-            <span style={{ color: 'var(--text2)' }}>Distracting Time</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.distractingDurationMs)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--distracting)', marginRight: '12px' }} />
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Distracting Time</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.distractingDurationMs)}</span>
           </div>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px', borderLeft: '4px solid var(--neutral)' }}>
-            <span style={{ color: 'var(--text2)' }}>Neutral Time</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.neutralDurationMs)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--neutral)', marginRight: '12px' }} />
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Neutral Time</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.neutralDurationMs)}</span>
           </div>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px', borderLeft: '4px solid var(--text3)' }}>
-            <span style={{ color: 'var(--text2)' }}>Unknown Time</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDuration(stats.metrics.unknownDurationMs)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text3)', marginRight: '12px' }} />
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Unknown Time</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(stats.metrics.unknownDurationMs)}</span>
           </div>
         </div>
       );
@@ -65,19 +69,19 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
         : 0;
       
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-            <span style={{ color: 'var(--text2)' }}>Total Visits</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{stats.metrics.totalVisits.toLocaleString()}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Total Visits</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{stats.metrics.totalVisits.toLocaleString()}</span>
           </div>
-          <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-            <span style={{ color: 'var(--text2)' }}>Avg Visits per Domain</span>
-            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{avgPerDomain}</span>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Avg Visits per Domain</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{avgPerDomain}</span>
           </div>
           {maxDay && (
-            <div className="stat-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--surface2)', borderRadius: '8px' }}>
-              <span style={{ color: 'var(--text2)' }}>Most Visits in a Day ({maxDay.date})</span>
-              <span style={{ fontWeight: 600, color: 'var(--text)' }}>{maxDay.visitCount.toLocaleString()}</span>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }} className="hover-bg-elevated">
+              <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Most Visits in a Day ({maxDay.date})</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{maxDay.visitCount.toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -95,7 +99,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', width: '90%', padding: '24px', display: 'flex', flexDirection: 'column' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '95vw', padding: '24px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
           <h3 className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
             {metricType === 'tracked' && (
@@ -121,7 +125,9 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
           </button>
         </div>
         
-        {content}
+        <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
+          {content}
+        </div>
       </div>
     </div>
   );
