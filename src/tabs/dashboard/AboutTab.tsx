@@ -1,9 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import "./SettingsTab.css";
+import { UserGuideModal } from "./modals/UserGuideModal";
 
 export function AboutTab() {
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
   return (
     <section className="settings-panel-layout tab-panel" aria-label="About the Extension">
+      {/* User Guide Banner */}
+      <div className="settings-card" style={{ padding: '32px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', border: '1px solid rgba(139, 92, 246, 0.3)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} onClick={() => setIsGuideOpen(true)}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(139, 92, 246, 0.2)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ fontSize: '22px', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+              Interactive User Manual
+            </h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>New here? Take a quick guided tour through the core features of Local Browse Insights.</p>
+          </div>
+          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px', pointerEvents: 'none' }}>
+            Open Guide
+          </button>
+        </div>
+      </div>
+
       {/* Project Overview */}
       <div className="settings-card" style={{ padding: '32px' }}>
         <div className="settings-card-icon blue" aria-hidden="true" style={{ width: '64px', height: '64px', borderRadius: '16px', fontSize: '32px', marginBottom: '20px' }}>
@@ -74,6 +96,8 @@ export function AboutTab() {
           </div>
         </div>
       </div>
+
+      {isGuideOpen && <UserGuideModal onClose={() => setIsGuideOpen(false)} />}
     </section>
   );
 }
