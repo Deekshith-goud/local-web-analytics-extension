@@ -13,11 +13,6 @@ Local Browse Insights is a browser extension that tracks your browsing activity,
 
 **Built With:** TypeScript, [Plasmo](https://docs.plasmo.com/), React, IndexedDB, TailwindCSS, and Recharts.
 
-<div align="center">
-  <img src="assets/dashboard.png" width="48%" alt="Analytics Dashboard" />
-  <img src="assets/widget.png" width="48%" alt="Floating Widget" />
-</div>
-
 ## Why Local Browse Insights?
 
 Most time-tracking tools send your deeply personal browsing history to the cloud. We don't.
@@ -60,34 +55,13 @@ Once installed, simply browse the web as usual. Click the floating widget on any
 
 ## Application Gallery
 
-### 📊 Main Dashboard
-Provides a comprehensive overview of your browsing habits, total time spent, and top visited domains.
-<img src="assets/dashboard/overview.png" width="800" alt="Dashboard Overview" />
-
-### 🎯 Productivity Rules & Scoring
-Automatically categorizes your visits into productive, neutral, or distracting based on your custom rules.
-<img src="assets/productivity/rules.png" width="800" alt="Productivity Rules" />
-
-<details>
-<summary><strong>See all other screenshots</strong></summary>
-<br>
-
-### ⚙️ Settings & Retention Controls
-Configure data retention policies, import/export data, and customize extension behavior.
-<img src="assets/settings/panel.png" width="800" alt="Settings Panel" />
-
-### ⏱️ Pomodoro Timer & Time Limits
-Stay focused with built-in Pomodoro sessions and block distracting sites with daily time limits.
-<img src="assets/pomodoro/limits.png" width="800" alt="Pomodoro and Time Limits" />
-
-### 🎈 Floating Widget
-A minimal, non-intrusive widget that tracks your active session directly on the page.
-<img src="assets/floating-widget/demo.png" width="800" alt="Floating Widget" />
-
-</details>
+<div align="center">
+  <img src="assets/dashboard/overview.png" height="350" alt="Productivity Rules" />
+  <img src="assets/floating-widget/Blob.png" height="350" alt="Floating Widget" />
+</div>
 
 **[📂 Browse all screenshots in the assets folder](assets/)**
-
+ 
 ## Data Transparency & Schema
 
 We believe you deserve to know exactly what is saved. **Local Browse Insights** stores its data entirely inside your browser's IndexedDB.
@@ -194,4 +168,3 @@ For more detailed setup instructions, see our full [Contributing Guide](CONTRIBU
 
 [MIT License](LICENSE)
 
-If this project is useful to you, consider giving it a ⭐ — it helps others find it.
