@@ -102,7 +102,7 @@ export function useTheme() {
         )
         document.documentElement.style.setProperty(
           "transition",
-          "filter 0.8s ease-in-out",
+          "filter 0.2s ease-in-out",
           "important"
         )
       } else {

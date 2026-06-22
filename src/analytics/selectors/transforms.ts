@@ -224,11 +224,13 @@ export function computeBarCoordinates(
   const barCount = timeline.length;
   const gapRatio = 0.25; // 25% gap between bars
   const totalBarSpace = chartWidth / barCount;
-  const barWidth = totalBarSpace * (1 - gapRatio);
+  let barWidth = totalBarSpace * (1 - gapRatio);
+  if (barWidth > 56) barWidth = 56; // Limit max width for aesthetic reasons
 
   return timeline.map((item, idx) => {
-    // Coordinate offsets
-    const x = padding.left + idx * totalBarSpace + (totalBarSpace * gapRatio) / 2;
+    // Coordinate offsets (centered in the available space)
+    const cx = padding.left + idx * totalBarSpace + totalBarSpace / 2;
+    const x = cx - barWidth / 2;
     const barHeight = (item.durationMs / maxDuration) * chartHeight;
     const y = height - padding.bottom - barHeight;
 

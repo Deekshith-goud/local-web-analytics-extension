@@ -199,7 +199,9 @@ export default function BlobContent() {
     const updateDetoxStyle = (enabled: boolean) => {
       if (enabled) {
         document.documentElement.style.setProperty('filter', 'grayscale(100%)', 'important');
-        document.documentElement.style.setProperty('transition', 'filter 0.8s ease-in-out', 'important');
+        if (process.env.PLASMO_PUBLIC_DOPAMINE_EFFECT === "true") {
+          document.documentElement.style.setProperty('transition', 'filter 0.2s ease-in-out', 'important');
+        }
       } else {
         document.documentElement.style.removeProperty('filter');
         document.documentElement.style.removeProperty('transition');

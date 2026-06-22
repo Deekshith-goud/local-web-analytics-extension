@@ -4,7 +4,7 @@ import { ScoreIllustration, getProductivityLabel, type IconStyleType } from "../
 
 
 import { formatDuration } from "../../utils/format";
-import { downsampleTimeline, computeBarCoordinates } from "../../analytics/selectors/transforms";
+import { computeBarCoordinates } from "../../analytics/selectors/transforms";
 
 interface AnalyticsTabProps {
   isLoading: boolean;
@@ -85,7 +85,7 @@ export function AnalyticsTab({
       return [];
     }
     if (!stats.timeline) return [];
-    return downsampleTimeline(stats.timeline, 14);
+    return stats.timeline;
   }, [stats, range]);
 
   // Pure SVG coordinate points (memoized to prevent resize layout thrashing)
@@ -450,11 +450,11 @@ export function AnalyticsTab({
                      return (
                       <g key={idx}>
                         <rect
-                          x={bar.x + bar.width * 0.1}
+                          x={bar.x}
                           y={bar.y}
-                          width={bar.width * 0.8}
+                          width={bar.width}
                           height={bar.height}
-                          rx={(bar.width * 0.8) / 2}
+                          rx={bar.width / 2}
                           fill={isMax ? "url(#capsuleHighlightGradient)" : bar.height <= 2 ? "rgba(255, 255, 255, 0.05)" : "url(#capsuleBrandGradient)"}
                           className="chart-capsule"
                           style={{ transition: 'all 0.2s ease', cursor: 'pointer', opacity: 1 }}
@@ -587,8 +587,13 @@ export function AnalyticsTab({
                                 })}
                                 onMouseLeave={() => setHoveredTooltip(null)}
                               />
-                              <circle cx={x} cy={prodPoints[idx]?.y} r="4" fill="#10b981" style={{ pointerEvents: 'none' }} />
-                              <circle cx={x} cy={distPoints[idx]?.y} r="4" fill="#ef4444" style={{ pointerEvents: 'none' }} />
+                              {hoveredTooltip?.title === item.date && (
+                                <>
+                                  <line x1={x} y1="20" x2={x} y2="210" stroke="var(--border-subtle)" strokeDasharray="4 4" pointerEvents="none" />
+                                  <circle cx={x} cy={prodPoints[idx]?.y} r="4" fill="#10b981" style={{ pointerEvents: 'none', stroke: 'var(--bg-elevated)', strokeWidth: 2 }} />
+                                  <circle cx={x} cy={distPoints[idx]?.y} r="4" fill="#ef4444" style={{ pointerEvents: 'none', stroke: 'var(--bg-elevated)', strokeWidth: 2 }} />
+                                </>
+                              )}
                               
                               {/* X-axis labels */}
                               {(idx % Math.ceil(ptCount / 8) === 0 || idx === ptCount - 1) && (

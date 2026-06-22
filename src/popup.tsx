@@ -179,7 +179,7 @@ export default function Popup() {
   useEffect(() => {
     if (isDetoxModeEnabled) {
       document.documentElement.style.setProperty('filter', 'grayscale(100%)', 'important');
-      document.documentElement.style.setProperty('transition', 'filter 0.8s ease-in-out', 'important');
+      document.documentElement.style.setProperty('transition', 'filter 0.2s ease-in-out', 'important');
     } else {
       document.documentElement.style.removeProperty('filter');
       document.documentElement.style.removeProperty('transition');
