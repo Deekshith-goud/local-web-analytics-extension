@@ -6,7 +6,7 @@ import overviewImg from "url:~assets/dashboard/overview.png";
 import blobImg from "url:~assets/floating-widget/Blob.png";
 import rulesImg from "url:~assets/productivity/rules.png";
 
-export type GuideCategory = "dashboard" | "productivity" | "settings" | null;
+export type GuideCategory = "dashboard" | "productivity" | "settings" | "popup" | "blob" | null;
 
 interface SlideData {
   title: string;
@@ -24,10 +24,9 @@ const GUIDE_CONTENT: Record<NonNullable<GuideCategory>, SlideData[]> = {
       fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
     },
     {
-      title: "Floating Widget",
-      description: "A minimal, non-intrusive widget tracks your active session directly on the page, keeping you aware of your time without breaking your flow.",
-      imageUrl: blobImg,
-      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      title: "Detailed Analytics",
+      description: "Click on any summary card to drill down into the data. View detailed breakdowns of your daily usage, total visits, and session lengths.",
+      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     }
   ],
   productivity: [
@@ -53,6 +52,31 @@ const GUIDE_CONTENT: Record<NonNullable<GuideCategory>, SlideData[]> = {
       title: "Data Retention & Control",
       description: "Configure how long your raw browsing history is kept before being automatically purged. You can also manually wipe all your data at any time with a single click.",
       fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" y1="5" x2="22" y2="5"/><line x1="19" y1="2" x2="19" y2="8"/></svg>
+    }
+  ],
+  popup: [
+    {
+      title: "Quick Action Popup",
+      description: "Access your daily summary instantly. The popup gives you a quick snapshot of your focus score and top sites without opening the full dashboard.",
+      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+    },
+    {
+      title: "Productivity Controls",
+      description: "Quickly toggle Detox Mode directly from the popup to instantly block distractions across your entire browser.",
+      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    }
+  ],
+  blob: [
+    {
+      title: "Floating Active Session Blob",
+      description: "A beautiful, non-intrusive widget tracks your active session directly on the page, keeping you aware of your time without breaking your flow.",
+      imageUrl: blobImg,
+      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    },
+    {
+      title: "Customizable Styles",
+      description: "Match your aesthetic. You can change the blob's appearance in the settings, choosing from glassmorphism, brutalism, or minimal design modes.",
+      fallbackIcon: <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
     }
   ]
 };
@@ -125,6 +149,20 @@ export function UserGuideModal({ onClose }: Props) {
                   </div>
                   <h3>Privacy & Settings</h3>
                   <p>Data retention & local storage</p>
+                </button>
+                <button className="guide-category-card" onClick={() => handleSelectCategory("popup")}>
+                  <div className="guide-icon blue">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+                  </div>
+                  <h3>Extension Popup</h3>
+                  <p>Quick access to metrics</p>
+                </button>
+                <button className="guide-category-card" onClick={() => handleSelectCategory("blob")}>
+                  <div className="guide-icon green">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  </div>
+                  <h3>Floating Blob</h3>
+                  <p>Live active session tracker</p>
                 </button>
               </div>
             </div>

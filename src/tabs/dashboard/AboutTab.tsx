@@ -12,15 +12,15 @@ export function AboutTab() {
         onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(139, 92, 246, 0.2)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h3 style={{ fontSize: '22px', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ flex: 1, paddingRight: '20px' }}>
+            <h3 style={{ fontSize: '22px', marginBottom: '8px', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
               Interactive User Manual
             </h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>New here? Take a quick guided tour through the core features of Local Browse Insights.</p>
           </div>
-          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px', pointerEvents: 'none' }}>
+          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '8px', pointerEvents: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
             Open Guide
           </button>
         </div>
