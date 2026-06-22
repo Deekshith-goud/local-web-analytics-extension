@@ -36,17 +36,6 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
 
     if (metricType === "tracked") {
       const maxDay = [...(stats.timeline || [])].sort((a, b) => b.durationMs - a.durationMs)[0];
-      const maxVal = Math.max(...sortedTimeline.map(t => t.durationMs), 1);
-      
-      const width = 450;
-      const height = 100;
-      const stepX = sortedTimeline.length > 1 ? width / (sortedTimeline.length - 1) : width;
-      const points = sortedTimeline.map((t, i) => ({
-        x: i * stepX,
-        y: height - (t.durationMs / maxVal) * (height - 10)
-      }));
-      const path = computeSmoothPath(points);
-
       const avgDailyMs = sortedTimeline.length > 0 ? stats.metrics.totalDurationMs / sortedTimeline.length : 0;
       
       return (
@@ -175,21 +164,6 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
     }
 
     if (metricType === "focus") {
-      const width = 450;
-      const height = 100;
-      const stepX = sortedTimeline.length > 1 ? width / (sortedTimeline.length - 1) : width;
-      const maxVal = Math.max(...sortedTimeline.map(t => Math.max(t.productiveMs || 0, t.distractingMs || 0)), 1);
-
-      const prodPoints = sortedTimeline.map((t, i) => ({
-        x: i * stepX, y: height - ((t.productiveMs || 0) / maxVal) * (height - 10)
-      }));
-      const distPoints = sortedTimeline.map((t, i) => ({
-        x: i * stepX, y: height - ((t.distractingMs || 0) / maxVal) * (height - 10)
-      }));
-
-      const prodPath = computeSmoothPath(prodPoints);
-      const distPath = computeSmoothPath(distPoints);
-
       const focusPct = stats.metrics.totalDurationMs > 0 ? (stats.metrics.productiveDurationMs / stats.metrics.totalDurationMs) * 100 : 0;
       const bestFocusDay = [...sortedTimeline].sort((a, b) => (b.productiveMs || 0) - (a.productiveMs || 0))[0];
 
@@ -226,7 +200,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
             <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{formatDuration(avgDailyProd)}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-subtle)' }} className="hover-bg-elevated">
-            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Net Positive Days (Focus > Distraction)</span>
+            <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' }}>Net Positive Days (Focus &gt; Distraction)</span>
             <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{consistentDays} of {sortedTimeline.length} days</span>
           </div>
           {bestFocusDay && bestFocusDay.productiveMs && bestFocusDay.productiveMs > 0 && (
