@@ -87,11 +87,11 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                     const total = stats.metrics.totalDurationMs;
                     const top5 = stats.topDomains.slice(0, 5);
                     const elegantColors = [
-                      { gradient: 'linear-gradient(90deg, #8b5cf6, #6366f1)', dot: 'linear-gradient(135deg, #8b5cf6, #6366f1)' },
-                      { gradient: 'linear-gradient(90deg, #0ea5e9, #3b82f6)', dot: 'linear-gradient(135deg, #0ea5e9, #3b82f6)' },
-                      { gradient: 'linear-gradient(90deg, #14b8a6, #10b981)', dot: 'linear-gradient(135deg, #14b8a6, #10b981)' },
-                      { gradient: 'linear-gradient(90deg, #fbbf24, #f59e0b)', dot: 'linear-gradient(135deg, #fbbf24, #f59e0b)' },
-                      { gradient: 'linear-gradient(90deg, #f472b6, #ec4899)', dot: 'linear-gradient(135deg, #f472b6, #ec4899)' },
+                      { gradient: '#0274BD', dot: '#0274BD', shadow: 'rgba(2, 116, 189, 0.4)' },
+                      { gradient: '#E9E6DD', dot: '#E9E6DD', shadow: 'rgba(233, 230, 221, 0.4)' },
+                      { gradient: '#C4AD9D', dot: '#C4AD9D', shadow: 'rgba(196, 173, 157, 0.4)' },
+                      { gradient: '#2C3E50', dot: '#2C3E50', shadow: 'rgba(44, 62, 80, 0.4)' },
+                      { gradient: '#F57251', dot: '#F57251', shadow: 'rgba(245, 114, 81, 0.4)' },
                     ];
                     
                     let accumulated = 0;
@@ -119,7 +119,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                         <div key="other" title={`Other Domains: ${remaining.toFixed(1)}%`} 
                           style={{ 
                             width: `${remaining}%`, 
-                            background: 'linear-gradient(90deg, #475569, #334155)', 
+                            background: '#B3B3B3', 
                             height: '100%', 
                             cursor: 'help',
                             boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
@@ -134,11 +134,11 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '16px' }}>
                   {stats.topDomains.slice(0, 5).map((td, i) => {
                     const elegantColors = [
-                      { gradient: 'linear-gradient(90deg, #8b5cf6, #6366f1)', dot: 'linear-gradient(135deg, #8b5cf6, #6366f1)', shadow: 'rgba(99, 102, 241, 0.4)' },
-                      { gradient: 'linear-gradient(90deg, #0ea5e9, #3b82f6)', dot: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', shadow: 'rgba(59, 130, 246, 0.4)' },
-                      { gradient: 'linear-gradient(90deg, #14b8a6, #10b981)', dot: 'linear-gradient(135deg, #14b8a6, #10b981)', shadow: 'rgba(16, 185, 129, 0.4)' },
-                      { gradient: 'linear-gradient(90deg, #fbbf24, #f59e0b)', dot: 'linear-gradient(135deg, #fbbf24, #f59e0b)', shadow: 'rgba(245, 158, 11, 0.4)' },
-                      { gradient: 'linear-gradient(90deg, #f472b6, #ec4899)', dot: 'linear-gradient(135deg, #f472b6, #ec4899)', shadow: 'rgba(236, 72, 153, 0.4)' },
+                      { gradient: '#0274BD', dot: '#0274BD', shadow: 'rgba(2, 116, 189, 0.4)' },
+                      { gradient: '#E9E6DD', dot: '#E9E6DD', shadow: 'rgba(233, 230, 221, 0.4)' },
+                      { gradient: '#C4AD9D', dot: '#C4AD9D', shadow: 'rgba(196, 173, 157, 0.4)' },
+                      { gradient: '#2C3E50', dot: '#2C3E50', shadow: 'rgba(44, 62, 80, 0.4)' },
+                      { gradient: '#F57251', dot: '#F57251', shadow: 'rgba(245, 114, 81, 0.4)' },
                     ];
                     const colorScheme = elegantColors[i % elegantColors.length];
                     return (
@@ -151,7 +151,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                   })}
                   {stats.topDomains.length > 5 && (
                     <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'linear-gradient(135deg, #475569, #334155)', marginRight: '8px' }} />
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#B3B3B3', marginRight: '8px' }} />
                       <span>Other</span>
                     </div>
                   )}
@@ -178,12 +178,15 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
       
       const hasBoth = prodRatio > 0 && distRatio > 0;
       const strokeW = 18;
-      const gap = hasBoth ? strokeW + 12 : 0; 
+      // Increase gap so it's very distinct
+      const gap = hasBoth ? strokeW + 20 : 0; 
       
       const pDash = Math.max(0, prodDash - gap);
       const dDash = Math.max(0, distDash - gap);
       
+      // Start productive segment (green) at top-right
       const pOffset = hasBoth ? -(gap / 2) : 0;
+      // Start distracting segment (red) on the left
       const dOffset = hasBoth ? -(gap / 2 + pDash + gap) : 0;
       
       const avgDailyProd = sortedTimeline.length > 0 ? stats.metrics.productiveDurationMs / sortedTimeline.length : 0;
@@ -222,20 +225,10 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                     <stop offset="0%" stopColor="#fb7185" />
                     <stop offset="100%" stopColor="#e11d48" />
                   </linearGradient>
-                  <filter id="glowProd" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#059669" floodOpacity="0.4"/>
-                  </filter>
-                  <filter id="glowDist" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#e11d48" floodOpacity="0.2"/>
-                  </filter>
                 </defs>
 
                 {/* Background Track */}
-                <circle cx="100" cy="100" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="16" />
-                
-                {/* Inner Decorative Rings */}
-                <circle cx="100" cy="100" r={radius - 22} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="4 6" />
-                <circle cx="100" cy="100" r={radius - 18} fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="2" />
+                <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--bg-elevated)" strokeWidth="18" />
                 
                 {/* Productive Segment */}
                 {prodRatio > 0 && (
@@ -244,8 +237,10 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                     strokeLinecap="round"
                     strokeDasharray={`${pDash} ${circumference}`}
                     strokeDashoffset={pOffset}
-                    filter="url(#glowProd)"
-                    style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                    style={{ 
+                      transition: 'stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                      filter: 'drop-shadow(0 6px 12px rgba(16, 185, 129, 0.35))'
+                    }}
                   />
                 )}
                 
@@ -256,13 +251,15 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                     strokeLinecap="round"
                     strokeDasharray={`${dDash} ${circumference}`}
                     strokeDashoffset={dOffset}
-                    filter="url(#glowDist)"
-                    style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                    style={{ 
+                      transition: 'stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                      filter: 'drop-shadow(0 6px 12px rgba(225, 29, 72, 0.35))'
+                    }}
                   />
                 )}
               </svg>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{Math.round(prodRatio * 100)}%</span>
+                <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{Math.round(prodRatio * 100)}%</span>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px' }}>Focus</span>
               </div>
             </div>

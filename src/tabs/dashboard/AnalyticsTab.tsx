@@ -165,10 +165,11 @@ export function AnalyticsTab({
             {!isLoading && !isDatabaseEmpty && (
               <button 
                 onClick={() => setShowMetricModal("tracked")}
-                className="hover-text-black"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                className="metric-details-btn"
+                title="View detailed stats"
               >
-                Details &rarr;
+                Details
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             )}
           </div>
@@ -188,10 +189,11 @@ export function AnalyticsTab({
             {!isLoading && !isDatabaseEmpty && (
               <button 
                 onClick={() => setShowMetricModal("focus")}
-                className="hover-text-black"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                className="metric-details-btn"
+                title="View detailed stats"
               >
-                Details &rarr;
+                Details
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             )}
           </div>
@@ -211,10 +213,11 @@ export function AnalyticsTab({
             {!isLoading && !isDatabaseEmpty && (
               <button 
                 onClick={() => setShowMetricModal("visits")}
-                className="hover-text-black"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                className="metric-details-btn"
+                title="View detailed stats"
               >
-                Details &rarr;
+                Details
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             )}
           </div>
@@ -234,10 +237,11 @@ export function AnalyticsTab({
             {!isLoading && !isDatabaseEmpty && (
               <button 
                 onClick={() => setShowAllDomainsModal(true)}
-                className="hover-text-black"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                className="metric-details-btn"
+                title="View all domains"
               >
-                View All &rarr;
+                View All
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             )}
           </div>

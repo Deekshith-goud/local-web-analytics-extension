@@ -111,33 +111,22 @@ export default function ReportPage() {
   };
 
   const total = metrics.productiveDurationMs + metrics.distractingDurationMs + metrics.neutralDurationMs + metrics.unknownDurationMs;
-  let currentAngle = 0;
+  const radius = 85;
+  const circumference = 2 * Math.PI * radius;
   
-  const getCoordinatesForPercent = (percent: number) => {
-    const x = Math.cos(2 * Math.PI * percent);
-    const y = Math.sin(2 * Math.PI * percent);
-    return [x, y];
-  };
-
-  const createPieSlice = (value: number, color: string, gap: number = 0.0) => {
-    if (value === 0 || total === 0) return null;
-    const percent = value / total;
+  const getDashValues = (val: number, offsetAccumulator: number) => {
+    if (val === 0 || total === 0) return { dash: 0, offset: 0 };
+    const ratio = val / total;
+    // Gap = 16px (to clear rounded caps) + 8px visual spacing
+    const gap = (ratio > 0 && ratio < 1) ? 24 : 0; 
     
-    const adjustedPercent = percent;
-    const startOffset = gap/2;
+    let dash = (ratio * circumference) - gap;
+    dash = Math.max(0.1, dash); // 0.1 prevents SVG rendering glitches on absolute 0
     
-    const [startX, startY] = getCoordinatesForPercent(currentAngle + startOffset);
-    currentAngle += percent;
-    const [endX, endY] = getCoordinatesForPercent(currentAngle - startOffset);
+    // Shift offset by half the gap so the spacing is distributed evenly on both sides
+    const offset = offsetAccumulator - (gap / 2);
     
-    const largeArcFlag = adjustedPercent > 0.5 ? 1 : 0;
-    
-    const pathData = [
-      `M ${startX} ${startY}`,
-      `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`
-    ].join(' ');
-
-    return <path d={pathData} fill="none" stroke={color} strokeWidth="0.5" strokeLinecap="butt" className="donut-slice" />;
+    return { dash, offset };
   };
 
   const hasData = total > 0;
@@ -253,11 +242,12 @@ export default function ReportPage() {
 
         .breakdown-row { display: flex; align-items: center; gap: 60px; }
         
-        .legend-row { display: grid; grid-template-columns: auto 150px auto auto; align-items: center; gap: 15px; padding: 12px 0; }
-        .legend-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
-        .legend-label { font-weight: 600; font-size: 15px; color: #0f172a; }
-        .legend-time { font-size: 14px; color: #64748b; font-variant-numeric: tabular-nums; text-align: right; }
-        .legend-pct { background: #f1f5f9; color: #4f46e5; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 6px; min-width: 45px; text-align: center; }
+        .legend-row { display: grid; grid-template-columns: auto 150px auto auto; align-items: center; gap: 15px; padding: 16px 0; border-bottom: 1px dashed #e2e8f0; }
+        .legend-row:last-child { border-bottom: none; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .legend-label { font-weight: 600; font-size: 15px; color: #1e293b; }
+        .legend-time { font-size: 14px; font-weight: 500; color: #64748b; font-variant-numeric: tabular-nums; text-align: right; }
+        .legend-pct { font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px; min-width: 55px; text-align: center; font-variant-numeric: tabular-nums; }
         
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th { text-align: left; padding: 12px 10px; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -359,47 +349,73 @@ export default function ReportPage() {
           <div className="breakdown-row">
             <div style={{ width: '220px', height: '220px', position: 'relative', flexShrink: 0 }}>
               {hasData ? (
-                <svg viewBox="-1.5 -1.5 3 3" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.05))' }}>
-                  {createPieSlice(metrics.productiveDurationMs, '#10b981')}
-                  {createPieSlice(metrics.distractingDurationMs, '#ef4444')}
-                  {createPieSlice(metrics.neutralDurationMs, '#3b82f6')}
-                  {createPieSlice(metrics.unknownDurationMs, '#94a3b8')}
+                <svg viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.06))' }}>
+                  <defs>
+                    <linearGradient id="prodGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#34d399"/><stop offset="100%" stopColor="#059669"/></linearGradient>
+                    <linearGradient id="distGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#fb7185"/><stop offset="100%" stopColor="#e11d48"/></linearGradient>
+                    <linearGradient id="neutGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#60a5fa"/><stop offset="100%" stopColor="#2563eb"/></linearGradient>
+                    <linearGradient id="unkGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#cbd5e1"/><stop offset="100%" stopColor="#64748b"/></linearGradient>
+                  </defs>
+                  
+                  {(() => {
+                    let offsetAccum = 0;
+                    
+                    const prod = getDashValues(metrics.productiveDurationMs, offsetAccum);
+                    offsetAccum -= (metrics.productiveDurationMs / total) * circumference;
+                    
+                    const dist = getDashValues(metrics.distractingDurationMs, offsetAccum);
+                    offsetAccum -= (metrics.distractingDurationMs / total) * circumference;
+                    
+                    const neut = getDashValues(metrics.neutralDurationMs, offsetAccum);
+                    offsetAccum -= (metrics.neutralDurationMs / total) * circumference;
+                    
+                    const unk = getDashValues(metrics.unknownDurationMs, offsetAccum);
+                    
+                    return (
+                      <>
+                        {metrics.productiveDurationMs > 0 && <circle cx="100" cy="100" r={radius} fill="none" stroke="url(#prodGrad)" strokeWidth="16" strokeLinecap="round" strokeDasharray={`${prod.dash} ${circumference}`} strokeDashoffset={prod.offset} />}
+                        {metrics.distractingDurationMs > 0 && <circle cx="100" cy="100" r={radius} fill="none" stroke="url(#distGrad)" strokeWidth="16" strokeLinecap="round" strokeDasharray={`${dist.dash} ${circumference}`} strokeDashoffset={dist.offset} />}
+                        {metrics.neutralDurationMs > 0 && <circle cx="100" cy="100" r={radius} fill="none" stroke="url(#neutGrad)" strokeWidth="16" strokeLinecap="round" strokeDasharray={`${neut.dash} ${circumference}`} strokeDashoffset={neut.offset} />}
+                        {metrics.unknownDurationMs > 0 && <circle cx="100" cy="100" r={radius} fill="none" stroke="url(#unkGrad)" strokeWidth="16" strokeLinecap="round" strokeDasharray={`${unk.dash} ${circumference}`} strokeDashoffset={unk.offset} />}
+                      </>
+                    );
+                  })()}
                 </svg>
               ) : (
-                <div style={{ width: '100%', height: '100%', border: '8px solid #f1f5f9', borderRadius: '50%' }} />
+                <div style={{ width: '100%', height: '100%', border: '16px solid #f1f5f9', borderRadius: '50%' }} />
               )}
               {hasData && (
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{Math.round(metrics.productivityScore || 0)}%</div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginTop: '4px' }}>SCORE</div>
+                  <div style={{ fontSize: '38px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.03em' }}>{Math.round(metrics.productivityScore || 0)}%</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, marginTop: '6px', letterSpacing: '0.1em' }}>SCORE</div>
                 </div>
               )}
             </div>
             
             <div style={{ flex: 1 }}>
               <div className="legend-row">
-                <span className="legend-dot" style={{ background: '#10b981' }}></span>
+                <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #34d399, #059669)' }}></span>
                 <span className="legend-label">Productive</span>
                 <span className="legend-time">{formatDuration(metrics.productiveDurationMs)}</span>
-                <span className="legend-pct" style={{ color: '#10b981', background: '#ecfdf5' }}>{prodPct}%</span>
+                <span className="legend-pct" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.1)' }}>{prodPct}%</span>
               </div>
               <div className="legend-row">
-                <span className="legend-dot" style={{ background: '#ef4444' }}></span>
+                <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #fb7185, #e11d48)' }}></span>
                 <span className="legend-label">Distracting</span>
                 <span className="legend-time">{formatDuration(metrics.distractingDurationMs)}</span>
-                <span className="legend-pct" style={{ color: '#ef4444', background: '#fef2f2' }}>{distPct}%</span>
+                <span className="legend-pct" style={{ color: '#e11d48', background: 'rgba(239, 68, 68, 0.1)' }}>{distPct}%</span>
               </div>
               <div className="legend-row">
-                <span className="legend-dot" style={{ background: '#3b82f6' }}></span>
+                <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #60a5fa, #2563eb)' }}></span>
                 <span className="legend-label">Neutral</span>
                 <span className="legend-time">{formatDuration(metrics.neutralDurationMs)}</span>
-                <span className="legend-pct" style={{ color: '#3b82f6', background: '#eff6ff' }}>{neutPct}%</span>
+                <span className="legend-pct" style={{ color: '#2563eb', background: 'rgba(59, 130, 246, 0.1)' }}>{neutPct}%</span>
               </div>
               <div className="legend-row">
-                <span className="legend-dot" style={{ background: '#94a3b8' }}></span>
+                <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #cbd5e1, #64748b)' }}></span>
                 <span className="legend-label">Uncategorized</span>
                 <span className="legend-time">{formatDuration(metrics.unknownDurationMs)}</span>
-                <span className="legend-pct" style={{ color: '#64748b', background: '#f8fafc' }}>{unkPct}%</span>
+                <span className="legend-pct" style={{ color: '#475569', background: 'rgba(100, 116, 138, 0.1)' }}>{unkPct}%</span>
               </div>
             </div>
           </div>
