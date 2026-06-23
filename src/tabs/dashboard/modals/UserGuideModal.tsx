@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./UserGuideModal.css";
 
@@ -173,6 +173,13 @@ interface Props {
 export function UserGuideModal({ onClose }: Props) {
   const [activeCategory, setActiveCategory] = useState<GuideCategory>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollBy({ left: direction === 'left' ? -256 : 256, behavior: 'smooth' });
+    }
+  };
 
   const handleSelectCategory = (cat: NonNullable<GuideCategory>) => {
     setActiveCategory(cat);
@@ -210,10 +217,20 @@ export function UserGuideModal({ onClose }: Props) {
           {/* CATEGORY SELECTION VIEW */}
           {!activeCategory && (
             <div className="guide-categories-grid">
-              <p style={{ color: 'var(--text2)', marginBottom: '24px', fontSize: '15px' }}>
-                Welcome to Local Browse Insights! Select a module below to learn how it works.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <p style={{ color: 'var(--text2)', margin: 0, fontSize: '15px' }}>
+                  Select a module below or use arrows to scroll.
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => scrollSlider('left')} className="slider-nav-btn" aria-label="Scroll left" title="Scroll left">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <button onClick={() => scrollSlider('right')} className="slider-nav-btn" aria-label="Scroll right" title="Scroll right">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div className="guide-slider-container" ref={sliderRef}>
                 <button className="guide-category-card" onClick={() => handleSelectCategory("dashboard")}>
                   <div className="guide-icon blue">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>

@@ -58,7 +58,44 @@
   padding: 10px;
 }
 
+.guide-slider-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-top: 8px;
+  padding-bottom: 24px;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.guide-slider-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.slider-nav-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.slider-nav-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
 .guide-category-card {
+  flex: 0 0 240px;
+  scroll-snap-align: start;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 16px;
