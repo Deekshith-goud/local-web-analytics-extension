@@ -19,7 +19,7 @@ interface RulesTabProps {
   handlePomodoroMessageChange: (key: "customFocusMessage" | "customBreakMessage", val: string) => void;
   setPomodoroSettings: (settings: PomodoroSettings) => void;
   
-  setInfoModal: (modal: unknown) => void;
+  setInfoModal: (modal: any) => void;
   setShowAddRuleModal: (show: boolean) => void;
   setShowAddLimitModal: (show: boolean) => void;
   

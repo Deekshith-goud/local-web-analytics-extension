@@ -10,7 +10,7 @@ interface AnalyticsTabProps {
   isLoading: boolean;
   isDatabaseEmpty: boolean;
   totalTrackedDuration: number;
-  stats: unknown; // Using any for stats to avoid complex typing for now, or use AnalyticsStats
+  stats: any; // Using any for stats to avoid complex typing for now, or use AnalyticsStats
   range: "today" | "7days" | "30days";
   
   domainSort: "duration" | "visits";
@@ -103,9 +103,9 @@ export function AnalyticsTab({
     if (!stats || !stats.topDomains) return [];
     const domains = [...stats.topDomains];
     if (domainSort === "visits") {
-      domains.sort((a, b) => b.visitCount - a.visitCount);
+      domains.sort((a: any, b: any) => b.visitCount - a.visitCount);
     } else {
-      domains.sort((a, b) => b.durationMs - a.durationMs);
+      domains.sort((a: any, b: any) => b.durationMs - a.durationMs);
     }
     return domains.slice(0, 15);
   }, [stats, domainSort]);
@@ -123,7 +123,7 @@ export function AnalyticsTab({
   // Max duration for the chart Y-axis
   const maxTimelineMs = useMemo(() => {
     if (processedTimeline.length === 0) return 1000;
-    return Math.max(...processedTimeline.map((t: unknown) => t.durationMs), 1000);
+    return Math.max(...processedTimeline.map((t: any) => t.durationMs || 0), 1000);
   }, [processedTimeline]);
 
   const formatAxisLabel = (ms: number) => {
@@ -509,18 +509,18 @@ export function AnalyticsTab({
                   <line x1="40" y1="210" x2="700" y2="210" stroke="var(--border-subtle)" strokeWidth="1.5" />
 
                   {(() => {
-                    const maxCompMs = Math.max(...processedTimeline.map((t: unknown) => Math.max(t.productiveMs || 0, t.distractingMs || 0)), 1000);
+                    const maxCompMs = Math.max(...processedTimeline.map((t: any) => Math.max(t.productiveMs || 0, t.distractingMs || 0)), 1000);
                     const ptCount = processedTimeline.length;
                     const stepX = ptCount > 1 ? 660 / (ptCount - 1) : 660;
                     
-                    const prodPoints = processedTimeline.map((item: unknown, idx: number) => ({
+                    const prodPoints = processedTimeline.map((item: any, idx: number) => ({
                       x: 40 + idx * stepX,
                       y: 210 - ((item.productiveMs || 0) / maxCompMs) * 190,
                       val: item.productiveMs || 0,
                       date: item.date
                     }));
                     
-                    const distPoints = processedTimeline.map((item: unknown, idx: number) => ({
+                    const distPoints = processedTimeline.map((item: any, idx: number) => ({
                       x: 40 + idx * stepX,
                       y: 210 - ((item.distractingMs || 0) / maxCompMs) * 190,
                       val: item.distractingMs || 0,
@@ -566,7 +566,7 @@ export function AnalyticsTab({
                         )}
 
                         {/* Interactive Overlay Zones for tooltips */}
-                        {processedTimeline.map((item: unknown, idx: number) => {
+                        {processedTimeline.map((item: any, idx: number) => {
                           const x = 40 + idx * stepX;
                           const pMs = item.productiveMs || 0;
                           const dMs = item.distractingMs || 0;
@@ -676,7 +676,7 @@ export function AnalyticsTab({
             </div>
           ) : (
             <div className="leaderboard-list">
-              {filteredDomains.map((item: unknown, idx: number) => {
+              {filteredDomains.map((item: any, idx: number) => {
                 const fillWidth = domainSort === "visits"
                   ? (maxVisitCount > 0 ? (item.visitCount / maxVisitCount) * 100 : 0)
                   : (maxDomainMs > 0 ? (item.durationMs / maxDomainMs) * 100 : 0);

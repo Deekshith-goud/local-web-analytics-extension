@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "./UserGuideModal.css";
 
 import dash1 from "url:~assets/dashboard/dash-1.png";
-import dash1 from "url:~assets/dashboard/dash-1.png";
+
 import dash2 from "url:~assets/dashboard/dash-2.png";
 import dash3 from "url:~assets/dashboard/dash-3.png";
 import dash4 from "url:~assets/dashboard/dash-4.png";

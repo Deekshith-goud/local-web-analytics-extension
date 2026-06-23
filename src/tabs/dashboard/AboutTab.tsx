@@ -44,41 +44,7 @@ export function AboutTab() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-        {/* Architecture stack */}
-        <div className="settings-card">
-            <div className="settings-card-icon green" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            </div>
-            <div className="settings-card-body">
-              <h3>Architecture & Technology</h3>
-              <p style={{ marginBottom: '16px' }}>Built using modern, secure web technologies running directly in your browser:</p>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>React 18</span>
-                <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>TypeScript</span>
-                <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Plasmo Framework</span>
-                <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Dexie.js (IndexedDB)</span>
-                <span style={{ padding: '4px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>Recharts</span>
-              </div>
-            </div>
-        </div>
 
-        {/* Acknowledgements */}
-        <div className="settings-card">
-            <div className="settings-card-icon orange" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-            </div>
-            <div className="settings-card-body">
-              <h3>Open Source Credits</h3>
-              <p style={{ marginBottom: '16px' }}>This project stands on the shoulders of giants. We utilize several incredible open-source libraries to deliver a seamless experience:</p>
-              <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.6 }}>
-                <li><strong>Lucide Icons</strong> for beautiful, crisp vector iconography.</li>
-                <li><strong>Recharts</strong> for robust, declarative data visualization.</li>
-                <li><strong>Dexie.js</strong> for reliable, high-performance local database wrappers.</li>
-              </ul>
-            </div>
-        </div>
-      </div>
 
       {/* Author */}
       <div className="settings-card">

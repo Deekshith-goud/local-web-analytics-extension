@@ -65,11 +65,11 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
               <div style={{ display: 'flex', gap: '16px', padding: '16px', background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)', borderRadius: '12px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Top Traversed Host</div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--orange)' }}>{stats.topDomains[0].domain}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--orange)' }}>{stats.topDomains[0]?.domain}</div>
                 </div>
                 <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Concentration</div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{((stats.topDomains[0].durationMs / stats.metrics.totalDurationMs) * 100).toFixed(1)}% of all time</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{(((stats.topDomains[0]?.durationMs || 0) / stats.metrics.totalDurationMs) * 100).toFixed(1)}% of all time</div>
                 </div>
                 <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg Time per Host</div>
@@ -103,7 +103,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                         <div key={td.domain} title={`${td.domain}: ${pct.toFixed(1)}%`} 
                           style={{ 
                             width: `${pct}%`, 
-                            background: elegantColors[i % elegantColors.length].gradient, 
+                            background: elegantColors[i % elegantColors.length]!.gradient, 
                             height: '100%', 
                             cursor: 'help',
                             borderRight: isLast ? 'none' : '2px solid var(--bg-card)',
@@ -143,7 +143,7 @@ export function MetricDetailsModal({ isOpen, onClose, metricType, stats }: Metri
                     const colorScheme = elegantColors[i % elegantColors.length];
                     return (
                       <div key={`legend-${td.domain}`} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colorScheme.dot, marginRight: '8px', boxShadow: `0 2px 6px ${colorScheme.shadow}` }} />
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colorScheme!.dot, marginRight: '8px', boxShadow: `0 2px 6px ${colorScheme!.shadow}` }} />
                         <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{td.domain}</span>
                         <span style={{ marginLeft: '6px', fontWeight: 600, color: 'var(--text-primary)' }}>{((td.durationMs / stats.metrics.totalDurationMs) * 100).toFixed(1)}%</span>
                       </div>
