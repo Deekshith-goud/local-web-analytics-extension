@@ -36,7 +36,7 @@ describe("Repository - pruneOldActivities", () => {
   })
 
   it("should not delete anything if no old activities exist", async () => {
-    ;((db.activities as any).primaryKeys as ReturnType<typeof vi.fn>).mockResolvedValueOnce([])
+    ;((db.activities as any /* eslint-disable-line @typescript-eslint/no-explicit-any */).primaryKeys as ReturnType<typeof vi.fn>).mockResolvedValueOnce([])
 
     const result = await pruneOldActivities(90, 500)
 
@@ -50,7 +50,7 @@ describe("Repository - pruneOldActivities", () => {
     const batch1 = Array(500).fill("session-id")
     const batch2 = Array(10).fill("session-id")
 
-    ;((db.activities as any).primaryKeys as ReturnType<typeof vi.fn>)
+    ;((db.activities as any /* eslint-disable-line @typescript-eslint/no-explicit-any */).primaryKeys as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(batch1)
       .mockResolvedValueOnce(batch2)
       .mockResolvedValueOnce([])
@@ -65,7 +65,7 @@ describe("Repository - pruneOldActivities", () => {
   })
 
   it("should handle database errors gracefully", async () => {
-    ;((db.activities as any).primaryKeys as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+    ;((db.activities as any /* eslint-disable-line @typescript-eslint/no-explicit-any */).primaryKeys as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error("DB Error")
     )
 

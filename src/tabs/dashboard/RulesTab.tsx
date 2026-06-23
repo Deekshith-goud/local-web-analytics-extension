@@ -19,7 +19,7 @@ interface RulesTabProps {
   handlePomodoroMessageChange: (key: "customFocusMessage" | "customBreakMessage", val: string) => void;
   setPomodoroSettings: (settings: PomodoroSettings) => void;
   
-  setInfoModal: (modal: any) => void;
+  setInfoModal: (modal: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => void;
   setShowAddRuleModal: (show: boolean) => void;
   setShowAddLimitModal: (show: boolean) => void;
   

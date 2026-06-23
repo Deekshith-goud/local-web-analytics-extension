@@ -148,4 +148,7 @@ export function setHistoricalCache(key: string, payload: HistoricalStatsResponse
 }
 
 export function getTodaySnapshotCache() { return _todaySnapshotCache; }
-export function setTodaySnapshotCache(snapshot: unknown) { _todaySnapshotCache = snapshot as any; }
+export function setTodaySnapshotCache(snapshot: unknown) { 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _todaySnapshotCache = snapshot as any; 
+}
