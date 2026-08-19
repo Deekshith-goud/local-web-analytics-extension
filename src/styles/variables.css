@@ -1,4 +1,4 @@
-﻿/* â”€â”€ Tokens â”€â”€ */
+/* ── Tokens ── */
 :root {
   --bg: #f0f1f7;
   --surface: #ffffff;
@@ -10,6 +10,7 @@
   --accent: #5b57e6;
   --accent-hover: #4340c4;
   --accent-bg: rgba(91,87,230,0.08);
+  --text-on-accent: #ffffff;
   --green: #10b981;
   --green-bg: rgba(16,185,129,0.1);
   --red: #ef4444;
@@ -45,6 +46,7 @@
   --text2: #cbd5e1;
   --text-secondary: var(--text2);
   --text3: #94a3b8;
+  --text-on-accent: #ffffff;
   --track-bg: rgba(255, 255, 255, 0.1);
   --shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.04);
 
@@ -61,4 +63,40 @@
   --playful-color-15: #f87171;
   --playful-bg-0: linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(225, 29, 72, 0.05) 100%);
   --playful-color-0: #fb7185;
+}
+
+/* Minimal Theme (Shadcn UI Style) */
+[data-ui-theme="minimal"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f4f4f5; /* zinc-100 */
+  --border: #e4e4e7; /* zinc-200 */
+  --text: #09090b; /* zinc-950 */
+  --text2: #71717a; /* zinc-500 */
+  --text-secondary: var(--text2);
+  --text3: #a1a1aa; /* zinc-400 */
+  --accent: #18181b; /* zinc-900 */
+  --accent-hover: #27272a; /* zinc-800 */
+  --accent-bg: #f4f4f5; /* zinc-100 */
+  --text-on-accent: #ffffff;
+  --track-bg: #f4f4f5;
+  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  --radius: 0.5rem; /* rounded-md */
+}
+
+[data-ui-theme="minimal"][data-theme="dark"] {
+  --bg: #09090b; /* zinc-950 */
+  --surface: #09090b; /* zinc-950 */
+  --surface2: #18181b; /* zinc-900 */
+  --border: #27272a; /* zinc-800 */
+  --text: #fafafa; /* zinc-50 */
+  --text2: #a1a1aa; /* zinc-400 */
+  --text-secondary: var(--text2);
+  --text3: #71717a; /* zinc-500 */
+  --accent: #fafafa; /* zinc-50 */
+  --accent-hover: #e4e4e7; /* zinc-200 */
+  --accent-bg: #18181b; /* zinc-900 */
+  --text-on-accent: #09090b;
+  --track-bg: #18181b; /* zinc-900 */
+  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
 }

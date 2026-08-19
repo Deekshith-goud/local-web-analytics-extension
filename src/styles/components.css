@@ -1,11 +1,11 @@
-﻿.filter-group { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+.filter-group { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
 .filter-btn {
   background: none; border: none; color: var(--text2);
   font-size: 14px; font-weight: 500; padding: 8px 16px;
   border-radius: 7px; cursor: pointer; transition: all 0.2s;
 }
 .filter-btn:hover { color: var(--text); }
-.filter-btn.active { background: var(--accent); color: #fff; font-weight: 600; }
+.filter-btn.active { background: var(--accent); color: var(--text-on-accent); font-weight: 600; }
 
 /* â”€â”€ Buttons â”€â”€ */
 .btn-primary {
