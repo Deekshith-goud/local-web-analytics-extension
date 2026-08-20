@@ -13,6 +13,19 @@ export function useTheme() {
   const [dailyLimitHours, setDailyLimitHours] = useState<number>(4)
   const [retentionDays, setRetentionDays] = useState<number>(90)
 
+  const applyTheme = useCallback((targetTheme: "dark" | "light" | "system", targetUiTheme: "playful" | "minimal") => {
+    let active: string
+    if (targetTheme === "system") {
+      active = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+    } else {
+      active = targetTheme
+    }
+    document.documentElement.setAttribute("data-theme", active)
+    document.documentElement.setAttribute("data-ui-theme", targetUiTheme)
+  }, [])
+
   useEffect(() => {
     chrome.storage.local.get(
       [
@@ -46,18 +59,7 @@ export function useTheme() {
     )
   }, [applyTheme])
 
-  const applyTheme = useCallback((targetTheme: "dark" | "light" | "system", targetUiTheme: "playful" | "minimal") => {
-    let active: string
-    if (targetTheme === "system") {
-      active = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-    } else {
-      active = targetTheme
-    }
-    document.documentElement.setAttribute("data-theme", active)
-    document.documentElement.setAttribute("data-ui-theme", targetUiTheme)
-  }, [])
+
 
   const handleThemeChange = (newTheme: "dark" | "light" | "system") => {
     setTheme(newTheme)
