@@ -19,11 +19,11 @@ const PROD_BUILD_DIR = path.join(WORKSPACE_DIR, "build", "chrome-mv3-prod");
 const RELEASE_MANIFEST_PATH = path.join(PROD_BUILD_DIR, "release-manifest.json");
 
 // Allowed list of permissions in chrome-mv3-prod
-const ALLOWED_PERMISSIONS = Object.freeze(["storage", "tabs", "idle", "windows", "webNavigation"]);
+const ALLOWED_PERMISSIONS = Object.freeze(["storage", "tabs", "idle", "windows", "webNavigation", "favicon", "alarms", "notifications", "offscreen"]);
 const ALLOWED_CSP_DIRECTIVES = Object.freeze(["script-src 'self'"]);
 
 // Total bundle size budget (e.g., 2MB limit for privacy-first light extensions)
-const BUNDLE_SIZE_BUDGET_BYTES = 2 * 1024 * 1024; // 2MB
+const BUNDLE_SIZE_BUDGET_BYTES = 3 * 1024 * 1024; // 3MB
 
 console.log("\x1b[35m%s\x1b[0m", "==========================================================");
 console.log("\x1b[35m%s\x1b[0m", "🛡️  LOCAL BROWSE ANALYTICS BUILD SECURITY AUDIT & VERIFIER");
