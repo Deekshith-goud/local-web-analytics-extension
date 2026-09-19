@@ -30,21 +30,37 @@ All processing, storage, and analysis must remain **100% on-device**.
    ```bash
    bun install
    ```
-4. **Run the development server**:
-   ```bash
-   bun run dev
-   ```
-5. **Load the unpacked extension** in Chrome from `build/chrome-mv3-dev`.
+4. **Target-specific builds**:
+   - **Chrome**:
+     ```bash
+     bun run dev          # Dev server with HMR
+     bun run build:chrome # Production build
+     bun run package:chrome # Security & bundle audit
+     ```
+   - **Safari (macOS & iOS)**:
+     ```bash
+     bun run build:safari   # Build Safari MV3 & sync to Xcode resources
+     bun run package:safari # Release security audit for Safari
+     ```
+5. **Testing the Safari Extension locally**:
+   - Open `safari/Local Web Analytics.xcodeproj` in Xcode.
+   - In Safari, ensure **"Allow Unsigned Extensions"** is enabled in the **Develop** menu.
+   - Run the macOS host app from Xcode, then enable **Local Web Analytics** in Safari Extensions settings.
 
 ## 📝 Pull Request Process
 
 1. Create a new branch from `main` (`git checkout -b feature/amazing-feature`).
 2. Make your changes. Ensure your code follows the existing style and is strictly typed with TypeScript.
-3. Verify your changes don't introduce security vulnerabilities or violate the CSP.
-4. Run formatting and linting:
+3. Verify cross-browser compatibility:
+   - Ensure all extension APIs use standard `chrome.*` or cross-browser polyfills (`src/utils/browser-compat.ts`).
+   - Keep service worker event listeners synchronous at module startup to prevent cold-start event drops in Safari MV3.
+   - Never call browser-specific APIs (e.g., `chrome.offscreen`) without safe runtime feature-guards.
+4. Run testing, formatting, and linting:
    ```bash
+   bun run test
    bun run lint
-   bun x tsc --noEmit
+   bun run package:chrome
+   bun run package:safari
    ```
 5. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/):
    - `feat(dashboard): add new chart view`

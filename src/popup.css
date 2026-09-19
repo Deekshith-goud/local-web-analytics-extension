@@ -60,18 +60,35 @@
   padding: 0;
 }
 
+html {
+  width: 580px;
+  height: 550px;
+  min-height: 550px;
+}
+
 body {
   font-family: var(--font-stack);
   background-color: var(--bg-primary);
   color: var(--text-primary);
   width: 580px;
-  height: auto;
-  max-height: 560px;
-  overflow: hidden;
+  height: 550px;
+  min-height: 550px;
+  max-height: 580px;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.4s ease, color 0.4s ease;
   position: relative;
 }
+
+#__plasmo {
+  width: 580px;
+  height: 550px;
+  min-height: 550px;
+  display: flex;
+  flex-direction: column;
+}
+
 
 /* Focus states for Keyboard Navigation & Screen Readers */
 button:focus-visible,

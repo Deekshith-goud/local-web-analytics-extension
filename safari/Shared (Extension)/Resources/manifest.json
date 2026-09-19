@@ -1,0 +1,66 @@
+{
+  "icons": {
+    "16": "icon16.plasmo.3f939841.png",
+    "32": "icon32.plasmo.b3e782d4.png",
+    "48": "icon48.plasmo.3cd5ceed.png",
+    "64": "icon64.plasmo.2d281304.png",
+    "128": "icon128.plasmo.75675c84.png"
+  },
+  "manifest_version": 3,
+  "action": {
+    "default_icon": {
+      "16": "icon16.plasmo.3f939841.png",
+      "32": "icon32.plasmo.b3e782d4.png",
+      "48": "icon48.plasmo.3cd5ceed.png",
+      "64": "icon64.plasmo.2d281304.png",
+      "128": "icon128.plasmo.75675c84.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "version": "1.0.0",
+  "author": "Deekshith-goud",
+  "name": "Local Browse Analytics",
+  "description": "Privacy-first, local-only browser analytics extension.",
+  "background": {
+    "service_worker": "static/background/index.js"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "idle",
+    "alarms",
+    "notifications"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.9f472dab.js"
+      ],
+      "exclude_matches": [
+        "https://accounts.google.com/*",
+        "https://*.microsoftonline.com/*",
+        "https://appleid.apple.com/*"
+      ],
+      "css": []
+    }
+  ],
+  "host_permissions": [],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "resources": [
+        "content.f06a01d2.css"
+      ]
+    }
+  ]
+}

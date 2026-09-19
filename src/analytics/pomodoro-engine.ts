@@ -26,6 +26,17 @@ export class PomodoroEngine {
 
   private currentSettings: PomodoroSettings = DEFAULT_POMODORO_SETTINGS;
 
+  constructor() {
+    // Listen for alarms synchronously on service worker initialization to prevent cold-start event drops
+    if (typeof chrome !== "undefined" && chrome.alarms?.onAlarm) {
+      chrome.alarms.onAlarm.addListener(async (alarm) => {
+        if (alarm.name === ALARM_NAME) {
+          await this.handleTimerComplete();
+        }
+      });
+    }
+  }
+
   public async initialize(): Promise<void> {
     const data = await chrome.storage.local.get([POMODORO_STATE_KEY, POMODORO_SETTINGS_KEY]);
     if (data[POMODORO_SETTINGS_KEY]) {
@@ -42,13 +53,6 @@ export class PomodoroEngine {
         }
       }
     }
-    
-    // Listen for alarms
-    chrome.alarms.onAlarm.addListener(async (alarm) => {
-      if (alarm.name === ALARM_NAME) {
-        await this.handleTimerComplete();
-      }
-    });
   }
 
   public async getSettings(): Promise<PomodoroSettings> {
@@ -212,25 +216,31 @@ export class PomodoroEngine {
 
     if (freshSettings.soundEnabled) {
       try {
-        // In MV3 service workers, we cannot play audio directly using HTMLAudioElement.
-        // We must use offscreen document.
-        const hasOffscreen = await chrome.offscreen.hasDocument();
-        if (!hasOffscreen) {
-          await chrome.offscreen.createDocument({
-            url: "tabs/offscreen.html",
-            reasons: [chrome.offscreen.Reason.AUDIO_PLAYBACK],
-            justification: "Play Pomodoro timer completion sound"
+        // In MV3 service workers, offscreen documents are Chromium-specific.
+        // On Safari / browsers without chrome.offscreen, this degrades gracefully.
+        if (
+          typeof chrome !== "undefined" &&
+          chrome.offscreen &&
+          typeof chrome.offscreen.hasDocument === "function"
+        ) {
+          const hasOffscreen = await chrome.offscreen.hasDocument();
+          if (!hasOffscreen) {
+            await chrome.offscreen.createDocument({
+              url: "tabs/offscreen.html",
+              reasons: [chrome.offscreen.Reason.AUDIO_PLAYBACK],
+              justification: "Play Pomodoro timer completion sound"
+            });
+          }
+          
+          chrome.runtime.sendMessage({
+            type: "PLAY_SOUND",
+            version: 1,
+            target: "offscreen",
+            soundId: freshSettings.soundId || 'beep'
+          }).catch(err => {
+              logger.error("[Pomodoro] Could not send PLAY_SOUND to offscreen", err);
           });
         }
-        
-        chrome.runtime.sendMessage({
-          type: "PLAY_SOUND",
-          version: 1,
-          target: "offscreen",
-          soundId: freshSettings.soundId || 'beep'
-        }).catch(err => {
-            logger.error("[Pomodoro] Could not send PLAY_SOUND to offscreen", err);
-        });
       } catch (err) {
         logger.error("[Pomodoro] Failed to create offscreen document for audio", err);
       }

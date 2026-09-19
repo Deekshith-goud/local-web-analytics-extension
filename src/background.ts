@@ -154,11 +154,13 @@ async function prewarmCache(): Promise<void> {
   }
 }
 
-chrome.idle.onStateChanged.addListener(async (state) => {
-  if (state === "idle" || state === "locked") {
-    await runMaintenance()
-  }
-})
+if (typeof chrome !== "undefined" && chrome.idle?.onStateChanged) {
+  chrome.idle.onStateChanged.addListener(async (state) => {
+    if (state === "idle" || state === "locked") {
+      await runMaintenance()
+    }
+  })
+}
 
 // --- Engine + Drain Lifecycle -------------------------------------------------
 
@@ -179,15 +181,19 @@ async function initializeAndDrain(): Promise<void> {
   await runMaintenance()
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
-  logger.info("Extension installed. Initializing tracking engine...")
-  await initializeAndDrain()
-})
+if (typeof chrome !== "undefined" && chrome.runtime?.onInstalled) {
+  chrome.runtime.onInstalled.addListener(async () => {
+    logger.info("Extension installed. Initializing tracking engine...")
+    await initializeAndDrain()
+  })
+}
 
-chrome.runtime.onStartup.addListener(async () => {
-  logger.info("Browser started. Initializing tracking engine...")
-  await initializeAndDrain()
-})
+if (typeof chrome !== "undefined" && chrome.runtime?.onStartup) {
+  chrome.runtime.onStartup.addListener(async () => {
+    logger.info("Browser started. Initializing tracking engine...")
+    await initializeAndDrain()
+  })
+}
 
 ;(async () => {
   logger.info("Service worker awoke. Initializing tracking engine...")
@@ -203,11 +209,15 @@ engine.events.on("session-ended", () => {
   scheduleDrain()
 })
 
-chrome.runtime.onSuspend.addListener(() => {
-  logger.info("Service worker suspending. Finalizing active session...")
-  if (drainTimer !== null) {
-    clearTimeout(drainTimer)
-    drainTimer = null
-  }
-  engine.handleShutdown()
-})
+// chrome.runtime.onSuspend is an optional lifecycle event not supported by Safari MV3 service workers
+if (typeof chrome !== "undefined" && chrome.runtime?.onSuspend?.addListener) {
+  chrome.runtime.onSuspend.addListener(() => {
+    logger.info("Service worker suspending. Finalizing active session...")
+    if (drainTimer !== null) {
+      clearTimeout(drainTimer)
+      drainTimer = null
+    }
+    engine.handleShutdown()
+  })
+}
+

@@ -235,24 +235,32 @@ export default function Popup() {
     });
   };
 
-  if (loading) {
+  if (loading && !snapshot) {
     return (
-      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center" }}>
+      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "550px", height: "550px" }}>
         <p className="stat-label">Hydrating stats...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !snapshot) {
     return (
-      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center" }}>
+      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "550px", height: "550px" }}>
         <p className="session-status paused">Connection Error</p>
         <p className="empty-text-desc" style={{ marginTop: 8 }}>{error}</p>
       </div>
     );
   }
 
-  const { trackingPaused, activeSession, todayTotals, topDomains } = snapshot!;
+  const safeSnapshot: PopupSnapshotResponse = snapshot ?? {
+    trackingPaused: false,
+    activeSession: null,
+    todayTotals: { totalDurationMs: 0, totalVisits: 0, uniqueDomainsCount: 0 },
+    topDomains: [],
+    snapshotGeneratedAt: Date.now()
+  };
+
+  const { trackingPaused, activeSession, todayTotals, topDomains } = safeSnapshot;
   const totalDurationMs = todayTotals.totalDurationMs;
   const totalVisits = todayTotals.totalVisits;
   const uniqueDomainsCount = todayTotals.uniqueDomainsCount;
@@ -263,6 +271,7 @@ export default function Popup() {
 
   // Circular gauge stroke-dasharray properties: radius = 24, circumference = 150
   const r = 24;
+
   const circ = 2 * Math.PI * r;
   const strokeOffset = circ - (progressPercent / 100) * circ;
 

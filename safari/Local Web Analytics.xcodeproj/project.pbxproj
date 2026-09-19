@@ -1,0 +1,694 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001 /* AppDelegate.swift */; };
+		AA000002 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002 /* ViewController.swift */; };
+		AA000003 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BB000003 /* Main.storyboard */; };
+		AA000004 /* SafariExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000004 /* SafariExtensionHandler.swift */; };
+		AA000005 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = BB000005 /* Resources */; };
+		AA000006 /* Local Web Analytics Extension (macOS).appex in CopyFiles */ = {isa = PBXBuildFile; fileRef = CC000002 /* Local Web Analytics Extension (macOS).appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA000007 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000007 /* AppDelegate.swift */; };
+		AA000008 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000008 /* SceneDelegate.swift */; };
+		AA000009 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002 /* ViewController.swift */; };
+		AA000010 /* SafariExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000004 /* SafariExtensionHandler.swift */; };
+		AA000011 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = BB000005 /* Resources */; };
+		AA000012 /* Local Web Analytics Extension (iOS).appex in CopyFiles */ = {isa = PBXBuildFile; fileRef = CC000004 /* Local Web Analytics Extension (iOS).appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DD000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EE000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FF000002;
+			remoteInfo = "Local Web Analytics Extension (macOS)";
+		};
+		DD000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EE000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FF000004;
+			remoteInfo = "Local Web Analytics Extension (iOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		00000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA000006 /* Local Web Analytics Extension (macOS).appex in CopyFiles */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000002 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA000012 /* Local Web Analytics Extension (iOS).appex in CopyFiles */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CC000001 /* Local Web Analytics.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Local Web Analytics.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC000002 /* Local Web Analytics Extension (macOS).appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Local Web Analytics Extension (macOS).appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC000003 /* Local Web Analytics iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Local Web Analytics iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC000004 /* Local Web Analytics Extension (iOS).appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Local Web Analytics Extension (iOS).appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BB000002 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		BB000003 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
+		BB000004 /* SafariExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariExtensionHandler.swift; sourceTree = "<group>"; };
+		BB000005 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		BB000007 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BB000008 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		BB000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB000010 /* Local Web Analytics.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Local Web Analytics.entitlements"; sourceTree = "<group>"; };
+		BB000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB000012 /* Local Web Analytics Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Local Web Analytics Extension.entitlements"; sourceTree = "<group>"; };
+		BB000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB000014 /* Local Web Analytics.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Local Web Analytics.entitlements"; sourceTree = "<group>"; };
+		BB000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB000016 /* Local Web Analytics Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Local Web Analytics Extension.entitlements"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		11000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		11000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		11000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		11000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		GG000001 = {
+			isa = PBXGroup;
+			children = (
+				GG000002 /* Shared (App) */,
+				GG000003 /* macOS (App) */,
+				GG000004 /* iOS (App) */,
+				GG000005 /* Shared (Extension) */,
+				GG000006 /* macOS (Extension) */,
+				GG000007 /* iOS (Extension) */,
+				GG000008 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		GG000002 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000002 /* ViewController.swift */,
+				GG000009 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		GG000009 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BB000003 /* Main.storyboard */,
+			);
+			path = "Resources/Base.lproj";
+			sourceTree = "<group>";
+		};
+		GG000003 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000001 /* AppDelegate.swift */,
+				BB000009 /* Info.plist */,
+				BB000010 /* Local Web Analytics.entitlements */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		GG000004 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000007 /* AppDelegate.swift */,
+				BB000008 /* SceneDelegate.swift */,
+				BB000013 /* Info.plist */,
+				BB000014 /* Local Web Analytics.entitlements */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		GG000005 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000004 /* SafariExtensionHandler.swift */,
+				BB000005 /* Resources */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		GG000006 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000011 /* Info.plist */,
+				BB000012 /* Local Web Analytics Extension.entitlements */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		GG000007 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BB000015 /* Info.plist */,
+				BB000016 /* Local Web Analytics Extension.entitlements */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		GG000008 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CC000001 /* Local Web Analytics.app */,
+				CC000002 /* Local Web Analytics Extension (macOS).appex */,
+				CC000003 /* Local Web Analytics iOS.app */,
+				CC000004 /* Local Web Analytics Extension (iOS).appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000001 /* Local Web Analytics (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = JJ000001 /* Build configuration list for PBXNativeTarget "Local Web Analytics (macOS)" */;
+			buildPhases = (
+				22000001 /* Sources */,
+				11000001 /* Frameworks */,
+				33000001 /* Resources */,
+				00000001 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				KK000001 /* PBXTargetDependency */,
+			);
+			name = "Local Web Analytics (macOS)";
+			productName = "Local Web Analytics";
+			productReference = CC000001 /* Local Web Analytics.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FF000002 /* Local Web Analytics Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = JJ000002 /* Build configuration list for PBXNativeTarget "Local Web Analytics Extension (macOS)" */;
+			buildPhases = (
+				22000002 /* Sources */,
+				11000002 /* Frameworks */,
+				33000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Local Web Analytics Extension (macOS)";
+			productName = "Local Web Analytics Extension";
+			productReference = CC000002 /* Local Web Analytics Extension (macOS).appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		FF000003 /* Local Web Analytics (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = JJ000003 /* Build configuration list for PBXNativeTarget "Local Web Analytics (iOS)" */;
+			buildPhases = (
+				22000003 /* Sources */,
+				11000003 /* Frameworks */,
+				33000003 /* Resources */,
+				00000002 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				KK000002 /* PBXTargetDependency */,
+			);
+			name = "Local Web Analytics (iOS)";
+			productName = "Local Web Analytics";
+			productReference = CC000003 /* Local Web Analytics iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FF000004 /* Local Web Analytics Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = JJ000004 /* Build configuration list for PBXNativeTarget "Local Web Analytics Extension (iOS)" */;
+			buildPhases = (
+				22000004 /* Sources */,
+				11000004 /* Frameworks */,
+				33000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Local Web Analytics Extension (iOS)";
+			productName = "Local Web Analytics Extension";
+			productReference = CC000004 /* Local Web Analytics Extension (iOS).appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EE000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					FF000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					FF000002 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					FF000003 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					FF000004 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = JJ000000 /* Build configuration list for PBXProject "Local Web Analytics" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = GG000001;
+			productRefGroup = GG000008 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF000001 /* Local Web Analytics (macOS) */,
+				FF000002 /* Local Web Analytics Extension (macOS) */,
+				FF000003 /* Local Web Analytics (iOS) */,
+				FF000004 /* Local Web Analytics Extension (iOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		33000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000003 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		33000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000005 /* Resources in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		33000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		33000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000011 /* Resources in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		22000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000001 /* AppDelegate.swift in Sources */,
+				AA000002 /* ViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000004 /* SafariExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000007 /* AppDelegate.swift in Sources */,
+				AA000008 /* SceneDelegate.swift in Sources */,
+				AA000009 /* ViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000010 /* SafariExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		KK000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FF000002 /* Local Web Analytics Extension (macOS) */;
+			targetProxy = DD000001 /* PBXContainerItemProxy */;
+		};
+		KK000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FF000004 /* Local Web Analytics Extension (iOS) */;
+			targetProxy = DD000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		LL000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		LL000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = "wholemodule";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		LL000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Local Web Analytics.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		LL000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Local Web Analytics.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		LL000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Local Web Analytics Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		LL000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Local Web Analytics Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		LL000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "iOS (App)/Local Web Analytics.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		LL000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "iOS (App)/Local Web Analytics.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		LL000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "iOS (Extension)/Local Web Analytics Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		LL000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "iOS (Extension)/Local Web Analytics Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourdomain.local-web-analytics.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		JJ000000 /* Build configuration list for PBXProject "Local Web Analytics" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LL000001 /* Debug */,
+				LL000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		JJ000001 /* Build configuration list for PBXNativeTarget "Local Web Analytics (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LL000003 /* Debug */,
+				LL000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		JJ000002 /* Build configuration list for PBXNativeTarget "Local Web Analytics Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LL000005 /* Debug */,
+				LL000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		JJ000003 /* Build configuration list for PBXNativeTarget "Local Web Analytics (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LL000007 /* Debug */,
+				LL000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		JJ000004 /* Build configuration list for PBXNativeTarget "Local Web Analytics Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LL000009 /* Debug */,
+				LL000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EE000001 /* Project object */;
+}

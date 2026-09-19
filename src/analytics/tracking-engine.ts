@@ -109,11 +109,13 @@ export class TrackingEngine {
   }
 
   private setupListeners(): void {
-    chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
-    chrome.tabs.onUpdated.addListener(this.onTabUpdated.bind(this));
-    chrome.windows.onFocusChanged.addListener(this.onWindowFocusChanged.bind(this));
-    chrome.idle.onStateChanged.addListener(this.onIdleStateChanged.bind(this));
+    if (typeof chrome === "undefined") return;
+    chrome.tabs?.onActivated?.addListener(this.onTabActivated.bind(this));
+    chrome.tabs?.onUpdated?.addListener(this.onTabUpdated.bind(this));
+    chrome.windows?.onFocusChanged?.addListener(this.onWindowFocusChanged.bind(this));
+    chrome.idle?.onStateChanged?.addListener(this.onIdleStateChanged.bind(this));
   }
+
 
   private async validateRecoveredSession(session: ActiveSession): Promise<void> {
     logger.debug("Validating recovered session:", session);

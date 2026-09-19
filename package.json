@@ -6,8 +6,15 @@
   "author": "Deekshith-goud",
   "scripts": {
     "dev": "plasmo dev",
+    "dev:safari": "plasmo dev --target=safari-mv3",
     "build": "plasmo build",
-    "package": "bun run build && node scripts/package-extension.js && plasmo package",
+    "build:chrome": "plasmo build --target=chrome-mv3",
+    "build:safari": "plasmo build --target=safari-mv3 && node scripts/sync-safari-assets.js",
+    "sync:safari": "node scripts/sync-safari-assets.js",
+    "package": "bun run package:chrome",
+    "package:chrome": "bun run build:chrome && node scripts/package-extension.js && plasmo package --target=chrome-mv3",
+    "package:safari": "bash scripts/safari-packager.sh",
+    "packager:safari": "bash scripts/safari-packager.sh",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest run"

@@ -8,12 +8,14 @@
   <img src="https://img.shields.io/badge/privacy-100%25_local-success.svg" alt="Privacy First" />
   <br/>
   <img src="https://img.shields.io/badge/Manifest-V3-blue.svg" alt="Manifest V3" />
+  <img src="https://img.shields.io/badge/Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Chrome" />
+  <img src="https://img.shields.io/badge/Safari-000000?logo=safari&logoColor=white" alt="Safari" />
   <img src="https://img.shields.io/badge/Framework-Plasmo-black.svg" alt="Plasmo" />
   <img src="https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" alt="React" />
 </p>
 
-**Local Browse Analytics** is a browser extension that tracks your browsing activity, time usage, and productivity score entirely on-device. Built for developers and privacy-conscious users, it ensures zero telemetry, zero external tracking, and requires no accounts. Everything stays local.
+**Local Browse Analytics** is a privacy-first, dual-target Web Extension supporting both **Google Chrome** and **Apple Safari** (macOS & iOS). It tracks your browsing activity, time usage, and productivity score entirely on-device with zero telemetry, zero external tracking, and zero account dependencies. Everything stays local.
 
 **Built With:** TypeScript, [Plasmo](https://docs.plasmo.com/), React, IndexedDB, TailwindCSS, and Recharts.
 
@@ -37,15 +39,53 @@ Most time-tracking tools send your browsing history to the cloud. We don't.
 
 ### 🛠 For Developers
 
+#### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Deekshith-goud/local-web-analytics-extension.git
 cd local-web-analytics-extension
 bun install
-bun run dev  # For active development
-bun run build # For a production-optimized build
 ```
 
-Then load the generated `build/chrome-mv3-dev` (or `prod`) directory as an unpacked extension in Chrome.
+#### 2. Build for Google Chrome
+```bash
+bun run dev:chrome   # Active dev server with live reload (or bun run dev)
+bun run build:chrome # Production bundle in build/chrome-mv3-prod
+bun run package:chrome # Security audit + deterministic distribution bundle
+```
+Load the generated `build/chrome-mv3-prod` directory via `chrome://extensions/` > **Load unpacked**.
+
+#### 3. Build & Test for Apple Safari (macOS & iOS)
+```bash
+bun run build:safari   # Build Safari MV3 bundle & sync assets to Xcode
+bun run package:safari # Release audit & packaging gate for Safari
+```
+
+##### 🍏 Local Safari Testing Workflow:
+1. **Enable Developer Menu in Safari**:
+   - Open **Safari** > **Settings** (or **Preferences**) > **Advanced**.
+   - Check the checkbox for **"Show features for web developers"** (or **"Show Develop menu in menu bar"**).
+2. **Allow Unsigned Extensions**:
+   - Open the **Develop** menu in the top menu bar.
+   - Check **"Allow Unsigned Extensions"** (enter macOS password when prompted).
+3. **Build & Run from Xcode**:
+   - Open `safari/Local Web Analytics.xcodeproj` in **Xcode**.
+   - Select the **Local Web Analytics (macOS)** target and press **Run (Cmd+R)**.
+   - The host application container will launch.
+4. **Enable in Safari Extensions**:
+   - In Safari, open **Settings** > **Extensions**.
+   - Check the box next to **Local Web Analytics** to enable it.
+   - Grant permission on requested domains (or click "Always Allow on Every Website" for global tracking).
+
+##### 🔐 Developer Signing & App Store Release:
+- **Code Signing**: In Xcode under **Signing & Capabilities**, select your active **Apple Developer Team**.
+- **Capabilities**: Ensure **Safari Web Extension** capability is present on the extension target.
+- **Rulesets & Limits**: If configuring Declarative Net Request rules in Safari MV3, Safari strictly enforces a maximum of 50 rulesets and 30,000 rules per extension. Ensure custom rules adhere to standard Manifest V3 syntax.
+- **Command Line Packager**: Apple's native converter tool can also be run directly via:
+  ```bash
+  xcrun safari-web-extension-packager ./build/chrome-mv3-prod --app-name "Local Web Analytics" --bundle-identifier "com.yourdomain.local-web-analytics"
+  # Or use our helper script:
+  bun run packager:safari
+  ```
 
 ## Quick Start
 
