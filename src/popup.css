@@ -62,8 +62,9 @@
 
 html {
   width: 580px;
-  height: 550px;
-  min-height: 550px;
+  height: 480px;
+  min-height: 480px;
+  max-height: 480px;
 }
 
 body {
@@ -71,11 +72,10 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   width: 580px;
-  height: 550px;
-  min-height: 550px;
-  max-height: 580px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 480px;
+  min-height: 480px;
+  max-height: 480px;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.4s ease, color 0.4s ease;
   position: relative;
@@ -83,8 +83,9 @@ body {
 
 #__plasmo {
   width: 580px;
-  height: 550px;
-  min-height: 550px;
+  height: 480px;
+  min-height: 480px;
+  max-height: 480px;
   display: flex;
   flex-direction: column;
 }
@@ -102,11 +103,14 @@ input:focus-visible {
 .popup-container {
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 14px 16px;
   gap: 12px;
-  height: auto;
+  height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
   position: relative;
   z-index: 1;
+  overflow: hidden;
 }
 
 /* Main Content Grid for Wide Layout */
@@ -114,25 +118,27 @@ input:focus-visible {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  flex-grow: 0;
+  flex: 1;
   min-height: 0; /* allows children to scroll */
 }
 
 .left-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
   padding-right: 4px;
+  min-height: 0;
 }
 
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-height: 0;
   border-left: 1px solid var(--border-color);
   padding-left: 16px;
+  overflow-y: auto;
 }
 
 /* Custom scrollbars for columns */
@@ -176,7 +182,7 @@ input:focus-visible {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, var(--text-primary) 30%, hsl(210, 40%, 80%) 100%);
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-color) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -567,7 +573,7 @@ input:checked + .slider:before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 24px 16px;
   text-align: center;
   background: var(--bg-glass);
   backdrop-filter: blur(16px);
@@ -575,7 +581,8 @@ input:checked + .slider:before {
   border: 1px dashed var(--border-color);
   border-radius: 16px;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 4px;
+  flex: 1;
 }
 
 .empty-icon {
@@ -604,6 +611,7 @@ input:checked + .slider:before {
   border-top: 1px solid var(--border-color);
   padding-top: 10px;
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .sync-status {

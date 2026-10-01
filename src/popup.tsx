@@ -237,7 +237,7 @@ export default function Popup() {
 
   if (loading && !snapshot) {
     return (
-      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "550px", height: "550px" }}>
+      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "100%", height: "100%" }}>
         <p className="stat-label">Hydrating stats...</p>
       </div>
     );
@@ -245,7 +245,7 @@ export default function Popup() {
 
   if (error && !snapshot) {
     return (
-      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "550px", height: "550px" }}>
+      <div className="popup-container" style={{ justifyContent: "center", alignItems: "center", minHeight: "100%", height: "100%" }}>
         <p className="session-status paused">Connection Error</p>
         <p className="empty-text-desc" style={{ marginTop: 8 }}>{error}</p>
       </div>
