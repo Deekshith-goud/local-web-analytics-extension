@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { formatDuration } from "../../../utils/format";
+import { getFaviconUrl } from "../../../utils/browser-compat";
 import { getStartOfDayTimestamp, getLocalTodayDateString } from "../../../utils/date-utils";
 import type { ActivityRecord, DomainIntervalsResponse, RuntimeMessage } from "../../../types/tracking";
 
@@ -75,11 +76,15 @@ export function DomainIntervalsModal({ domain, onClose, initialRange = "7days" }
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', width: '95vw', padding: '24px', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
           <h3 id="domain-intervals-modal-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', color: 'inherit' }}>
-            <img 
-              src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + domain)}&size=64` : ""} 
-              alt="" 
-              style={{ width: '24px', height: '24px', borderRadius: '4px', marginRight: '10px' }} 
-            />
+            {getFaviconUrl(domain, 64) ? (
+              <img 
+                src={getFaviconUrl(domain, 64)} 
+                alt="" 
+                style={{ width: '24px', height: '24px', borderRadius: '4px', marginRight: '10px' }} 
+              />
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text3)", marginRight: '10px' }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            )}
             <span style={{ color: 'inherit', fontWeight: 600 }}>{domain}</span>
             <span style={{ color: 'var(--text-secondary)', marginLeft: '8px', fontSize: '14px', fontWeight: 500 }}>Sessions</span>
           </h3>
