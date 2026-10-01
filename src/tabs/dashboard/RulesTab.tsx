@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import "./RulesTab.css";
 import { PomodoroTimer } from "../../components/ui/PomodoroTimer";
 import { CustomDropdown } from "../../components/ui/CustomDropdown";
+import { getFaviconUrl } from "../../utils/browser-compat";
 import type { ProductivityRule } from "../../analytics/productivity-rules";
 import type { PomodoroState, PomodoroSettings, TimeLimitRule } from "../../types/tracking";
 
@@ -148,11 +149,11 @@ export function RulesTab({
                   <div className="elegant-list-row" key={`${rule.domain}-${rule.isCustom ? 'custom' : 'default'}`}>
                     <div className="elegant-row-col domain-col" style={{ flex: 2.5, display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                       <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {imgErrors[rule.domain] ? (
+                        {imgErrors[rule.domain] || !getFaviconUrl(rule.domain, 32) ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text3)" }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                         ) : (
                           <img 
-                            src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + rule.domain)}&size=32` : ""} 
+                            src={getFaviconUrl(rule.domain, 32)} 
                             alt="" 
                             style={{ width: "16px", height: "16px", borderRadius: "2px" }} 
                             onError={() => setImgErrors(prev => ({ ...prev, [rule.domain]: true }))}

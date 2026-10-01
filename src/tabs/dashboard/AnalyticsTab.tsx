@@ -5,6 +5,7 @@ import { ScoreIllustration, getProductivityLabel, type IconStyleType } from "../
 
 import { formatDuration } from "../../utils/format";
 import { computeBarCoordinates } from "../../analytics/selectors/transforms";
+import { getFaviconUrl } from "../../utils/browser-compat";
 
 interface AnalyticsTabProps {
   isLoading: boolean;
@@ -692,11 +693,15 @@ export function AnalyticsTab({
                   >
                     <div className="leaderboard-meta" style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                        <img 
-                          src={chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + item.domain)}&size=64` : ""} 
-                          alt="" 
-                          style={{ width: '16px', height: '16px', borderRadius: '3px', marginRight: '8px', flexShrink: 0 }} 
-                        />
+                        {getFaviconUrl(item.domain, 64) ? (
+                          <img 
+                            src={getFaviconUrl(item.domain, 64)} 
+                            alt="" 
+                            style={{ width: '16px', height: '16px', borderRadius: '3px', marginRight: '8px', flexShrink: 0 }} 
+                          />
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text3)", marginRight: '8px', flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        )}
                         <span className="leaderboard-name" title={item.domain} style={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text3)', marginRight: '6px', fontWeight: 500 }}>#{idx + 1}</span>
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.domain}</span>

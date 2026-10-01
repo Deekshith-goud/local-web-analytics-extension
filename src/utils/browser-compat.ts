@@ -25,10 +25,29 @@ export function getExtensionApi(): ExtensionApiNamespace {
  * Detects if the current runtime is Apple Safari WebExtension environment.
  */
 export function isSafariExtension(): boolean {
+  if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+    if (chrome.runtime.getURL("").startsWith("safari-web-extension://")) {
+      return true;
+    }
+  }
   if (typeof navigator !== "undefined" && navigator.userAgent) {
     return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   }
   return false;
+}
+
+/**
+ * Resolves a favicon URL for a given domain in Chromium environments,
+ * returning an empty string in Safari where the Chromium _favicon API is unsupported.
+ */
+export function getFaviconUrl(domain: string, size = 64): string {
+  if (isSafariExtension()) {
+    return "";
+  }
+  if (typeof chrome !== "undefined" && chrome.runtime?.id) {
+    return `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent("https://" + domain)}&size=${size}`;
+  }
+  return "";
 }
 
 /**

@@ -24,13 +24,27 @@ export const SENDER_FIXTURES = Object.freeze({
   validDashboardTab: Object.freeze({
     id: "extension-id-placeholder",
     url: "chrome-extension://extension-id-placeholder/tabs/dashboard.html",
-    tab: undefined
+    tab: { id: 102, index: 1, pinned: false, windowId: 1, active: true }
+  } as unknown as chrome.runtime.MessageSender),
+
+  /** authentic privileged Safari dashboard tab context */
+  validSafariDashboardTab: Object.freeze({
+    id: "extension-id-placeholder",
+    url: "safari-web-extension://B1982A12-D07E-4F35-86A9-7A5D2D5D5515/tabs/dashboard.html",
+    tab: { id: 103, index: 1, pinned: false, windowId: 1, active: true }
   } as unknown as chrome.runtime.MessageSender),
 
   /** authentic privileged popup context */
   validPopupTab: Object.freeze({
     id: "extension-id-placeholder",
     url: "chrome-extension://extension-id-placeholder/popup.html",
+    tab: undefined
+  } as unknown as chrome.runtime.MessageSender),
+
+  /** authentic privileged Safari popup context */
+  validSafariPopupTab: Object.freeze({
+    id: "extension-id-placeholder",
+    url: "safari-web-extension://B1982A12-D07E-4F35-86A9-7A5D2D5D5515/popup.html",
     tab: undefined
   } as unknown as chrome.runtime.MessageSender),
 

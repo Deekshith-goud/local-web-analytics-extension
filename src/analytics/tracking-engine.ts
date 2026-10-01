@@ -28,7 +28,9 @@ export class TrackingEngine {
     if (this.isInitialized) return;
     
     logger.info("Initializing Tracking Engine...");
-    chrome.idle.setDetectionInterval(IDLE_THRESHOLD_SECONDS);
+    if (typeof chrome !== "undefined" && chrome.idle?.setDetectionInterval) {
+      chrome.idle.setDetectionInterval(IDLE_THRESHOLD_SECONDS);
+    }
     
     // Resolve tracking paused setting
     const pauseSetting = await chrome.storage.local.get("tracking_paused");
@@ -129,13 +131,11 @@ export class TrackingEngine {
     } else {
       try {
         const [chromeWindow, tab] = await Promise.all([
-          chrome.windows.get(session.windowId),
-          chrome.tabs.get(session.tabId)
+          chrome.windows.get(session.windowId).catch(() => null),
+          chrome.tabs.get(session.tabId).catch(() => null)
         ]);
 
-        if (!chromeWindow.focused) {
-          isValid = false;
-        } else if (!tab.active) {
+        if (!chromeWindow || !tab || !tab.active) {
           isValid = false;
         } else {
           const currentDomain = extractHostname(tab.url);
@@ -163,13 +163,24 @@ export class TrackingEngine {
     if (this.isPaused) return;
 
     try {
-      const window = await chrome.windows.getLastFocused();
-      if (!window || !window.focused || window.id === undefined) {
+      // 1. Direct active tab queries (most reliable across Safari & Chrome when popup is open)
+      let activeTabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true }).catch(() => []);
+      if (!activeTabs || activeTabs.length === 0) {
+        activeTabs = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
+      }
+      if (activeTabs && activeTabs[0] && activeTabs[0].url) {
+        await this.startTracking(activeTabs[0], activeTabs[0].windowId);
         return;
       }
 
-      const tabs = await chrome.tabs.query({ active: true, windowId: window.id });
-      const firstTab = tabs[0];
+      // 2. Fallback to windows API
+      const window = await chrome.windows.getLastFocused().catch(() => null);
+      if (!window || window.id === undefined) {
+        return;
+      }
+
+      const tabs = await chrome.tabs.query({ active: true, windowId: window.id }).catch(() => []);
+      const firstTab = tabs && tabs[0];
       if (firstTab !== undefined) {
         await this.startTracking(firstTab, window.id);
       }
@@ -256,13 +267,8 @@ export class TrackingEngine {
     if (this.isPaused) return;
     logger.debug("Tab activated", activeInfo);
     
-    // Ensure window is actually focused
     try {
-      const window = await chrome.windows.get(activeInfo.windowId);
-      if (!window.focused) return;
-      
       const tab = await chrome.tabs.get(activeInfo.tabId);
-      
       await this.finalizeCurrentSession("tab-switch");
       await this.startTracking(tab, activeInfo.windowId);
     } catch (e) {
@@ -285,17 +291,10 @@ export class TrackingEngine {
           await this.startTracking(tab, tab.windowId);
         }
       } else if (!this.currentState && tab.active && newDomain) {
-        // Handle transitions from untracked pages (e.g., chrome://newtab)
+        // Handle transitions from untracked pages (e.g., chrome://newtab or Safari start page)
         // to tracked pages while the tab remains active.
-        try {
-          const window = await chrome.windows.get(tab.windowId);
-          if (window.focused) {
-            logger.debug("Untracked active tab updated to trackable domain", tabId, tab.url);
-            await this.startTracking(tab, tab.windowId);
-          }
-        } catch (e) {
-          logger.error("Error retrieving window state during tab update", e);
-        }
+        logger.debug("Untracked active tab updated to trackable domain", tabId, tab.url);
+        await this.startTracking(tab, tab.windowId);
       }
     }
   }

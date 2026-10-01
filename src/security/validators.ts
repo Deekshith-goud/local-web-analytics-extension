@@ -166,21 +166,30 @@ export function deriveSurface(sender: chrome.runtime.MessageSender): ExtensionSu
     return "background";
   }
 
-  // Ensure the message originates from our internal extension bundle context
-  const extensionOrigin = `chrome-extension://${chrome.runtime.id}`;
-  const isInternal = url.startsWith(extensionOrigin);
+  // Ensure the message originates from our internal extension bundle context.
+  // Supports Chromium (chrome-extension://), Safari (safari-web-extension://), and Firefox (moz-extension://).
+  const baseExtensionUrl =
+    typeof chrome !== "undefined" && chrome.runtime?.getURL
+      ? chrome.runtime.getURL("")
+      : "";
+
+  const isInternal =
+    (baseExtensionUrl !== "" && url.startsWith(baseExtensionUrl)) ||
+    (chrome.runtime?.id !== undefined && url.startsWith(`chrome-extension://${chrome.runtime.id}`)) ||
+    url.startsWith("safari-web-extension://") ||
+    url.startsWith("moz-extension://");
 
   if (isInternal) {
-    if (url.includes("/popup.html")) {
+    if (url.includes("/popup.html") || url.includes("popup.html")) {
       return "popup";
     }
 
     // Handle standard option dashboards (/tabs/dashboard.html or options.html)
-    if (url.includes("/dashboard.html")) {
+    if (url.includes("/dashboard.html") || url.includes("dashboard.html") || url.includes("options.html")) {
       return "dashboard";
     }
 
-    if (url.includes("/report.html")) {
+    if (url.includes("/report.html") || url.includes("report.html")) {
       return "report";
     }
 
@@ -193,6 +202,9 @@ export function deriveSurface(sender: chrome.runtime.MessageSender): ExtensionSu
     ) {
       return "background";
     }
+
+    // Default any other internal extension bundle page to dashboard privilege
+    return "dashboard";
   }
 
   // Webpage content scripts possess an associated active browser tab context

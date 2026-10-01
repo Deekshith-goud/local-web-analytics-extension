@@ -48,7 +48,10 @@
     "vitest-mock-extended": "^4.0.0"
   },
   "manifest": {
-    "host_permissions": [],
+    "host_permissions": [
+      "http://*/*",
+      "https://*/*"
+    ],
     "permissions": [
       "storage",
       "tabs",

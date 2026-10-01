@@ -67,15 +67,17 @@ async function runMaintenance(): Promise<void> {
   }
 
   try {
-    const systemState = await new Promise<chrome.idle.IdleState>((resolve) => {
-      chrome.idle.queryState(60, resolve)
-    })
+    if (typeof chrome !== "undefined" && chrome.idle?.queryState) {
+      const systemState = await new Promise<chrome.idle.IdleState>((resolve) => {
+        chrome.idle.queryState(60, resolve);
+      });
 
-    if (systemState !== "idle" && systemState !== "locked") {
-      logger.debug(
-        "[Background] Deferring maintenance: System is currently active."
-      )
-      return
+      if (systemState !== "idle" && systemState !== "locked") {
+        logger.debug(
+          "[Background] Deferring maintenance: System is currently active."
+        );
+        return;
+      }
     }
 
     const storage = await chrome.storage.local.get([
